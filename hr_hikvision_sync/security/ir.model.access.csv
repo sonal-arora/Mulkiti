@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hikvision_device_manager,hikvision.device manager,model_hikvision_device,hr_attendance.group_hr_attendance_manager,1,1,1,1
+access_hikvision_device_officer,hikvision.device officer,model_hikvision_device,hr_attendance.group_hr_attendance_officer,1,0,0,0
+access_hikvision_sync_wizard_manager,hikvision.sync.wizard manager,model_hikvision_sync_wizard,hr_attendance.group_hr_attendance_manager,1,1,1,1
+access_hikvision_sync_wizard_officer,hikvision.sync.wizard officer,model_hikvision_sync_wizard,hr_attendance.group_hr_attendance_officer,1,1,1,0

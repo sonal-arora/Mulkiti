@@ -1,2 +1,0 @@
-# Mulkiti
-HR Set Up

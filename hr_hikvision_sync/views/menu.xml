@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Top-level menu entry under Attendances app -->
+    <menuitem
+        id="menu_hikvision_root"
+        name="Hikvision"
+        parent="hr_attendance.menu_hr_attendance_root"
+        sequence="99"/>
+
+    <menuitem
+        id="menu_hikvision_devices"
+        name="Devices"
+        parent="menu_hikvision_root"
+        action="hikvision_device_action"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_hikvision_sync"
+        name="Sync Now"
+        parent="menu_hikvision_root"
+        action="hikvision_sync_wizard_action"
+        sequence="20"/>
+
+</odoo>

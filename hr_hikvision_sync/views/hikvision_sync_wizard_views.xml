@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="hikvision_sync_wizard_form_view" model="ir.ui.view">
+        <field name="name">hikvision.sync.wizard.form</field>
+        <field name="model">hikvision.sync.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Sync Hikvision Attendance">
+                <header>
+                    <field name="state"/>
+                </header>
+                <sheet>
+                    <!-- Config state -->
+                    <group>
+                        <group string="Select Devices">
+                            <field name="device_ids" widget="many2many_tags"
+                                   nolabel="1"
+                                   placeholder="Select one or more devices..."/>
+                        </group>
+                        <group string="Date Range">
+                            <field name="override_last_sync"/>
+                            <field name="date_from"/>
+<!--                                   attrs="{'required': [('override_last_sync', '=', True)]}"/>-->
+                            <field name="date_to"/>
+<!--                                   attrs="{'required': [('override_last_sync', '=', True)]}"/>-->
+                        </group>
+                    </group>
+
+                    <!-- Result state -->
+                    <group >
+                        <field name="result_html" nolabel="1" widget="html"/>
+                    </group>
+
+                    <field name="state" invisible="1"/>
+                </sheet>
+
+                <footer>
+                    <button name="action_sync"
+                            string="Sync Now"
+                            type="object"
+                            class="btn-primary"/>
+<!--                            attrs="{'invisible': [('state', '=', 'done')]}"/>-->
+                    <button name="action_close"
+                            string="Close"
+                            type="object"
+                            class="btn-secondary"/>
+<!--                            attrs="{'invisible': [('state', '=', 'config')]}"/>-->
+                    <button string="Cancel"
+                            class="btn-secondary"
+                            special="cancel"/>
+<!--                            attrs="{'invisible': [('state', '=', 'done')]}"/>-->
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="hikvision_sync_wizard_action" model="ir.actions.act_window">
+        <field name="name">Sync Hikvision Attendance</field>
+        <field name="res_model">hikvision.sync.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

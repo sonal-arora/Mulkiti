@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════════
+         CONTRACT FORM - Field Renaming
+    ════════════════════════════════════════════════════════ -->
+    <record id="hr_contract_view_form_custom" model="ir.ui.view">
+        <field name="name">hr.contract.form.custom</field>
+        <field name="model">hr.contract</field>
+        <field name="inherit_id" ref="hr_contract.hr_contract_view_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Contract Date → Joining Date (done in model, label override) -->
+            <xpath expr="//field[@name='date_start']" position="attributes">
+                <attribute name="string">Joining Date</attribute>
+            </xpath>
+
+            <!-- Wages → Basic Salary -->
+            <xpath expr="//field[@name='wage']" position="attributes">
+                <attribute name="string">Basic Salary</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- HR Payroll Struct / Leave Days override if hr_payroll installed -->
+    <record id="hr_contract_view_form_payroll_custom" model="ir.ui.view">
+        <field name="name">hr.contract.form.payroll.custom</field>
+        <field name="model">hr.contract</field>
+        <field name="inherit_id" ref="hr_contract.hr_contract_view_form"/>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+
+            <!-- Eligibility Days/Year → 22 Working Days / on completion of one year service -->
+            <xpath expr="//field[@name='leave_annual_allowance']" position="attributes">
+                <attribute name="string">22 Working Days / on completion of one year service</attribute>
+            </xpath>
+
+            <!-- Gratuity Computed Based On Daily Salary → Basic Salary -->
+            <xpath expr="//field[@name='hr_responsible_id']" position="before">
+                <group string="Gratuity">
+                    <field name="gratuity_amount" readonly="1" string="Gratuity (Basic Salary Based)"/>
+                </group>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

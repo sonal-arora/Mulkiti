@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════════
+         EMPLOYEE FORM VIEW INHERITANCE
+    ════════════════════════════════════════════════════════ -->
+    <record id="hr_employee_view_form_custom" model="ir.ui.view">
+        <field name="name">hr.employee.form.custom</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_documents"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-file">
+                    <field name="document_count" widget="statinfo"/>
+                </button>
+            </xpath>
+
+
+            <!-- ── 3. ATTACHMENTS TAB - Visa, Passport, Emirates ID ─ -->
+            <!-- Add after Private Information tab -->
+            <xpath expr="//field[@name='has_work_permit']" position="attributes">
+                <attribute name="string">Work permit</attribute>
+            </xpath>
+
+
+             <xpath expr="//label[@for='contract_date_start']" position="attributes">
+                 <attribute name="string">Joining Date</attribute>
+             </xpath>
+
+            <xpath expr="//div[@name='contract_dates']" position="after">
+                <field name="mol_contract_date"/>
+            </xpath>
+
+        </field>
+    </record>
+<!--    <record id="hr_employee_view_form_l10n_ae_hr_payroll" model="ir.ui.view">-->
+<!--        <field name="name">hr.employee.form.custom</field>-->
+<!--        <field name="model">hr.employee</field>-->
+<!--        <field name="inherit_id" ref="l10n_ae_hr_payroll.hr_employee_view_form"/>-->
+<!--        <field name="arch" type="xml">-->
+<!--            <xpath expr="//field[@name='l10n_ae_is_computed_based_on_daily_salary']" position="attributes">-->
+<!--                <attribute name="string">Computed Based On Basic Salary</attribute>-->
+<!--          </xpath>-->
+<!--            <xpath expr="//field[@name='wage_type']" position="before">-->
+<!--                 <field name="mol_contract_date"/>-->
+<!--             </xpath>-->
+<!--            &lt;!&ndash; ── GRATUITY Field ─────────────────────────────────── &ndash;&gt;-->
+<!--            <xpath expr="//group[@name='payroll_group']" position="inside">-->
+<!--                <group string="Gratuity">-->
+<!--                    <field name="gratuity_amount" string="Gratuity" readonly="0"/>-->
+<!--                </group>-->
+<!--            </xpath>-->
+<!--        </field>-->
+<!--    </record>-->
+
+</odoo>

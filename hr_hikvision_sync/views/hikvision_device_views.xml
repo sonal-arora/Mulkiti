@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Hikvision Device — List View
+    ================================================================ -->
+    <record id="hikvision_device_list_view" model="ir.ui.view">
+        <field name="name">hikvision.device.list</field>
+        <field name="model">hikvision.device</field>
+        <field name="arch" type="xml">
+            <list string="Hikvision Devices">
+                <field name="name"/>
+                <field name="host"/>
+                <field name="port"/>
+                <field name="use_https"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'ok'"
+                       decoration-warning="state == 'draft'"
+                       decoration-danger="state == 'error'"/>
+                <field name="last_sync"/>
+                <field name="attendance_count"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Hikvision Device — Form View
+    ================================================================ -->
+    <record id="hikvision_device_form_view" model="ir.ui.view">
+        <field name="name">hikvision.device.form</field>
+        <field name="model">hikvision.device</field>
+        <field name="arch" type="xml">
+            <form string="Hikvision Device">
+                <header>
+                    <button name="action_test_connection"
+                            string="Test Connection"
+                            type="object"
+                            class="btn-secondary"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,ok,error"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_attendances"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-clock-o">
+                            <field name="attendance_count" widget="statinfo"
+                                   string="Attendances"/>
+                        </button>
+                    </div>
+
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Main Gate Reader"/></h1>
+                    </div>
+
+                    <group>
+                        <group string="Connection">
+                            <field name="host" placeholder="192.168.1.64"/>
+                            <field name="port"/>
+                            <field name="use_https"/>
+                            <field name="username"/>
+                            <field name="password" password="True"/>
+                        </group>
+                        <group string="Sync Settings">
+                            <field name="sync_days_back"/>
+                            <field name="last_sync"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+
+                    <group string="Last Error">
+<!--                        attrs="{'invisible': [('last_error', '=', False)]}">-->
+                        <field name="last_error" nolabel="1"
+                               widget="char"
+                               class="text-danger"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Hikvision Device — Action
+    ================================================================ -->
+    <record id="hikvision_device_action" model="ir.actions.act_window">
+        <field name="name">Hikvision Devices</field>
+        <field name="res_model">hikvision.device</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add your first Hikvision device
+            </p>
+            <p>
+                Configure the IP address, port, and credentials of your
+                Hikvision biometric reader or iVMS-4200 server to start
+                syncing attendance records.
+            </p>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         hr.attendance — add Hikvision Device column to list view
+    ================================================================ -->
+<!--    <record id="hr_attendance_hikvision_list_view" model="ir.ui.view">-->
+<!--        <field name="name">hr.attendance.hikvision.list</field>-->
+<!--        <field name="model">hr.attendance</field>-->
+<!--        <field name="inherit_id" ref="hr_attendance.hr_attendance_view_tree"/>-->
+<!--        <field name="arch" type="xml">-->
+<!--            <xpath expr="//list" position="inside">-->
+<!--                <field name="hikvision_device_id" optional="show" string="Device"/>-->
+<!--            </xpath>-->
+<!--        </field>-->
+<!--    </record>-->
+
+</odoo>

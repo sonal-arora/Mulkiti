@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- Tree View -->
+    <record id="view_employee_document_tree" model="ir.ui.view">
+        <field name="name">employee.document.tree</field>
+        <field name="model">employee.document</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="document_type"/>
+                <field name="expiry_date"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_employee_document_form" model="ir.ui.view">
+        <field name="name">employee.document.form</field>
+        <field name="model">employee.document</field>
+        <field name="arch" type="xml">
+            <form string="Employee Document">
+             <!-- ✅ HEADER START -->
+            <header>
+                <field name="state" widget="statusbar"
+                       statusbar_visible="valid,expire_soon,expired"/>
+            </header>
+            <!-- ✅ HEADER END -->
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="employee_id"/>
+                        <field name="document_type"/>
+                    </group>
+
+                    <group>
+                        <field name="issue_date"/>
+                        <field name="expiry_date"/>
+
+                    </group>
+
+                    <group>
+                        <field name="document_file" filename="file_name"/>
+                        <field name="file_name"/>
+                    </group>
+                </sheet>
+
+                <!-- Chatter -->
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_employee_document" model="ir.actions.act_window">
+        <field name="name">Employee Documents</field>
+        <field name="res_model">employee.document</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_employee_document_root"
+              name="Employee Documents"
+              parent="hr.menu_hr_root"
+              sequence="25"/>
+
+    <menuitem id="menu_employee_document"
+              name="Documents"
+              parent="menu_employee_document_root"
+              action="action_employee_document"/>
+
+</odoo>
