@@ -1,0 +1,15 @@
+<odoo>
+    <record id="view_leave_allocation_form_inherit_cf" model="ir.ui.view">
+        <field name="name">hr.leave.allocation.cf.form</field>
+        <field name="model">hr.leave.allocation</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_allocation_view_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Example: add after number_of_days -->
+            <xpath expr="//field[@name='number_of_days']" position="after">
+                <field name="cf"/>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>
