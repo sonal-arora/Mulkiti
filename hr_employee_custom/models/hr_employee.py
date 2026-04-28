@@ -32,6 +32,10 @@ class HrEmployee(models.Model):
     document_ids = fields.One2many('employee.document', 'employee_id', string="Documents")
     document_count = fields.Integer(compute="_compute_document_count")
     mol_contract_date = fields.Date(string='MOL Contract date')
+    leave_second_approver_id = fields.Many2one(
+        'res.users',
+        string="Second Leave Approver"
+    )
 
     def _compute_document_count(self):
         for rec in self:
@@ -46,3 +50,15 @@ class HrEmployee(models.Model):
             'domain': [('employee_id', '=', self.id)],
             'context': {'default_employee_id': self.id},
         }
+
+class EmployeePublic(models.Model):
+    _inherit = 'hr.employee.public'
+
+    work_permit_document_name = fields.Char()
+    work_permit_issue_date = fields.Date()
+    gratuity_amount = fields.Float()
+    mol_contract_date = fields.Date()
+    leave_second_approver_id = fields.Many2one(
+        'res.users',
+        string="Second Leave Approver"
+    )

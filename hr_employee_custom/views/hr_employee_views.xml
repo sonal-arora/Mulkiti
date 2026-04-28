@@ -38,6 +38,14 @@
                 <attribute name="string">Emirates ID</attribute>
             </xpath>
 
+            <xpath expr="//field[@name='parent_id']" position="after">
+                <field name="leave_second_approver_id"/>
+            </xpath>
+            
+            <xpath expr="//field[@name='wage']" position="attributes">
+                <attribute name="string">Basic Salary</attribute>
+            </xpath>
+
         </field>
     </record>
 <!--    <record id="hr_employee_view_form_l10n_ae_hr_payroll" model="ir.ui.view">-->

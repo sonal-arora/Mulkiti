@@ -1,2 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_employee_document_user,employee.document user,model_employee_document,hr.group_hr_user,1,1,1,0
+access_hr_leave_user,hr.leave.user,hr_holidays.model_hr_leave,base.group_user,1,1,1,0
+access_employee_document_manager,employee.document.manager,model_employee_document,hr.group_hr_manager,1,1,1,1

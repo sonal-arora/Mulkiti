@@ -11,11 +11,12 @@
         'hr_holidays',
     ],
     'data': [
+        'security/security.xml',
         'security/ir.model.access.csv',
         'data/ir_cron.xml',
         'views/hr_employee_views.xml',
         'views/employee_document_views.xml',
-        'views/hr_leave_allocation_view.xml',
+        # 'views/hr_leave_allocation_view.xml',
 
     ],
     'installable': True,
