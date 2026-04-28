@@ -20,9 +20,9 @@
             </t>
         </xpath>
 
-        <div id="employee_marital" position="attributes">
-            <attribute name="class" separator=" " add="d-none" />
-        </div>
+<!--        <div id="employee_marital" position="attributes">-->
+<!--            <attribute name="class" separator=" " add="d-none" />-->
+<!--        </div>-->
 
         <div id="pay_period" position="attributes">
             <attribute name="class" separator=" " add="d-none" />
