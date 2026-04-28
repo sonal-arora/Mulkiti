@@ -11,7 +11,7 @@
         'hr_holidays',
     ],
     'data': [
-        'security/security.xml',
+        # 'security/security.xml',
         'security/ir.model.access.csv',
         'data/ir_cron.xml',
         'views/hr_employee_views.xml',
