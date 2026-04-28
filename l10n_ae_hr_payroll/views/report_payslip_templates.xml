@@ -87,34 +87,6 @@
         <td id="worked_days_amount" position="after">
             <td />
         </td>
-        <div style="margin-top:50px;">
-
-            <table style="width:100%; border-top:1px solid black; padding-top:10px;">
-
-                <tr>
-                    <td>
-                        <strong>Transfer to :</strong><br/>
-                        Cash Payment
-                    </td>
-                </tr>
-
-                <tr>
-                    <td style="padding-top:40px;">
-                        <strong>Prepared By:</strong><br/>
-                        Mulkiti Finance
-                    </td>
-
-                    <td style="text-align:right; padding-top:40px;">
-                        <strong>Received By:</strong><br/>
-                        Name<br/>
-                        Sign<br/>
-                        Date
-                    </td>
-                </tr>
-
-            </table>
-
-        </div>
     </template>
 
     <template id="report_payslip_ae_lang">
