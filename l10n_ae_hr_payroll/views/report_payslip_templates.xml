@@ -10,7 +10,7 @@
             <t t-if="eos">
                 <h2 id="payslip_name_new">
                     <span
-                        t-out="'End of Service Slip - ' + o.employee_id.name + ' - ' + o.date_from.strftime('%B %Y')" />
+                        t-out="'End of Service Slip - ' + ' - ' + o.date_from.strftime('%B %Y')" />
                 </h2>
             </t>
             <t t-else="">
@@ -41,15 +41,15 @@
         <div id="contract_start" position="attributes">
             <attribute name="class" separator=" " add="d-none" />
         </div>
-        <div
-            id="contract_start" position="after">
-            <div id="contract_start_ae">
-                <strong class="me-2">
-                    <span>Entry Date:</span>
-                </strong>
-                <span t-out="o.version_id.employee_id._get_first_contract_date()"/>
-            </div>
-        </div>
+<!--        <div-->
+<!--            id="contract_start" position="after">-->
+<!--            <div id="contract_start_ae">-->
+<!--                <strong class="me-2">-->
+<!--                    <span>Entry Date:</span>-->
+<!--                </strong>-->
+<!--                <span t-out="o.version_id.employee_id._get_first_contract_date()"/>-->
+<!--            </div>-->
+<!--        </div>-->
 
         <div id="contract_type" position="attributes">
             <attribute name="class" separator=" " add="d-none" />

@@ -3,7 +3,7 @@
 <template id="report_payslip">
     <t t-call="web.external_layout">
         <div class="page">
-            <h2 id="payslip_name"><span t-field="o.name">August 2023 Payslip</span></h2>
+            <h2 id="payslip_name"><span>August 2023 Payslip</span></h2>
             <t t-set="is_invalid" t-value="o._is_invalid()"/>
             <div t-if="is_invalid">
                 <strong id="invalid_warning"><span t-out="is_invalid">This payslip is not validated. This is not a legal document.</span></strong>
@@ -26,11 +26,11 @@
                                     <strong class="me-2">Name:</strong>
                                     <span t-field="o.employee_id.legal_name"/>
                                 </div>
-                                <div id="employee_id">
-                                    <strong class="me-2">ID:</strong>
-                                    <span t-if="o.version_id.identification_id" t-field="o.version_id.identification_id"/>
-                                    <span t-else="" class="fw-bold">No ID number on the employee</span>
-                                </div>
+<!--                                <div id="employee_id">-->
+<!--                                    <strong class="me-2">ID:</strong>-->
+<!--                                    <span t-if="o.version_id.identification_id" t-field="o.version_id.identification_id"/>-->
+<!--                                    <span t-else="" class="fw-bold">No ID number on the employee</span>-->
+<!--                                </div>-->
 <!--                                <div id="employee_email" t-if="o.employee_id.work_email">-->
 <!--                                    <strong class="me-2">Email:</strong>-->
 <!--                                    <span t-field="o.employee_id.work_email"/>-->
@@ -59,20 +59,20 @@
 <!--                                    <strong class="me-2">Children:</strong>-->
 <!--                                    <span t-field="o.version_id.children"/>-->
 <!--                                </div>-->
-                                <div id="employee_private_address" t-if="o.version_id.private_street and o.version_id.private_city">
-                                    <strong class="me-2">Address:</strong>
-                                    <span t-field="o.version_id.private_street"/>,
-                                    <span t-field="o.version_id.private_street2" t-if="o.version_id.private_street2" class="ms-2"/><span t-if="o.version_id.private_street2">,</span>
-                                    <span t-field="o.version_id.private_city" class="ms-2"/>
-                                    <span t-field="o.version_id.private_zip"/>
-                                    <span t-field="o.version_id.private_country_id"/>
-                                </div>
+<!--                                <div id="employee_private_address" t-if="o.version_id.private_street and o.version_id.private_city">-->
+<!--                                    <strong class="me-2">Address:</strong>-->
+<!--                                    <span t-field="o.version_id.private_street"/>,-->
+<!--                                    <span t-field="o.version_id.private_street2" t-if="o.version_id.private_street2" class="ms-2"/><span t-if="o.version_id.private_street2">,</span>-->
+<!--                                    <span t-field="o.version_id.private_city" class="ms-2"/>-->
+<!--                                    <span t-field="o.version_id.private_zip"/>-->
+<!--                                    <span t-field="o.version_id.private_country_id"/>-->
+<!--                                </div>-->
                             </td>
                             <td id="other_infos">
-                                <div id="wage" t-if="not o.struct_id.hide_basic_on_pdf">
-                                    <strong class="me-2">Contract Wage (<span class="text-capitalize" t-out="o.version_id.schedule_pay if o.version_id.wage_type == 'monthly' else o.version_id.wage_type"/>):</strong>
-                                    <span t-out="o.version_id._get_contract_wage()" t-options="{'widget': 'monetary', 'display_currency': o.company_id.currency_id}" class="fw-bold"/>
-                                </div>
+<!--                                <div id="wage" t-if="not o.struct_id.hide_basic_on_pdf">-->
+<!--                                    <strong class="me-2">Contract Wage (<span class="text-capitalize" t-out="o.version_id.schedule_pay if o.version_id.wage_type == 'monthly' else o.version_id.wage_type"/>):</strong>-->
+<!--                                    <span t-out="o.version_id._get_contract_wage()" t-options="{'widget': 'monetary', 'display_currency': o.company_id.currency_id}" class="fw-bold"/>-->
+<!--                                </div>-->
                                 <div invisible="1">
                                     <t t-if="o.version_id.contract_date_end and o.date_to &gt; o.version_id.contract_date_end" t-set="end_date" t-value="o.version_id.contract_date_end"/>
                                     <t t-else="" t-set="end_date" t-value="o.date_to"/>
@@ -88,23 +88,23 @@
                                     <strong class="me-2">Computed On:</strong>
                                     <span t-field="o.compute_date"/>
                                 </div>
-                                <div id="contract_start">
-                                    <strong class="me-2">Entry Date:</strong>
-                                    <span t-out="o.version_id.employee_id.with_context(before_date=end_date)._get_first_contract_date()"/>
-                                </div>
+<!--                                <div id="contract_start">-->
+<!--                                    <strong class="me-2">Entry Date:</strong>-->
+<!--                                    <span t-out="o.version_id.employee_id.with_context(before_date=end_date)._get_first_contract_date()"/>-->
+<!--                                </div>-->
                                 <div id="contract_type" t-if="o.version_id.contract_type_id">
                                     <strong class="me-2">Contract Type:</strong>
                                     <span t-field="o.version_id.contract_type_id"/>
                                 </div>
-                                <div id="working_schedule">
-                                    <strong class="me-2">Working Schedule:</strong>
-                                    <t t-if="o.version_id.resource_calendar_id.flexible_hours">
-                                        <span t-field="o.version_id.resource_calendar_id.full_time_required_hours"/> Hours / Week
-                                    </t>
-                                    <t t-else="">
-                                        <span t-field="o.version_id.hours_per_week"/> Hours / Week
-                                    </t>
-                                </div>
+<!--                                <div id="working_schedule">-->
+<!--                                    <strong class="me-2">Working Schedule:</strong>-->
+<!--                                    <t t-if="o.version_id.resource_calendar_id.flexible_hours">-->
+<!--                                        <span t-field="o.version_id.resource_calendar_id.full_time_required_hours"/> Hours / Week-->
+<!--                                    </t>-->
+<!--                                    <t t-else="">-->
+<!--                                        <span t-field="o.version_id.hours_per_week"/> Hours / Week-->
+<!--                                    </t>-->
+<!--                                </div>-->
                             </td>
                         </tr>
                     </tbody>
