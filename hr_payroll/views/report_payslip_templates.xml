@@ -2,7 +2,7 @@
 <odoo>
 <template id="report_payslip">
     <t t-call="web.external_layout">
-         <div style="text-align:center; margin-bottom:10px;">
+         <div style="text-align:left; margin-bottom:10px;">
             <img t-if="o.company_id.logo"
                  t-att-src="image_data_uri(o.company_id.logo)"
                  style="max-height:200px;"/>
@@ -21,75 +21,6 @@
             <br></br>
             <br></br>
             <div id="infos_table">
-<!--                <table style="width:100%; border-collapse:collapse;">-->
-<!--                    <thead class="o_black_border">-->
-<!--                        <tr style="border-bottom:1px solid black;">-->
-<!--                            <th>Employee Information</th>-->
-<!--                            <th class="w-50">Other Information</th>-->
-<!--                        </tr>-->
-<!--                    </thead>-->
-<!--                    <tbody>-->
-<!--                        <tr>-->
-<!--                            &lt;!&ndash; LEFT SIDE &ndash;&gt;-->
-<!--                            <td style="vertical-align:top; padding-top:10px;">-->
-<!--                            <table style="width:100%;">-->
-<!--                            <td id="employee_infos">-->
-<!--                                <div id="employee_name">-->
-<!--                                    <strong class="me-2">Name:</strong>-->
-<!--                                    <span t-field="o.employee_id.legal_name"/>-->
-<!--                                </div>-->
-<!--                                <div id="identification_id" t-if="o.employee_id.identification_id">-->
-<!--                                    <strong class="me-2">Emirates ID:</strong>-->
-<!--                                    <span t-field="o.employee_id.identification_id"/>-->
-<!--                                </div>-->
-<!--                                <div id="employee_job_position" t-if="o.version_id.job_id">-->
-<!--                                    <strong class="me-2">Job Position:</strong>-->
-<!--                                    <span t-field="o.version_id.job_id"/>-->
-<!--                                </div>-->
-<!--                                <div id="contract_date_start" t-if="o.employee_id.contract_date_start">-->
-<!--                                    <strong class="me-2">DOJ:</strong>-->
-<!--                                    <span t-field="o.employee_id.contract_date_start"/>-->
-<!--                                </div>-->
-<!--                                <div id="employee_department" t-if="o.version_id.department_id">-->
-<!--                                    <strong class="me-2">Department:</strong>-->
-<!--                                    <span t-field="o.version_id.department_id"/>-->
-<!--                                </div>-->
-
-<!--                            </td>-->
-<!--                            <td id="other_infos">-->
-<!--                                <div invisible="1">-->
-<!--                                    <t t-if="o.version_id.contract_date_end and o.date_to &gt; o.version_id.contract_date_end" t-set="end_date" t-value="o.version_id.contract_date_end"/>-->
-<!--                                    <t t-else="" t-set="end_date" t-value="o.date_to"/>-->
-<!--                                </div>-->
-<!--                                <div id="pay_period">-->
-<!--                                    <strong class="me-2">Pay Period:</strong>-->
-<!--                                    <span t-if="o.date_from &lt; o.version_id.contract_date_start" t-field="o.version_id.contract_date_start"/>-->
-<!--                                    <span t-else="" t-field="o.date_from"/>-->
-<!--                                    - -->
-<!--                                    <span t-esc="end_date.strftime('%m/%d/%Y')"/>-->
-<!--                                </div>-->
-<!--                                <div id="computed_on">-->
-<!--                                    <strong class="me-2">Paid On:</strong>-->
-<!--                                    <span t-field="o.compute_date"/>-->
-<!--                                </div>-->
-
-<!--                                <div id="contract_type" t-if="o.version_id.contract_type_id">-->
-<!--                                    <strong class="me-2">Paid On:</strong>-->
-<!--                                    <span t-field="o.version_id.contract_type_id"/>-->
-<!--                                </div>-->
-<!--                                <div id="working_schedule">-->
-<!--                                    <strong class="me-2">Working Schedule:</strong>-->
-<!--                                    <t t-if="o.version_id.resource_calendar_id.flexible_hours">-->
-<!--                                        <span t-field="o.version_id.resource_calendar_id.full_time_required_hours"/> Hours / Week-->
-<!--                                    </t>-->
-<!--                                    <t t-else="">-->
-<!--                                        <span t-field="o.version_id.hours_per_week"/> Hours / Week-->
-<!--                                    </t>-->
-<!--                                </div>-->
-<!--                            </td>-->
-<!--                        </tr>-->
-<!--                    </tbody>-->
-<!--                </table>-->
                 <table style="width:100%; border-collapse:collapse;">
                 <thead>
                     <tr style="border-bottom:1px solid black;">
@@ -120,7 +51,7 @@
 
                         <tr t-if="o.employee_id.contract_date_start">
                             <td><strong>DOJ:</strong></td>
-                            <td><span t-field="o.employee_id.contract_date_start"/></td>
+                            <td><span t-field="o.employee_id.contract_date_start" t-options='{"format": "dd/MM/yyyy"}'/></td>
                         </tr>
 
                         <tr t-if="o.version_id.department_id">
@@ -148,18 +79,18 @@
                                     <td>
                                         <span t-if="o.date_from &lt; o.version_id.contract_date_start"
                                               t-field="o.version_id.contract_date_start"
-                                              t-options='{"format": "MM/dd/yyyy"}'/>
+                                              t-options='{"format": "dd/MM/yyyy"}'/>
                                         <span t-else=""
                                               t-field="o.date_from"
-                                              t-options='{"format": "MM/dd/yyyy"}'/>
+                                              t-options='{"format": "dd/MM/yyyy"}'/>
                                         -
-                                        <span t-esc="end_date.strftime('%m/%d/%Y')"/>
+                                        <span t-esc="end_date.strftime('%d/%m/%Y')"/>
                                     </td>
                                 </tr>
 
                                 <tr>
                                     <td><strong>Paid On:</strong></td>
-                                    <td><span t-field="o.compute_date"/></td>
+                                    <td><span t-field="o.compute_date" t-options='{"format": "dd/MM/yyyy"}'/></td>
                                 </tr>
 
                                 <tr t-if="o.version_id.contract_type_id">
@@ -168,7 +99,7 @@
                                 </tr>
 
                                 <tr>
-                                    <td><strong>Working Schedule:</strong></td>
+                                    <td><strong>Working Days:</strong></td>
                                     <td>
 <!--                                        <t t-if="o.version_id.resource_calendar_id.flexible_hours">-->
 <!--                                            <span t-field="o.version_id.resource_calendar_id.full_time_required_hours"/> Hours / Week-->
@@ -238,7 +169,7 @@
                         <span t-esc="alloc[1]" class="fw-bold" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
                     </p>
                     <t t-if="not allocations">
-                        <strong>Amount to be paid to</strong>
+                        <strong>paid to</strong>
                         <span class="fst-italic" t-field="o.employee_id.legal_name"/>: <t t-esc="o.company_id.currency_id.name"/>
                         <span t-esc="o.net_wage" class="fw-bold"/>
                     </t>
