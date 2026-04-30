@@ -19,90 +19,62 @@
                 <div class="oe_structure"></div>
             </div>
             <div id="infos_table">
-                <table class="table table-sm table-borderless">
-                    <thead class="o_black_border">
-                        <tr>
-                            <th>Employee Information</th>
-                            <th class="w-50">Other Information</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td id="employee_infos">
-                                <div id="employee_name">
-                                    <strong class="me-2">Name:</strong>
-                                    <span t-field="o.employee_id.legal_name"/>
-                                </div>
-<!--                                <div id="employee_id">-->
-<!--                                    <strong class="me-2">ID:</strong>-->
-<!--                                    <span t-if="o.version_id.identification_id" t-field="o.version_id.identification_id"/>-->
-<!--                                    <span t-else="" class="fw-bold">No ID number on the employee</span>-->
+<!--                <table style="width:100%; border-collapse:collapse;">-->
+<!--                    <thead class="o_black_border">-->
+<!--                        <tr style="border-bottom:1px solid black;">-->
+<!--                            <th>Employee Information</th>-->
+<!--                            <th class="w-50">Other Information</th>-->
+<!--                        </tr>-->
+<!--                    </thead>-->
+<!--                    <tbody>-->
+<!--                        <tr>-->
+<!--                            &lt;!&ndash; LEFT SIDE &ndash;&gt;-->
+<!--                            <td style="vertical-align:top; padding-top:10px;">-->
+<!--                            <table style="width:100%;">-->
+<!--                            <td id="employee_infos">-->
+<!--                                <div id="employee_name">-->
+<!--                                    <strong class="me-2">Name:</strong>-->
+<!--                                    <span t-field="o.employee_id.legal_name"/>-->
 <!--                                </div>-->
-<!--                                <div id="employee_email" t-if="o.employee_id.work_email">-->
-<!--                                    <strong class="me-2">Email:</strong>-->
-<!--                                    <span t-field="o.employee_id.work_email"/>-->
+<!--                                <div id="identification_id" t-if="o.employee_id.identification_id">-->
+<!--                                    <strong class="me-2">Emirates ID:</strong>-->
+<!--                                    <span t-field="o.employee_id.identification_id"/>-->
 <!--                                </div>-->
-                                <div id="identification_id" t-if="o.employee_id.identification_id">
-                                    <strong class="me-2">Emirates ID:</strong>
-                                    <span t-field="o.employee_id.identification_id"/>
-                                </div>
-                                <div id="employee_job_position" t-if="o.version_id.job_id">
-                                    <strong class="me-2">Job Position:</strong>
-                                    <span t-field="o.version_id.job_id"/>
-                                </div>
-                                <div id="contract_date_start" t-if="o.employee_id.contract_date_start">
-                                    <strong class="me-2">DOJ:</strong>
-                                    <span t-field="o.employee_id.contract_date_start"/>
-                                </div>
-                                <div id="employee_department" t-if="o.version_id.department_id">
-                                    <strong class="me-2">Department:</strong>
-                                    <span t-field="o.version_id.department_id"/>
-                                </div>
-<!--                                <div id="employee_marital">-->
-<!--                                    <strong class="me-2">Marital Status:</strong>-->
-<!--                                    <span t-field="o.version_id.marital"/>-->
+<!--                                <div id="employee_job_position" t-if="o.version_id.job_id">-->
+<!--                                    <strong class="me-2">Job Position:</strong>-->
+<!--                                    <span t-field="o.version_id.job_id"/>-->
 <!--                                </div>-->
-<!--                                <div id="employee_person_in_charge" t-if="o.version_id.children">-->
-<!--                                    <strong class="me-2">Children:</strong>-->
-<!--                                    <span t-field="o.version_id.children"/>-->
+<!--                                <div id="contract_date_start" t-if="o.employee_id.contract_date_start">-->
+<!--                                    <strong class="me-2">DOJ:</strong>-->
+<!--                                    <span t-field="o.employee_id.contract_date_start"/>-->
 <!--                                </div>-->
-<!--                                <div id="employee_private_address" t-if="o.version_id.private_street and o.version_id.private_city">-->
-<!--                                    <strong class="me-2">Address:</strong>-->
-<!--                                    <span t-field="o.version_id.private_street"/>,-->
-<!--                                    <span t-field="o.version_id.private_street2" t-if="o.version_id.private_street2" class="ms-2"/><span t-if="o.version_id.private_street2">,</span>-->
-<!--                                    <span t-field="o.version_id.private_city" class="ms-2"/>-->
-<!--                                    <span t-field="o.version_id.private_zip"/>-->
-<!--                                    <span t-field="o.version_id.private_country_id"/>-->
+<!--                                <div id="employee_department" t-if="o.version_id.department_id">-->
+<!--                                    <strong class="me-2">Department:</strong>-->
+<!--                                    <span t-field="o.version_id.department_id"/>-->
 <!--                                </div>-->
-                            </td>
-                            <td id="other_infos">
-<!--                                <div id="wage" t-if="not o.struct_id.hide_basic_on_pdf">-->
-<!--                                    <strong class="me-2">Contract Wage (<span class="text-capitalize" t-out="o.version_id.schedule_pay if o.version_id.wage_type == 'monthly' else o.version_id.wage_type"/>):</strong>-->
-<!--                                    <span t-out="o.version_id._get_contract_wage()" t-options="{'widget': 'monetary', 'display_currency': o.company_id.currency_id}" class="fw-bold"/>-->
+
+<!--                            </td>-->
+<!--                            <td id="other_infos">-->
+<!--                                <div invisible="1">-->
+<!--                                    <t t-if="o.version_id.contract_date_end and o.date_to &gt; o.version_id.contract_date_end" t-set="end_date" t-value="o.version_id.contract_date_end"/>-->
+<!--                                    <t t-else="" t-set="end_date" t-value="o.date_to"/>-->
 <!--                                </div>-->
-                                <div invisible="1">
-                                    <t t-if="o.version_id.contract_date_end and o.date_to &gt; o.version_id.contract_date_end" t-set="end_date" t-value="o.version_id.contract_date_end"/>
-                                    <t t-else="" t-set="end_date" t-value="o.date_to"/>
-                                </div>
-                                <div id="pay_period">
-                                    <strong class="me-2">Pay Period:</strong>
-                                    <span t-if="o.date_from &lt; o.version_id.contract_date_start" t-field="o.version_id.contract_date_start"/>
-                                    <span t-else="" t-field="o.date_from"/>
-                                    -
-                                    <span t-esc="end_date.strftime('%m/%d/%Y')"/>
-                                </div>
-                                <div id="computed_on">
-                                    <strong class="me-2">Paid On:</strong>
-                                    <span t-field="o.compute_date"/>
-                                </div>
-<!--                                <div id="contract_start">-->
-<!--                                    <strong class="me-2">Entry Date:</strong>-->
-<!--                                    <span t-out="o.version_id.employee_id.with_context(before_date=end_date)._get_first_contract_date()"/>-->
+<!--                                <div id="pay_period">-->
+<!--                                    <strong class="me-2">Pay Period:</strong>-->
+<!--                                    <span t-if="o.date_from &lt; o.version_id.contract_date_start" t-field="o.version_id.contract_date_start"/>-->
+<!--                                    <span t-else="" t-field="o.date_from"/>-->
+<!--                                    - -->
+<!--                                    <span t-esc="end_date.strftime('%m/%d/%Y')"/>-->
 <!--                                </div>-->
-                                <div id="contract_type" t-if="o.version_id.contract_type_id">
-                                    <strong class="me-2">Contract Type:</strong>
-                                    <span t-field="o.version_id.contract_type_id"/>
-                                </div>
+<!--                                <div id="computed_on">-->
+<!--                                    <strong class="me-2">Paid On:</strong>-->
+<!--                                    <span t-field="o.compute_date"/>-->
+<!--                                </div>-->
+
+<!--                                <div id="contract_type" t-if="o.version_id.contract_type_id">-->
+<!--                                    <strong class="me-2">Paid On:</strong>-->
+<!--                                    <span t-field="o.version_id.contract_type_id"/>-->
+<!--                                </div>-->
 <!--                                <div id="working_schedule">-->
 <!--                                    <strong class="me-2">Working Schedule:</strong>-->
 <!--                                    <t t-if="o.version_id.resource_calendar_id.flexible_hours">-->
@@ -112,71 +84,115 @@
 <!--                                        <span t-field="o.version_id.hours_per_week"/> Hours / Week-->
 <!--                                    </t>-->
 <!--                                </div>-->
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-<!--            <div id="worked_days_table" t-if="o.use_worked_day_lines">-->
-<!--                <table class="table table-sm table-borderless">-->
-<!--                    <thead class="o_black_border">-->
-<!--                        <tr>-->
-<!--                            <th id="work_days_header_name">Earnings</th>-->
-<!--                            <th id="work_days_header_hours" class="text-end">Hours</th>-->
-<!--                            <th id="work_days_header_days" class="text-end">Days</th>-->
-<!--                            <th id="work_days_header_amount" class="text-end">Amount</th>-->
-<!--                            <th id="work_days_header_ytd" t-if="o.ytd_computation" class="text-end">YTD</th>-->
+<!--                            </td>-->
 <!--                        </tr>-->
-<!--                    </thead>-->
-<!--                    <tbody id="worked_days_lines">-->
-<!--                        <t t-set="worked_days_lines" t-value="o.worked_days_line_ids.filtered(lambda worked_days: worked_days.code != 'OUT')"/>-->
-<!--                            <span t-foreach="worked_days_lines" t-as="worked_days">-->
-<!--                                <tr style="color:none">-->
-<!--                                    <td id="worked_days_name"><span t-field="worked_days.name"/></td>-->
-<!--                                    <td id="worked_days_hours" class="text-end"><span t-out="round(worked_days.number_of_hours, 2)"/></td>-->
-<!--                                    <td id="worked_days_days" class="text-end"><span t-out="round(worked_days.number_of_days, 2)"/></td>-->
-<!--                                    <td id="worked_days_amount" class="text-end"><span t-out="worked_days.amount" digits="[42, 2]"-->
-<!--                                        t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/></td>-->
-<!--                                    <td id="worked_days_ytd" t-if="o.ytd_computation" class="text-end">-->
-<!--                                        <span t-esc="worked_days.ytd"-->
-<!--                                            t-options="{'widget': 'monetary', 'display_currency': o.company_id.currency_id}"/>-->
-<!--                                    </td>-->
-<!--                                </tr>-->
-<!--                            </span>-->
-<!--                            <span>-->
-<!--                                <t t-set="line_class" t-value="'o_total o_border_bottom fw-bold'"/>-->
-<!--                                <tr style="color:none">-->
-<!--                                    <td t-att-class="line_class">-->
-<!--                                        <span>Total</span>-->
-<!--                                    </td>-->
-<!--                                    <td id="worked_days_total_hours" t-attf-class="#{line_class} text-end">-->
-<!--                                        <span t-out="round(sum(worked_days_lines.mapped('number_of_hours')), 2)"/>-->
-<!--                                    </td>-->
-<!--                                    <td id="worked_days_total_days" t-attf-class="#{line_class} text-end">-->
-<!--                                        <span t-out="round(sum(worked_days_lines.mapped('number_of_days')), 2)"/>-->
-<!--                                    </td>-->
-<!--                                    <td id="worked_days_total_amount" t-attf-class="#{line_class} text-end">-->
-<!--                                        <span t-out="sum(worked_days_lines.mapped('amount'))" digits="[42, 2]"-->
-<!--                                            t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>-->
-<!--                                    </td>-->
-<!--                                    <td id="worked_days_total_ytd" t-if="o.ytd_computation" t-attf-class="#{line_class} text-end">-->
-<!--                                        <span t-out="sum(worked_days_lines.mapped('ytd'))" digits="[42, 2]"-->
-<!--                                            t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>-->
-<!--                                    </td>-->
-<!--                                </tr>-->
-<!--                            </span>-->
 <!--                    </tbody>-->
 <!--                </table>-->
-<!--            </div>-->
+                <table style="width:100%; border-collapse:collapse;">
+
+            <thead>
+                <tr style="border-bottom:1px solid black;">
+                    <th style="text-align:left; width:50%;">Employee Information</th>
+                    <th style="text-align:left; width:50%;">Other Information</th>
+                </tr>
+            </thead>
+
+        <tbody>
+            <tr>
+                <!-- LEFT SIDE -->
+                <td style="vertical-align:top; padding-top:10px;">
+
+                    <table style="width:100%;">
+                        <tr>
+                            <td><strong>Name:</strong></td>
+                            <td><span t-field="o.employee_id.legal_name"/></td>
+                        </tr>
+
+                        <tr t-if="o.employee_id.identification_id">
+                            <td><strong>Emirates ID:</strong></td>
+                            <td><span t-field="o.employee_id.identification_id"/></td>
+                        </tr>
+
+                        <tr t-if="o.version_id.job_id">
+                            <td><strong>Job Position:</strong></td>
+                            <td><span t-field="o.version_id.job_id"/></td>
+                        </tr>
+
+                        <tr t-if="o.employee_id.contract_date_start">
+                            <td><strong>DOJ:</strong></td>
+                            <td><span t-field="o.employee_id.contract_date_start"/></td>
+                        </tr>
+
+                        <tr t-if="o.version_id.department_id">
+                            <td><strong>Department:</strong></td>
+                            <td><span t-field="o.version_id.department_id"/></td>
+                        </tr>
+                    </table>
+
+                </td>
+
+                <!-- RIGHT SIDE -->
+                <td style="vertical-align:top; padding-top:10px;">
+
+                    <div invisible="1">
+                        <t t-if="o.version_id.contract_date_end and o.date_to &gt; o.version_id.contract_date_end"
+                           t-set="end_date"
+                           t-value="o.version_id.contract_date_end"/>
+                        <t t-else=""
+                           t-set="end_date"
+                           t-value="o.date_to"/>
+                        </div>
+
+                            <table style="width:100%;">
+
+                                <tr>
+                                    <td><strong>Pay Period:</strong></td>
+                                    <td>
+                                        <span t-if="o.date_from &lt; o.version_id.contract_date_start"
+                                              t-field="o.version_id.contract_date_start"
+                                              t-options='{"format": "MM/dd/yyyy"}'/>
+                                        <span t-else=""
+                                              t-field="o.date_from"
+                                              t-options='{"format": "MM/dd/yyyy"}'/>
+                                        -
+                                        <span t-esc="end_date.strftime('%m/%d/%Y')"/>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td><strong>Paid On:</strong></td>
+                                    <td><span t-field="o.compute_date"/></td>
+                                </tr>
+
+                                <tr t-if="o.version_id.contract_type_id">
+                                    <td><strong>Contract Type:</strong></td>
+                                    <td><span t-field="o.version_id.contract_type_id"/></td>
+                                </tr>
+
+                                <tr>
+                                    <td><strong>Working Schedule:</strong></td>
+                                    <td>
+                                        <t t-if="o.version_id.resource_calendar_id.flexible_hours">
+                                            <span t-field="o.version_id.resource_calendar_id.full_time_required_hours"/> Hours / Week
+                                        </t>
+                                        <t t-else="">
+                                            <span t-field="o.version_id.hours_per_week"/> Hours / Week
+                                        </t>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </tbody>
+
+            </table>
+            </div>
             <div id="payslip_lines_table">
                 <table class="table table-sm table-borderless">
                     <thead class="o_black_border">
                         <tr>
                             <th id="line_header_name">Name</th>
-<!--                            <th id="line_header_amount" class="text-end">Amount</th>-->
-<!--                            <th id="line_header_quantity" class="text-end">Quantity</th>-->
-<!--                            <th id="line_header_rate" class="text-end">Rate</th>-->
-                            <th id="line_header_total" class="text-end">Total</th>
+                            <th id="line_header_total" class="text-end">Total(AED)</th>
                             <th id="line_header_ytd" class="text-end" t-if="o.ytd_computation">YTD</th>
                         </tr>
                     </thead>
@@ -191,24 +207,18 @@
                                     <span t-field="line.name" class="d-block"/>
                                     <span t-field="line.salary_rule_id.note" t-attf-class="#{line_class} d-inline-block text-truncate pb-0 mb-0 ps-1" style="max-width: 500px; font-size: 0.875em;"/>
                                 </td>
-<!--                                <td id="payslip_line_amount" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">-->
-<!--                                    <span t-out="line.amount"-->
-<!--                                        t-if="line.quantity > 1 or line.rate &lt; 100"-->
-<!--                                        t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>-->
-<!--                                </td>-->
-<!--                                <td id="payslip_line_quantity" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">-->
-<!--                                    <span t-if="line.quantity > 1" t-out="round(line.quantity, 2)"/>-->
-<!--                                </td>-->
-<!--                                <td id="payslip_line_rate" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">-->
-<!--                                    <span t-if="line.rate &lt; 100" t-out="str(round(line.rate, 2)) + ' %'"></span>-->
-<!--                                </td>-->
                                 <td id="payslip_line_total" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">
-                                    <span t-out="line.total"
-                                        t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
+                                    <span>
+                                        <t t-esc="o.company_id.currency_id.name"/>
+                                        <t t-esc="line.total"/>
+                                    </span>
                                 </td>
                                 <td id="payslip_line_ytd" t-if="o.ytd_computation" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">
-                                    <span t-esc="line.ytd"
-                                        t-options="{'widget': 'monetary', 'display_currency': o.company_id.currency_id}"/>
+                                    <span>
+                                       <t t-esc="o.company_id.currency_id.name"/>
+                                        <t t-esc="line.ytd"/>
+                                    </span>
+
                                 </td>
                             </tr>
                         </span>
@@ -228,7 +238,9 @@
                         <span t-esc="alloc[1]" class="fw-bold" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
                     </p>
                     <t t-if="not allocations">
-                        Amount to be paid to <span class="fst-italic" t-field="o.employee_id.legal_name"/>: <span t-esc="o.net_wage" t-options='{"widget": "monetary", "display_currency": o.currency_id}' class="fw-bold"/>
+                        Amount to be paid to
+                        <span class="fst-italic" t-field="o.employee_id.legal_name"/>: <t t-esc="o.company_id.currency_id.name"/>
+                        <span t-esc="o.net_wage" class="fw-bold"/>
                     </t>
                 </t>
                 <p t-if="o.net_wage &lt; 0">
@@ -236,7 +248,7 @@
                 </p>
             </div>
             <div style="margin-top:40px; border-top:1px solid black; padding-top:10px;">
-                <p><strong>Transfer to :</strong> Cash Payment</p>
+                <p><strong>Transfer to :</strong> </p>
                 <table style="width:100%; margin-top:30px;">
                     <tr>
                         <td>
