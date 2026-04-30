@@ -162,14 +162,14 @@
                     <t t-set="allocations" t-value="o.compute_salary_allocations()"/>
                     <p t-foreach="allocations.items()" t-as="alloc">
                         <t t-set="bank" t-value="o.employee_id.bank_account_ids.filtered(lambda b: str(b.id) == alloc[0])[0]"/>
-                        To pay on 
+                        Paid to
                         <span class="fw-bold" t-esc="bank.acc_number or 'N/A'"/>
                         of <span class="fst-italic" t-field="bank.acc_holder_name"/>:
 
                         <span t-esc="alloc[1]" class="fw-bold" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
                     </p>
                     <t t-if="not allocations">
-                        <strong>paid to</strong>
+                        <strong>Paid to</strong>
                         <span class="fst-italic" t-field="o.employee_id.legal_name"/>: <t t-esc="o.company_id.currency_id.name"/>
                         <span t-esc="o.net_wage" class="fw-bold"/>
                     </t>
