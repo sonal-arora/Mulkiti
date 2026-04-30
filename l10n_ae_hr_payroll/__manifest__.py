@@ -25,7 +25,7 @@ United Arab Emirates Payroll and End of Service rules.
     'auto_install': ['hr_payroll'],
     'data': [
         'views/hr_payroll_report.xml',
-        'views/report_payslip_templates.xml',
+        # 'views/report_payslip_templates.xml',
         'data/hr_salary_rule_category_data.xml',
         'data/hr_payroll_structure_type_data.xml',
         'data/hr_payroll_structure_data.xml',

@@ -2,8 +2,15 @@
 <odoo>
 <template id="report_payslip">
     <t t-call="web.external_layout">
+         <div style="text-align:center; margin-bottom:10px;">
+            <img t-if="o.company_id.logo"
+                 t-att-src="image_data_uri(o.company_id.logo)"
+                 style="max-height:200px;"/>
+        </div>
         <div class="page">
-            <h2 id="payslip_name"><span>August 2023 Payslip</span></h2>
+           <h2 id="payslip_name" class="text-center">
+                <span t-esc="'Salary Slip - ' + o.date_from.strftime('%B %Y')"/>
+            </h2>
             <t t-set="is_invalid" t-value="o._is_invalid()"/>
             <div t-if="is_invalid">
                 <strong id="invalid_warning"><span t-out="is_invalid">This payslip is not validated. This is not a legal document.</span></strong>
@@ -82,10 +89,10 @@
                                     <span t-if="o.date_from &lt; o.version_id.contract_date_start" t-field="o.version_id.contract_date_start"/>
                                     <span t-else="" t-field="o.date_from"/>
                                     -
-                                    <span t-out="end_date"/>
+                                    <span t-esc="end_date.strftime('%m/%d/%Y')"/>
                                 </div>
                                 <div id="computed_on">
-                                    <strong class="me-2">Computed On:</strong>
+                                    <strong class="me-2">Paid On:</strong>
                                     <span t-field="o.compute_date"/>
                                 </div>
 <!--                                <div id="contract_start">-->
@@ -166,9 +173,9 @@
                     <thead class="o_black_border">
                         <tr>
                             <th id="line_header_name">Name</th>
-                            <th id="line_header_amount" class="text-end">Amount</th>
-                            <th id="line_header_quantity" class="text-end">Quantity</th>
-                            <th id="line_header_rate" class="text-end">Rate</th>
+<!--                            <th id="line_header_amount" class="text-end">Amount</th>-->
+<!--                            <th id="line_header_quantity" class="text-end">Quantity</th>-->
+<!--                            <th id="line_header_rate" class="text-end">Rate</th>-->
                             <th id="line_header_total" class="text-end">Total</th>
                             <th id="line_header_ytd" class="text-end" t-if="o.ytd_computation">YTD</th>
                         </tr>
@@ -184,17 +191,17 @@
                                     <span t-field="line.name" class="d-block"/>
                                     <span t-field="line.salary_rule_id.note" t-attf-class="#{line_class} d-inline-block text-truncate pb-0 mb-0 ps-1" style="max-width: 500px; font-size: 0.875em;"/>
                                 </td>
-                                <td id="payslip_line_amount" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">
-                                    <span t-out="line.amount"
-                                        t-if="line.quantity > 1 or line.rate &lt; 100"
-                                        t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
-                                </td>
-                                <td id="payslip_line_quantity" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">
-                                    <span t-if="line.quantity > 1" t-out="round(line.quantity, 2)"/>
-                                </td>
-                                <td id="payslip_line_rate" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">
-                                    <span t-if="line.rate &lt; 100" t-out="str(round(line.rate, 2)) + ' %'"></span>
-                                </td>
+<!--                                <td id="payslip_line_amount" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">-->
+<!--                                    <span t-out="line.amount"-->
+<!--                                        t-if="line.quantity > 1 or line.rate &lt; 100"-->
+<!--                                        t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>-->
+<!--                                </td>-->
+<!--                                <td id="payslip_line_quantity" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">-->
+<!--                                    <span t-if="line.quantity > 1" t-out="round(line.quantity, 2)"/>-->
+<!--                                </td>-->
+<!--                                <td id="payslip_line_rate" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">-->
+<!--                                    <span t-if="line.rate &lt; 100" t-out="str(round(line.rate, 2)) + ' %'"></span>-->
+<!--                                </td>-->
                                 <td id="payslip_line_total" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">
                                     <span t-out="line.total"
                                         t-options='{"widget": "monetary", "display_currency": o.company_id.currency_id}'/>
