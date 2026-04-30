@@ -185,13 +185,15 @@
 
             </table>
             </div>
+            <br></br>
+            <br></br>
             <div id="payslip_lines_table">
                 <table class="table table-sm table-borderless">
                     <thead class="o_black_border">
                         <tr>
                             <strong><th id="line_header_name">Name</th></strong>
-                            <strong><th id="line_header_total" class="text-end">Total(AED)</th></strong>
-                            <th id="line_header_ytd" class="text-end" t-if="o.ytd_computation">YTD</th>
+                            <strong><th id="line_header_total" class="text-start">Total(AED)</th></strong>
+                            <th id="line_header_ytd" class="text-start" t-if="o.ytd_computation">YTD</th>
                         </tr>
                     </thead>
                     <tbody id="payslip_lines">
@@ -205,13 +207,13 @@
                                     <span t-field="line.name" class="d-block"/>
                                     <span t-field="line.salary_rule_id.note" t-attf-class="#{line_class} d-inline-block text-truncate pb-0 mb-0 ps-1" style="max-width: 500px; font-size: 0.875em;"/>
                                 </td>
-                                <td id="payslip_line_total" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">
+                                <td id="payslip_line_total" t-attf-class="#{line_class} text-start #{o_title}" t-att-style="line_style">
                                     <span>
                                         <t t-esc="o.company_id.currency_id.name"/>
                                         <t t-esc="line.total"/>
                                     </span>
                                 </td>
-                                <td id="payslip_line_ytd" t-if="o.ytd_computation" t-attf-class="#{line_class} text-end #{o_title}" t-att-style="line_style">
+                                <td id="payslip_line_ytd" t-if="o.ytd_computation" t-attf-class="#{line_class} text-start #{o_title}" t-att-style="line_style">
                                     <span>
                                        <t t-esc="o.company_id.currency_id.name"/>
                                         <t t-esc="line.ytd"/>
