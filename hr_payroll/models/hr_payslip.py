@@ -184,6 +184,7 @@ class HrPayslip(models.Model):
         selection=[
             ('wps', 'WPS'),
             ('cash', 'Cash'),
+            ('bank', 'Bank'),
         ],
         string='Transfer To',
         default='wps',  # WPS by default select hoga
