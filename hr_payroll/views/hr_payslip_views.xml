@@ -164,6 +164,7 @@
                         <div>
                             <field name="date_from" class="oe_inline" readonly="state in ['cancel', 'validated', 'paid']"/> - <field name="date_to" class="oe_inline" readonly="state in ['cancel', 'validated', 'paid']"/>
                         </div>
+                        <field name="transfer_to"/>
                     </group>
                 </group>
                 <notebook>

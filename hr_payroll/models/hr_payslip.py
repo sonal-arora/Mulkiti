@@ -180,6 +180,16 @@ class HrPayslip(models.Model):
     related_payslip_ids = fields.One2many('hr.payslip', 'origin_payslip_id', string="Related Payslips")
     related_payslip_count = fields.Integer("Related payslip count", compute="_compute_related_payslip_count_count")
     payslip_properties = fields.Properties('Payroll Properties', definition='struct_id.payslip_properties_definition')
+    transfer_to = fields.Selection(
+        selection=[
+            ('wps', 'WPS'),
+            ('cash', 'Cash'),
+        ],
+        string='Transfer To',
+        default='wps',  # WPS by default select hoga
+        required=True,
+        help='WPS is the default mode of payment as per UAE Labour Law.'
+    )
 
     def _get_salary_advance_balances(self):
         return defaultdict(float)
