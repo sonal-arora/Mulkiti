@@ -179,7 +179,7 @@
                 </p>
             </div>
             <div style="margin-top:40px; border-top:1px solid black; padding-top:10px;">
-                <p><strong>Transfer to :</strong> <span t-esc="o.transfer_to" class="fw-bold"/> </p>
+                <p><strong>Transfer to :</strong> </p>
                 <table style="width:100%; margin-top:30px;">
                     <tr>
                         <td>
