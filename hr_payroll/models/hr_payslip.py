@@ -4,6 +4,7 @@ import logging
 import random
 import math
 import pytz
+import calendar
 
 from collections import defaultdict
 from datetime import date, datetime, time
@@ -191,6 +192,38 @@ class HrPayslip(models.Model):
         required=True,
         help='WPS is the default mode of payment as per UAE Labour Law.'
     )
+    x_working_days = fields.Integer(
+        string='Working Days',
+        compute='_compute_x_working_days',
+        store=True,
+        readonly=False,
+        help=(
+            'Total working days for the payslip month.\n'
+            'Auto-filled as 30 or 31 based on the period month '
+            '(February = 28/29). You can override this value manually.'
+        ),
+    )
+
+    @api.depends('date_from')
+    def _compute_x_working_days(self):
+        """Set working days = total days in the payslip month from date_from."""
+        for slip in self:
+            if slip.date_from:
+                _, days_in_month = calendar.monthrange(
+                    slip.date_from.year,
+                    slip.date_from.month,
+                )
+                slip.x_working_days = days_in_month
+            else:
+                slip.x_working_days = 0
+
+    @api.constrains('x_working_days')
+    def _check_x_working_days(self):
+        for slip in self:
+            if slip.x_working_days < 0:
+                raise ValidationError(_('Working Days cannot be negative.'))
+            if slip.x_working_days > 31:
+                raise ValidationError(_('Working Days cannot exceed 31.'))
 
     def _get_salary_advance_balances(self):
         return defaultdict(float)

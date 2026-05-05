@@ -100,14 +100,7 @@
 
                                 <tr>
                                     <td><strong>Working Days:</strong></td>
-                                    <td>
-<!--                                        <t t-if="o.version_id.resource_calendar_id.flexible_hours">-->
-<!--                                            <span t-field="o.version_id.resource_calendar_id.full_time_required_hours"/> Hours / Week-->
-<!--                                        </t>-->
-<!--                                        <t t-else="">-->
-<!--                                            <span t-field="o.version_id.hours_per_week"/> Hours / Week-->
-<!--                                        </t>-->
-                                    </td>
+                                    <td><span t-field="o.x_working_days"/></td>
                                 </tr>
                             </table>
                         </td>

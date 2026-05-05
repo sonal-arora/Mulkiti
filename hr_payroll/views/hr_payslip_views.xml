@@ -26,6 +26,7 @@
                 <field name="basic_wage" widget="monetary" options="{'currency_field': 'currency_id'}" optional="show"/>
                 <field name="gross_wage" widget="monetary" options="{'currency_field': 'currency_id'}" optional="show"/>
                 <field name="net_wage" widget="monetary" options="{'currency_field': 'currency_id'}" decoration-bf="1" optional="show"/>
+                <field name="x_working_days" optional="hide" string="Working Days"/>
                 <field
                     name="state_display" widget="badge"
                     decoration-info="state_display == 'draft'"
@@ -164,6 +165,11 @@
                         <div>
                             <field name="date_from" class="oe_inline" readonly="state in ['cancel', 'validated', 'paid']"/> - <field name="date_to" class="oe_inline" readonly="state in ['cancel', 'validated', 'paid']"/>
                         </div>
+                        <field
+                            name="x_working_days"
+                            readonly="state in ['cancel', 'validated', 'paid']"
+                            string="Working Days"
+                        />
                         <field name="transfer_to"/>
                     </group>
                 </group>
