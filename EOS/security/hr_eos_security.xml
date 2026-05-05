@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <!-- ── EOS Privilege ──────────────────────────────────────────────── -->
+    <record id="res_groups_privilege_eos" model="res.groups.privilege">
+        <field name="name">End of Service</field>
+        <field name="sequence">25</field>
+        <field name="category_id" ref="base.module_category_human_resources"/>
+    </record>
+
+    <!-- ── EOS User: Can create/submit. Sees only own records. ───────── -->
+    <record id="group_hr_eos_user" model="res.groups">
+        <field name="name">EOS User</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="res_groups_privilege_eos"/>
+        <field name="implied_ids" eval="[(4, ref('hr.group_hr_user'))]"/>
+        <field name="comment">Can create and submit EOS records. Sees only records they created.</field>
+    </record>
+
+    <!-- ── EOS Manager: Sees all records. Cannot approve. ────────────── -->
+    <record id="group_hr_eos_manager" model="res.groups">
+        <field name="name">EOS Manager</field>
+        <field name="sequence">20</field>
+        <field name="privilege_id" ref="res_groups_privilege_eos"/>
+        <field name="implied_ids" eval="[(4, ref('EOS.group_hr_eos_user'))]"/>
+        <field name="comment">Can view all EOS records and edit. Cannot approve.</field>
+    </record>
+
+    <!-- ── EOS Head: Sees all records. Only role that can approve. ───── -->
+    <record id="group_hr_eos_head" model="res.groups">
+        <field name="name">EOS Head</field>
+        <field name="sequence">30</field>
+        <field name="privilege_id" ref="res_groups_privilege_eos"/>
+        <field name="implied_ids" eval="[(4, ref('EOS.group_hr_eos_manager'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        <field name="comment">Can view all EOS records and is the only role that can approve.</field>
+    </record>
+
+    <!-- ── Record Rules ───────────────────────────────────────────────── -->
+
+    <!-- User: sees only records they created, within their company -->
+    <record id="hr_eos_rule_user" model="ir.rule">
+        <field name="name">EOS: User sees own records only</field>
+        <field name="model_id" ref="model_hr_eos"/>
+        <field name="domain_force">[('create_uid', '=', user.id), ('company_id', 'in', user.company_ids.ids)]</field>
+        <field name="groups" eval="[(4, ref('EOS.group_hr_eos_user'))]"/>
+    </record>
+
+    <!-- Manager: sees all records (overrides user rule) -->
+    <record id="hr_eos_rule_manager" model="ir.rule">
+        <field name="name">EOS: Manager sees all records</field>
+        <field name="model_id" ref="model_hr_eos"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('EOS.group_hr_eos_manager'))]"/>
+    </record>
+
+    <!-- Head: sees all records (overrides user rule) -->
+    <record id="hr_eos_rule_head" model="ir.rule">
+        <field name="name">EOS: Head sees all records</field>
+        <field name="model_id" ref="model_hr_eos"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('EOS.group_hr_eos_head'))]"/>
+    </record>
+
+</data>
+</odoo>

@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         LIST VIEW
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="view_hr_eos_list" model="ir.ui.view">
+        <field name="name">hr.eos.list</field>
+        <field name="model">hr.eos</field>
+        <field name="arch" type="xml">
+            <list string="End of Service" decoration-success="state == 'done'"
+                  decoration-info="state == 'waiting_approval'"
+                  decoration-muted="state == 'draft'">
+                <field name="name" string="EOS No"/>
+                <field name="application_date" string="Application Date"/>
+                <field name="employee_id" string="Employee"/>
+                <field name="joining_date" string="Date of Joining"/>
+                <field name="last_working_date" string="Last Working Date"/>
+                <field name="exit_type" string="Exit Type"/>
+                <field name="net_payable" string="Net Payable (AED)" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" string="Status"
+                       decoration-success="state == 'done'"
+                       decoration-warning="state == 'waiting_approval'"
+                       decoration-muted="state == 'draft'"
+                       widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         FORM VIEW
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="view_hr_eos_form" model="ir.ui.view">
+        <field name="name">hr.eos.form</field>
+        <field name="model">hr.eos</field>
+        <field name="arch" type="xml">
+            <form string="End of Service">
+                <!-- ── Status bar ─────────────────────────────────────── -->
+                <header>
+                    <button name="action_submit" string="Submit for Approval"
+                            type="object" class="btn-primary"
+                            invisible="state != 'draft'"
+                            groups="EOS.group_hr_eos_user"/>
+                    <button name="action_approve" string="Approve"
+                            type="object" class="btn-primary"
+                            invisible="state != 'waiting_approval'"
+                            groups="EOS.group_hr_eos_head"/>
+                    <button name="action_reset_draft" string="Reset to Draft"
+                            type="object"
+                            invisible="state != 'waiting_approval'"
+                            groups="EOS.group_hr_eos_head"/>
+                    <button name="action_view_payslip" string="View FnF Payslip"
+                            type="object"
+                            invisible="not payslip_id"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,waiting_approval,done"/>
+                </header>
+
+                <sheet>
+                    <!-- ── Title row ─────────────────────────────────── -->
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+
+                    <!-- ── Main header fields ────────────────────────── -->
+                    <group>
+                        <group string="Employee Information">
+                            <field name="employee_id"
+                                   readonly="state in ('waiting_approval', 'done')"/>
+                            <field name="joining_date" readonly="1"/>
+                            <field name="department_id" readonly="1"/>
+                            <field name="job_title" readonly="1"/>
+                        </group>
+                        <group string="EOS Details">
+                            <field name="application_date"
+                                   readonly="state in ('waiting_approval', 'done')"/>
+                            <field name="resignation_date"
+                                   readonly="state in ('waiting_approval', 'done')"/>
+                            <field name="notice_period_days"
+                                   readonly="state in ('waiting_approval', 'done')"/>
+                            <field name="last_working_date"
+                                   readonly="state in ('waiting_approval', 'done')"/>
+                            <field name="exit_type"
+                                   readonly="state in ('waiting_approval', 'done')"/>
+                            <field name="termination_reason"
+                                   invisible="exit_type != 'termination'"
+                                   readonly="state in ('waiting_approval', 'done')"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+
+                    <!-- ═══════════════════════════════════════════════
+                         SECTION 1 — FINAL SETTLEMENT DETAILS
+                    ═══════════════════════════════════════════════ -->
+                    <separator string="Final Settlement Details"/>
+
+                    <group>
+                        <group string="Salary Details (from Contract)">
+                            <field name="basic_salary" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
+                            <field name="housing_allowance" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
+                            <field name="transportation_allowance" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
+                            <field name="other_salary_allowances" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"/>
+                            <field name="total_salary" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   class="fw-bold"/>
+                        </group>
+                        <group string="Duration of Employment">
+                            <field name="total_calendar_days" readonly="1"/>
+                            <field name="years_of_service" readonly="1" string="Years"/>
+                            <field name="months_of_service" readonly="1" string="Months"/>
+                            <field name="days_of_service" readonly="1" string="Days"/>
+                        </group>
+                    </group>
+
+                    <!-- ═══════════════════════════════════════════════
+                         SECTION 2 — ANNUAL LEAVE
+                    ═══════════════════════════════════════════════ -->
+                    <separator string="Annual Leave"/>
+
+                    <group>
+                        <group>
+                            <field name="total_leave_allocated" readonly="1" string="Total Annual Leave Allocated (Days)"/>
+                            <field name="leave_availed" readonly="1" string="Annual Leave Availed (Days)"/>
+                            <field name="leave_balance" readonly="1" string="Annual Leave Balance (Days)" class="fw-bold"/>
+                        </group>
+                        <group>
+                            <field name="leave_pay" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   string="Leave Pay  [ (Basic/22) × Balance ]"
+                                   class="fw-bold"/>
+                        </group>
+                    </group>
+
+                    <!-- ═══════════════════════════════════════════════
+                         SECTION 3 — GRATUITY
+                    ═══════════════════════════════════════════════ -->
+                    <separator string="Gratuity"/>
+
+                    <group>
+                        <group>
+                            <field name="gratuity_eligible" readonly="1" widget="boolean_toggle"/>
+                            <field name="gratuity_days" readonly="1"
+                                   invisible="not gratuity_eligible"
+                                   string="Gratuity Days"/>
+                        </group>
+                        <group>
+                            <field name="gratuity_pay" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   invisible="not gratuity_eligible"
+                                   string="Gratuity Pay  [ (Basic/30) × Gratuity Days ]"
+                                   class="fw-bold"/>
+                        </group>
+                    </group>
+
+                    <!-- ═══════════════════════════════════════════════
+                         SECTION 4 — ALLOWANCES (Total A)
+                    ═══════════════════════════════════════════════ -->
+                    <separator string="Allowances"/>
+
+                    <group>
+                        <group>
+                            <field name="notice_period_salary" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   string="Notice Period Salary"/>
+                            <field name="ticket_reimbursement" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="state in ('done',)"/>
+                            <field name="other_income" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="state in ('done',)"/>
+                        </group>
+                        <group>
+                            <field name="total_a" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   string="Total (A)" class="fw-bold"/>
+                        </group>
+                    </group>
+
+                    <!-- ═══════════════════════════════════════════════
+                         SECTION 5 — DEDUCTIONS (Total B)
+                    ═══════════════════════════════════════════════ -->
+                    <separator string="Deductions"/>
+
+                    <group>
+                        <group>
+                            <field name="loan_advance" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   string="Loan / Salary Advance"/>
+                            <field name="notice_period_shortfall" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="state in ('done',)"/>
+                            <field name="other_deductions" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   readonly="state in ('done',)"/>
+                        </group>
+                        <group>
+                            <field name="total_b" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   string="Deductions Total (B)" class="fw-bold"/>
+                        </group>
+                    </group>
+
+                    <!-- ═══════════════════════════════════════════════
+                         NET PAYABLE
+                    ═══════════════════════════════════════════════ -->
+                    <separator/>
+                    <group>
+                        <group/>
+                        <group>
+                            <field name="net_payable" readonly="1" widget="monetary"
+                                   options="{'currency_field': 'currency_id'}"
+                                   class="fw-bold fs-4"/>
+                        </group>
+                    </group>
+
+                    <!-- ═══════════════════════════════════════════════
+                         APPROVAL INFO
+                    ═══════════════════════════════════════════════ -->
+                    <group invisible="state == 'draft'">
+                        <group string="Approval">
+                            <field name="approval_date" readonly="1"/>
+                            <field name="approved_by" readonly="1"/>
+                            <field name="payslip_id" readonly="1"/>
+                        </group>
+                    </group>
+
+                </sheet>
+
+                <!-- ── Chatter ─────────────────────────────────────────── -->
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         SEARCH VIEW
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="view_hr_eos_search" model="ir.ui.view">
+        <field name="name">hr.eos.search</field>
+        <field name="model">hr.eos</field>
+        <field name="arch" type="xml">
+            <search string="End of Service">
+                <field name="name" string="EOS No"/>
+                <field name="employee_id" string="Employee"/>
+                <filter string="Draft" name="draft" domain="[('state','=','draft')]"/>
+                <filter string="Waiting Approval" name="waiting" domain="[('state','=','waiting_approval')]"/>
+                <filter string="Done" name="done" domain="[('state','=','done')]"/>
+                <filter string="Resignation" name="resignation" domain="[('exit_type','=','resignation')]"/>
+                <filter string="Termination" name="termination" domain="[('exit_type','=','termination')]"/>
+                <group>
+                    <filter string="Employee" name="group_employee" context="{'group_by': 'employee_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Exit Type" name="group_exit" context="{'group_by': 'exit_type'}"/>
+                    <filter string="Application Date" name="group_date" context="{'group_by': 'application_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         ACTION
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="action_hr_eos" model="ir.actions.act_window">
+        <field name="name">End of Service</field>
+        <field name="res_model">hr.eos</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_hr_eos_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first End of Service record
+            </p>
+            <p>
+                Process employee final settlements including gratuity, leave encashment
+                and all other dues as per UAE Labour Law.
+            </p>
+        </field>
+    </record>
+
+</odoo>

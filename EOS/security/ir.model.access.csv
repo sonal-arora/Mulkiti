@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_eos_user,hr.eos user,model_hr_eos,EOS.group_hr_eos_user,1,1,1,0
+access_hr_eos_manager,hr.eos manager,model_hr_eos,EOS.group_hr_eos_manager,1,1,1,0
+access_hr_eos_head,hr.eos head,model_hr_eos,EOS.group_hr_eos_head,1,1,1,1

@@ -1,0 +1,25 @@
+{
+    'name': 'End of Service (EOS)',
+    'version': '19.0.1.0.0',
+    'category': 'Human Resources',
+    'summary': 'Manage End of Service / Final Settlement for Employees',
+    'author': 'Mulkiti',
+    'depends': [
+        'hr',
+        'hr_payroll',
+        'l10n_ae_hr_payroll',
+        'hr_holidays',
+        'ohrms_loan',
+        'mail',
+    ],
+    'data': [
+        'security/hr_eos_security.xml',
+        'security/ir.model.access.csv',
+        'data/hr_eos_sequence.xml',
+        'views/hr_eos_views.xml',
+        'views/hr_eos_menu.xml',
+    ],
+    'installable': True,
+    'application': True,
+    'license': 'LGPL-3',
+}

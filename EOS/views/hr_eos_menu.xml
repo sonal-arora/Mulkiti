@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ── Top-level menu ─────────────────────────────────────────────── -->
+    <menuitem id="menu_hr_eos_root"
+              name="EOS"
+              sequence="90"
+              groups="EOS.group_hr_eos_user"/>
+
+    <!-- ── EOS records ────────────────────────────────────────────────── -->
+    <menuitem id="menu_hr_eos_main"
+              name="End of Service"
+              parent="menu_hr_eos_root"
+              action="action_hr_eos"
+              sequence="10"
+              groups="EOS.group_hr_eos_user"/>
+
+</odoo>
