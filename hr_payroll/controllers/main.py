@@ -15,11 +15,21 @@ class HrPayroll(Controller):
 
     @route(["/print/payslips"], type='http', auth='user')
     def get_payroll_report_print(self, list_ids='', **post):
-        if not request.env.user.has_group('hr_payroll.group_hr_payroll_user') or not list_ids or re.search("[^0-9|,]", list_ids):
+        if not list_ids or re.search("[^0-9|,]", list_ids):
             return request.not_found()
 
         ids = [int(s) for s in list_ids.split(',')]
-        payslips = request.env['hr.payslip'].browse(ids)
+        payslips = request.env['hr.payslip'].sudo().browse(ids)
+
+        is_officer = request.env.user.has_group('hr_payroll.group_hr_payroll_user')
+        # Regular employees can only print their own paid payslips
+        if not is_officer:
+            own_payslips = payslips.filtered(
+                lambda p: p.employee_id.user_id == request.env.user and p.state == 'paid'
+            )
+            if not own_payslips:
+                return request.not_found()
+            payslips = own_payslips
 
         pdf_writer = PdfFileWriter()
         payslip_reports = payslips._get_pdf_reports()
