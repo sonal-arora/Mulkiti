@@ -11,6 +11,14 @@ class HrVersion(models.Model):
     _inherit = 'hr.version'
     _description = 'Employee Contract'
 
+    # Remove the hr.group_hr_user restriction from date_version.
+    # This field is used by _compute_display_name to build the record label
+    # (e.g. "Jan 2026").  Without read access, ANY Many2one pointing to
+    # hr.version (including hr.payslip.line.version_id) raises AccessError
+    # for regular employees trying to view their own payslips.
+    # date_version contains only a date — no salary, SSN or private data.
+    date_version = fields.Date(groups=False)
+
     schedule_pay = fields.Selection(
         selection=lambda self: self.env['hr.payroll.structure.type']._get_selection_schedule_pay(),
         compute='_compute_schedule_pay', store=True, readonly=False, groups="hr_payroll.group_hr_payroll_user", default='monthly', string='Pay Schedule')
@@ -365,3 +373,4 @@ class HrVersion(models.Model):
                 ('dependent_input_id', '=', False),
                 ('dependent_input_id', 'in', existing_ids)])
         return action
+

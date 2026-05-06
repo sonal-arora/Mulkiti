@@ -1,7 +1,11 @@
 <?xml version='1.0' encoding='UTF-8' ?>
 <odoo>
     <record id="hr_work_entry_enterprise.menu_hr_payroll_root" model="ir.ui.menu">
-        <field name="group_ids" eval="[Command.link(ref('hr_payroll.group_hr_payroll_user'))]"/>
+        <!-- Allow both Payroll Officers AND regular employees (for My Payslips) -->
+        <field name="group_ids" eval="[
+            Command.link(ref('hr_payroll.group_hr_payroll_user')),
+            Command.link(ref('base.group_user')),
+        ]"/>
     </record>
     <!-- [XBO] Remove me in master -->
     <record id="action_open_employees" model="ir.actions.act_url">
@@ -205,5 +209,17 @@
         parent="menu_hr_payroll_dashboard_configuration"
         name="Warnings"
         sequence="10"/>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         MY PAYSLIPS — visible to every internal employee (self-service)
+         Action is defined in hr_payslip_employee_views.xml
+    ══════════════════════════════════════════════════════════════════ -->
+    <menuitem
+        id="menu_hr_my_payslips"
+        name="My Payslips"
+        parent="hr_work_entry_enterprise.menu_hr_payroll_root"
+        action="hr_payroll.action_my_payslips"
+        sequence="10"
+        groups="base.group_user"/>
 
 </odoo>
