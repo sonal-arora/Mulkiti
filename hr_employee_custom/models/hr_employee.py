@@ -32,10 +32,10 @@ class HrEmployee(models.Model):
     document_ids = fields.One2many('employee.document', 'employee_id', string="Documents")
     document_count = fields.Integer(compute="_compute_document_count")
     mol_contract_date = fields.Date(string='MOL Contract date')
-    leave_second_approver_id = fields.Many2one(
-        'res.users',
-        string="Second Leave Approver"
-    )
+    # leave_second_approver_id = fields.Many2one(
+    #     'res.users',
+    #     string="Second Leave Approver"
+    # )
 
     def _compute_document_count(self):
         for rec in self:
