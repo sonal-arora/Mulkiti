@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         LEAVE REQUEST FORM VIEW
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="hr_leave_view_form_multi_approval" model="ir.ui.view">
+        <field name="name">hr.leave.view.form.multi.approval</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_view_form"/>
+        <field name="arch" type="xml">
+
+            <!-- 1. Inject can_validate2 invisible field after user_id invisible field -->
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="can_validate2" invisible="1"/>
+            </xpath>
+
+            <!-- 2. Add "Second Approve" button before the Refuse button -->
+            <xpath expr="//button[@name='action_refuse']" position="before">
+                <button
+                    name="action_second_approve"
+                    type="object"
+                    string="Second Approve"
+                    class="oe_highlight"
+                    invisible="not can_validate2 or not id"
+                />
+            </xpath>
+
+            <!-- 3. Replace both status-bar fields with unified bars -->
+            <xpath expr="//field[@name='state'][@statusbar_visible='confirm,validate,validate1']" position="replace">
+                <field name="state" widget="statusbar"
+                       statusbar_visible="confirm,validate1,validate2,validate"
+                       invisible="validation_type != 'both'"/>
+            </xpath>
+            <xpath expr="//field[@name='state'][@statusbar_visible='confirm,validate']" position="replace">
+                <field name="state" widget="statusbar"
+                       statusbar_visible="confirm,validate1,validate2,validate"
+                       invisible="validation_type == 'both'"/>
+            </xpath>
+
+            <!-- 4. Show approver names after the top-level invisible employee_id -->
+            <xpath expr="//form/field[@name='employee_id']" position="after">
+                <field name="x_leave_approver_1_id" readonly="1" string="1st Approver"
+                       invisible="not x_leave_approver_1_id"/>
+                <field name="x_leave_approver_2_id" readonly="1" string="2nd Approver"
+                       invisible="not x_leave_approver_2_id"/>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         LEAVE LIST VIEW — optional approver columns
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="hr_leave_view_list_multi_approval" model="ir.ui.view">
+        <field name="name">hr.leave.view.list.multi.approval</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='employee_id']" position="after">
+                <field name="x_leave_approver_1_id" optional="hide" string="1st Approver"/>
+                <field name="x_leave_approver_2_id" optional="hide" string="2nd Approver"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -38,9 +38,7 @@
                 <attribute name="string">Emirates ID</attribute>
             </xpath>
 
-            <xpath expr="//field[@name='parent_id']" position="after">
-                <field name="leave_second_approver_id"/>
-            </xpath>
+           
             
             <xpath expr="//field[@name='wage']" position="attributes">
                 <attribute name="string">Basic Salary</attribute>
@@ -48,24 +46,6 @@
 
         </field>
     </record>
-<!--    <record id="hr_employee_view_form_l10n_ae_hr_payroll" model="ir.ui.view">-->
-<!--        <field name="name">hr.employee.form.custom</field>-->
-<!--        <field name="model">hr.employee</field>-->
-<!--        <field name="inherit_id" ref="l10n_ae_hr_payroll.hr_employee_view_form"/>-->
-<!--        <field name="arch" type="xml">-->
-<!--            <xpath expr="//field[@name='l10n_ae_is_computed_based_on_daily_salary']" position="attributes">-->
-<!--                <attribute name="string">Computed Based On Basic Salary</attribute>-->
-<!--          </xpath>-->
-<!--            <xpath expr="//field[@name='wage_type']" position="before">-->
-<!--                 <field name="mol_contract_date"/>-->
-<!--             </xpath>-->
-<!--            &lt;!&ndash; ── GRATUITY Field ─────────────────────────────────── &ndash;&gt;-->
-<!--            <xpath expr="//group[@name='payroll_group']" position="inside">-->
-<!--                <group string="Gratuity">-->
-<!--                    <field name="gratuity_amount" string="Gratuity" readonly="0"/>-->
-<!--                </group>-->
-<!--            </xpath>-->
-<!--        </field>-->
-<!--    </record>-->
+
 
 </odoo>

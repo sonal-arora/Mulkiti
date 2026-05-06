@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data noupdate="1">
+
+    <!--
+        Record rules so that custom approvers (1st / 2nd) can view and
+        write leave records of employees they are assigned to, WITHOUT
+        needing Time Off Officer rights.
+
+        Odoo combines same-group rules with OR, so these rules EXPAND
+        access, never restrict it.
+    -->
+
+    <!-- Approver can READ leaves where they are 1st or 2nd approver -->
+    <record id="hr_leave_rule_custom_approver_read" model="ir.rule">
+        <field name="name">Leave: Custom Approver — Read</field>
+        <field name="model_id" ref="hr_holidays.model_hr_leave"/>
+        <field name="domain_force">
+            ['|',
+                ('employee_id.x_leave_approver_1_id',  '=', user.id),
+                ('employee_id.x_leave_approver_2_id', '=', user.id),
+            ]
+        </field>
+        <field name="perm_read"   eval="True"/>
+        <field name="perm_write"  eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- Approver can WRITE (approve/refuse) leaves they are assigned to -->
+    <record id="hr_leave_rule_custom_approver_write" model="ir.rule">
+        <field name="name">Leave: Custom Approver — Write</field>
+        <field name="model_id" ref="hr_holidays.model_hr_leave"/>
+        <field name="domain_force">
+            ['|',
+                ('employee_id.x_leave_approver_1_id',  '=', user.id),
+                ('employee_id.x_leave_approver_2_id', '=', user.id),
+            ]
+        </field>
+        <field name="perm_read"   eval="False"/>
+        <field name="perm_write"  eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- Direct manager (parent_id) can READ leaves of their direct reports -->
+    <record id="hr_leave_rule_manager_read" model="ir.rule">
+        <field name="name">Leave: Direct Manager — Read</field>
+        <field name="model_id" ref="hr_holidays.model_hr_leave"/>
+        <field name="domain_force">
+            [('employee_id.parent_id.user_id', '=', user.id)]
+        </field>
+        <field name="perm_read"   eval="True"/>
+        <field name="perm_write"  eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- Direct manager can WRITE (approve/refuse) their direct reports' leaves -->
+    <record id="hr_leave_rule_manager_write" model="ir.rule">
+        <field name="name">Leave: Direct Manager — Write</field>
+        <field name="model_id" ref="hr_holidays.model_hr_leave"/>
+        <field name="domain_force">
+            [('employee_id.parent_id.user_id', '=', user.id)]
+        </field>
+        <field name="perm_read"   eval="False"/>
+        <field name="perm_write"  eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+</data>
+</odoo>

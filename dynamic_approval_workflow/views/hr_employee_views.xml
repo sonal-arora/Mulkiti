@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Add 1st and 2nd Approver fields after the existing Time Off Manager
+         field (leave_manager_id) in the Work Information tab. -->
+    <record id="hr_employee_view_form_custom_approvers" model="ir.ui.view">
+        <field name="name">hr.employee.form.custom.approvers</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr_holidays.view_employee_form_leave_inherit"/>
+        <field name="arch" type="xml">
+            <field name="leave_manager_id" position="after">
+                <field
+                    name="x_leave_approver_1_id"
+                    string="Leave 1st Approver"
+                    options="{'no_create': True}"
+                    help="This user AND/OR the employee's direct manager can approve the 1st level."
+                />
+                <field
+                    name="x_leave_approver_2_id"
+                    string="Leave 2nd Approver"
+                    options="{'no_create': True}"
+                    help="Only this user (or an HR Manager) can approve the 2nd level. Leave empty to skip the 2nd level."
+                />
+            </field>
+        </field>
+    </record>
+
+</odoo>

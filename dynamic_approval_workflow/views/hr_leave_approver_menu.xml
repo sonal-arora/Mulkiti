@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        ═══════════════════════════════════════════════════════════════
+        APPROVER FORM VIEW
+        Inherits the manager form view and:
+          • Adds the "Second Approve" button (for 2nd-level approvers)
+          • Adds groups="hr_holidays.group_hr_holidays_user" to the
+            "Validate" button so ONLY a Time Off Officer can see it.
+            Regular 1st/2nd approvers see only Approve / Second Approve.
+        ═══════════════════════════════════════════════════════════════
+    -->
+    <record id="hr_leave_view_form_approver" model="ir.ui.view">
+        <field name="name">hr.leave.view.form.approver</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_view_form_manager"/>
+        <field name="mode">primary</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+
+            <!-- Inject can_validate2 invisible field -->
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="can_validate2" invisible="1"/>
+            </xpath>
+
+            <!-- Second Approve button for 2nd-level approvers
+                 Target: the Refuse button identified by its name attribute -->
+            <xpath expr="//button[@name='action_refuse']" position="before">
+                <button
+                    name="action_second_approve"
+                    type="object"
+                    string="Second Approve"
+                    class="oe_highlight"
+                    invisible="not can_validate2 or not id"
+                />
+            </xpath>
+
+            <!--
+                Validate button → restrict to Time Off Officer only.
+                Selector: name=action_approve AND invisible contains 'can_validate'
+                (the Approve button has a different invisible value, so this
+                 uniquely targets the Validate button without using @string).
+            -->
+            <xpath expr="//button[@name='action_approve'][@invisible='not can_validate or can_approve or not id']"
+                   position="attributes">
+                <attribute name="groups">hr_holidays.group_hr_holidays_user</attribute>
+            </xpath>
+
+            <!--
+                Statusbar is already updated to show validate1,validate2,validate
+                by hr_leave_view_form_multi_approval (which extends the base form).
+                No need to touch it here again.
+            -->
+
+            <!-- Show approver names below holiday_status_id -->
+            <xpath expr="//field[@name='holiday_status_id']" position="after">
+                <field name="x_leave_approver_1_id" readonly="1" string="1st Approver"
+                       invisible="not x_leave_approver_1_id"/>
+                <field name="x_leave_approver_2_id" readonly="1" string="2nd Approver"
+                       invisible="not x_leave_approver_2_id"/>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!--
+        ═══════════════════════════════════════════════════════════════
+        APPROVER LIST VIEW
+        Shows approver columns + action buttons.
+        Validate button hidden from non-officers via groups.
+        ═══════════════════════════════════════════════════════════════
+    -->
+    <record id="hr_leave_view_list_approver" model="ir.ui.view">
+        <field name="name">hr.leave.view.list.approver</field>
+        <field name="model">hr.leave</field>
+        <field name="arch" type="xml">
+            <list string="Team Leaves"
+                sample="1"
+                duplicate="false"
+                decoration-warning="state in ('confirm','validate1','validate2')"
+                decoration-success="state == 'validate'"
+                decoration-danger="state == 'refuse'">
+
+                <!-- Header bulk action buttons -->
+                <header>
+                    <button type="object" name="action_approve"
+                        string="Approve" icon="fa-thumbs-up"
+                        class="btn btn-outline-success"/>
+                    <button type="object" name="action_second_approve"
+                        string="Second Approve" icon="fa-check-circle"
+                        class="btn btn-outline-primary"/>
+                    <button type="object" name="action_refuse"
+                        string="Refuse" icon="fa-times"
+                        class="btn btn-outline-danger"/>
+                </header>
+
+                <field name="employee_id" widget="many2one_avatar_employee"/>
+                <field name="department_id" optional="show"/>
+                <field name="holiday_status_id" string="Leave Type" class="fw-bold"/>
+                <field name="date_from" string="From"/>
+                <field name="date_to" string="To"/>
+                <field name="duration_display" string="Duration"/>
+                <field name="x_leave_approver_1_id" optional="show" string="1st Approver"/>
+                <field name="x_leave_approver_2_id" optional="show" string="2nd Approver"/>
+                <field name="state" widget="badge"
+                    decoration-warning="state in ('confirm','validate1','validate2')"
+                    decoration-success="state == 'validate'"
+                    decoration-danger="state == 'refuse'"/>
+                <field name="can_approve"   column_invisible="True"/>
+                <field name="can_validate2" column_invisible="True"/>
+                <field name="can_validate"  column_invisible="True"/>
+                <field name="can_refuse"    column_invisible="True"/>
+
+                <!-- Row-level buttons -->
+                <button string="Approve" name="action_approve" type="object"
+                    icon="fa-thumbs-up"
+                    invisible="not can_approve"/>
+                <button string="2nd Approve" name="action_second_approve" type="object"
+                    icon="fa-check-circle"
+                    invisible="not can_validate2"/>
+                <!--
+                    Validate button: ONLY Time Off Officer.
+                    groups restricts rendering; invisible is a backup guard.
+                -->
+                <button string="Validate" name="action_approve" type="object"
+                    icon="fa-check"
+                    groups="hr_holidays.group_hr_holidays_user"
+                    invisible="not can_validate or can_approve"/>
+                <button string="Refuse" name="action_refuse" type="object"
+                    icon="fa-times"
+                    invisible="not can_refuse"/>
+            </list>
+        </field>
+    </record>
+
+    <!--
+        ═══════════════════════════════════════════════════════════════
+        SEARCH VIEW FOR APPROVER MENU
+        ═══════════════════════════════════════════════════════════════
+    -->
+    <!--
+        Search view for approver menu.
+        Inherits from the base hr.leave search view (Odoo 19 pattern)
+        and adds pending-approval filters + removes irrelevant filters.
+    -->
+    <!--
+        Search view for approver menu.
+        Inherits from view_hr_holidays_filter (Odoo 19 pattern).
+        Adds validate2 filter + "All Pending" shortcut.
+    -->
+    <record id="hr_leave_view_search_approver" model="ir.ui.view">
+        <field name="name">hr.leave.view.search.approver</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.view_hr_holidays_filter"/>
+        <field name="mode">primary</field>
+        <field name="priority">35</field>
+        <field name="arch" type="xml">
+
+            <!-- Remove searchpanel — not applicable in list/form view -->
+            <xpath expr="//searchpanel" position="replace"/>
+
+            <!-- Hide 'My Time Off' filter (not relevant in approver view) -->
+            <xpath expr="//filter[@name='my_leaves']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!--
+                Inject validate2 filter + "All Pending" after
+                the standard 'to_approve' filter (confirm + validate1).
+                Base filters already cover: approve, second_approval, to_approve.
+            -->
+            <xpath expr="//filter[@name='to_approve']" position="after">
+                <filter string="Pending 2nd Manager Approval"
+                    name="pending_validate2"
+                    domain="[('state','=','validate2')]"/>
+                <filter string="All Pending"
+                    name="all_pending"
+                    domain="[('state','in',['confirm','validate1','validate2'])]"/>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!--
+        ═══════════════════════════════════════════════════════════════
+        ACTION 1: PENDING APPROVALS
+        Shows only leaves that are waiting for the current user's approval.
+        Domain: user is 1st approver OR 2nd approver OR direct manager
+                AND state is pending (confirm / validate1 / validate2)
+        ═══════════════════════════════════════════════════════════════
+    -->
+    <record id="hr_leave_action_pending_approvals" model="ir.actions.act_window">
+        <field name="name">Pending Approvals</field>
+        <field name="res_model">hr.leave</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[
+            ('state', 'in', ['confirm', 'validate1', 'validate2']),
+            '|', ('x_leave_approver_1_id', '=', uid),
+            '|', ('x_leave_approver_2_id', '=', uid),
+                 ('employee_id.parent_id.user_id', '=', uid)
+        ]</field>
+        <field name="context">{'search_default_all_pending': 1}</field>
+        <field name="search_view_id" ref="hr_leave_view_search_approver"/>
+        <field name="views" eval="[
+            (ref('hr_leave_view_list_approver'), 'list'),
+            (ref('hr_leave_view_form_approver'), 'form'),
+        ]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No leaves waiting for your approval!
+            </p>
+            <p>
+                Leave requests from employees you manage will appear here
+                once they submit a request.
+            </p>
+        </field>
+    </record>
+
+    <!--
+        ═══════════════════════════════════════════════════════════════
+        ACTION 2: ALL TEAM LEAVES
+        Shows ALL leaves (any state) for the approver's team.
+        ═══════════════════════════════════════════════════════════════
+    -->
+    <record id="hr_leave_action_all_team_leaves" model="ir.actions.act_window">
+        <field name="name">All Team Leaves</field>
+        <field name="res_model">hr.leave</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[
+            '|', ('x_leave_approver_1_id', '=', uid),
+            '|', ('x_leave_approver_2_id', '=', uid),
+                 ('employee_id.parent_id.user_id', '=', uid)
+        ]</field>
+        <field name="search_view_id" ref="hr_leave_view_search_approver"/>
+        <field name="views" eval="[
+            (ref('hr_leave_view_list_approver'), 'list'),
+            (ref('hr_leave_view_form_approver'), 'form'),
+        ]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No leaves found for your team.
+            </p>
+        </field>
+    </record>
+
+    <!--
+        ═══════════════════════════════════════════════════════════════
+        MENUS
+        Sequence order:
+          1 → My Time
+          2 → Overview
+          3 → Team Approvals  (our new menu — before Management)
+          4 → Management      (bumped from 3 → 4)
+          5 → Reporting       (bumped from 4 → 5)
+          6 → Configuration   (bumped from 5 → 6)
+
+        We override Management/Reporting/Configuration sequences here
+        so Team Approvals reliably appears before Management.
+        ═══════════════════════════════════════════════════════════════
+    -->
+
+    <!-- Bump standard menus to make room at sequence=3 -->
+    <record id="hr_holidays.menu_hr_holidays_management" model="ir.ui.menu">
+        <field name="sequence">4</field>
+    </record>
+    <record id="hr_holidays.menu_hr_holidays_report" model="ir.ui.menu">
+        <field name="sequence">5</field>
+    </record>
+    <record id="hr_holidays.menu_hr_holidays_configuration" model="ir.ui.menu">
+        <field name="sequence">6</field>
+    </record>
+
+    <!-- Team Approvals at sequence=3 (before Management) -->
+    <menuitem
+        id="menu_hr_leave_team_approvals"
+        name="Team Approvals"
+        parent="hr_holidays.menu_hr_holidays_root"
+        sequence="3"
+        groups="base.group_user"
+    />
+
+    <menuitem
+        id="menu_hr_leave_pending_approvals"
+        name="Pending Approvals"
+        parent="menu_hr_leave_team_approvals"
+        action="hr_leave_action_pending_approvals"
+        sequence="1"
+    />
+
+    <menuitem
+        id="menu_hr_leave_all_team_leaves"
+        name="All Team Leaves"
+        parent="menu_hr_leave_team_approvals"
+        action="hr_leave_action_all_team_leaves"
+        sequence="2"
+    />
+
+</odoo>

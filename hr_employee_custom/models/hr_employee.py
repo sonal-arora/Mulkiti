@@ -58,7 +58,7 @@ class EmployeePublic(models.Model):
     work_permit_issue_date = fields.Date()
     gratuity_amount = fields.Float()
     mol_contract_date = fields.Date()
-    leave_second_approver_id = fields.Many2one(
-        'res.users',
-        string="Second Leave Approver"
-    )
+    # leave_second_approver_id = fields.Many2one(
+    #     'res.users',
+    #     string="Second Leave Approver"
+    # )
