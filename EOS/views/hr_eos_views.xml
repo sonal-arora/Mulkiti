@@ -163,7 +163,7 @@
                     <!-- ═══════════════════════════════════════════════
                          SECTION 4 — ALLOWANCES (Total A)
                     ═══════════════════════════════════════════════ -->
-                    <separator string="Allowances"/>
+                    <separator string="Total Payable"/>
 
                     <group>
                         <group>
@@ -191,7 +191,7 @@
 
                     <group>
                         <group>
-                            <field name="loan_advance" readonly="1" widget="monetary"
+                            <field name="loan_advance" widget="monetary"
                                    options="{'currency_field': 'currency_id'}"
                                    string="Loan / Salary Advance"/>
                             <field name="notice_period_shortfall" widget="monetary"

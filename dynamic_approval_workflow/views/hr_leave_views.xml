@@ -64,4 +64,19 @@
         </field>
     </record>
 
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         ALLOCATION LIST VIEW — rename "Amount" column header to "Days"
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="hr_leave_allocation_view_list_days_label" model="ir.ui.view">
+        <field name="name">hr.leave.allocation.view.list.days.label</field>
+        <field name="model">hr.leave.allocation</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_allocation_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='duration_display']" position="attributes">
+                <attribute name="string">Days</attribute>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>
