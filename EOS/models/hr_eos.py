@@ -101,7 +101,8 @@ class HrEos(models.Model):
 
     # ── Deductions (Total B) ──────────────────────────────────────────────────
     loan_advance = fields.Monetary(
-        string='Loan / Salary Advance', compute='_compute_loan_advance', store=True)
+        string='Loan / Salary Advance')
+    #compute='_compute_loan_advance', store=True)
     notice_period_shortfall = fields.Monetary(string='Notice Period Shortfall', tracking=True)
     other_deductions = fields.Monetary(string='Others (Deductions)', tracking=True)
     total_b = fields.Monetary(string='Deductions Total (B)', compute='_compute_total_b', store=True)
@@ -259,16 +260,27 @@ class HrEos(models.Model):
             total_years = rd.years + rd.months / 12.0 + rd.days / 365.0
 
             if total_years < 1.0:
+                # Less than 1 year → not eligible
                 rec.gratuity_eligible = False
                 rec.gratuity_days = 0.0
                 rec.gratuity_pay = 0.0
             elif total_years <= 5.0:
+                # 1 year to 5 years (including exactly 5 years) → Total Calendar Days × 21/365
                 rec.gratuity_eligible = True
                 rec.gratuity_days = rec.total_calendar_days * 21.0 / 365.0
                 rec.gratuity_pay = (rec.basic_salary / 30.0) * rec.gratuity_days
             else:
+                # More than 5 years → split calculation:
+                #   First 5 years portion  → days × 21/365
+                #   Remaining days beyond 5 years → days × 30/365
                 rec.gratuity_eligible = True
-                rec.gratuity_days = rec.total_calendar_days * 30.0 / 365.0
+                five_year_date = jd + relativedelta(years=5)
+                days_first_5 = (five_year_date - jd).days + 1
+                days_beyond_5 = (lwd - five_year_date).days
+                rec.gratuity_days = (
+                    (days_first_5 * 21.0 / 365.0)
+                    + (days_beyond_5 * 30.0 / 365.0)
+                )
                 rec.gratuity_pay = (rec.basic_salary / 30.0) * rec.gratuity_days
 
     @api.depends('total_salary', 'last_working_date')
