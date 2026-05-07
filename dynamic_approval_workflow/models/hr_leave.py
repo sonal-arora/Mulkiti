@@ -1,3 +1,6 @@
+import hashlib
+import hmac as _hmac
+
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError
 
@@ -5,9 +8,11 @@ from odoo.exceptions import AccessError, UserError
 class HrLeave(models.Model):
     _inherit = 'hr.leave'
 
-    # ── Extended state: adds "2nd Approval" between validate1 and validate ─
+    # ── Extended state: inserts "2nd Approval" between validate1 and validate ─
+    # ('validate2', '2nd Approval') is the new state
+    # ('validate',) is an anchor — tells Odoo to insert validate2 BEFORE validate
     state = fields.Selection(
-        selection_add=[('validate2', '2nd Approval')],
+        selection_add=[('validate2', 'HR Approval'), ('validate',)],
         ondelete={'validate2': 'cascade'},
     )
 
@@ -417,6 +422,15 @@ class HrLeave(models.Model):
     # Action buttons
     # ─────────────────────────────────────────────────────────────────────
 
+    def action_confirm(self):
+        """Override: after confirming, notify the 1st approver(s) by email."""
+        result = super().action_confirm()
+        for leave in self:
+            if leave._use_custom_flow():
+                approvers = leave._get_first_approvers()
+                leave._send_leave_approval_email(approvers, '1st Approval')
+        return result
+
     def action_approve(self, check_state=True):
         """Handles both 'Approve' (confirm→validate1) and 'Validate' (final step)."""
         current_employee = self.env.user.employee_id
@@ -448,6 +462,15 @@ class HrLeave(models.Model):
             )
             if not self.env.context.get('leave_fast_create'):
                 to_validate1.activity_update()
+            # Notify next approver by email
+            for leave in to_validate1:
+                second = leave._get_second_approver()
+                if second:
+                    leave._send_leave_approval_email(second, '2nd Approval')
+                else:
+                    mgr = leave.employee_id.sudo().leave_manager_id
+                    if mgr:
+                        leave._send_leave_approval_email(mgr, 'Final Approval')
 
         if to_validate_final:
             to_validate_final._action_validate(check_state)
@@ -466,6 +489,12 @@ class HrLeave(models.Model):
         self.with_context(leave_fast_create=True).write({'state': 'validate2'})
         if not self.env.context.get('leave_fast_create'):
             self.activity_update()
+        # Notify Time Off Manager for final approval
+        for leave in self:
+            if leave._use_custom_flow():
+                mgr = leave.employee_id.sudo().leave_manager_id
+                if mgr:
+                    leave._send_leave_approval_email(mgr, 'Final Approval')
         return True
 
     def action_refuse(self):
@@ -531,3 +560,127 @@ class HrLeave(models.Model):
                 return employee.leave_manager_id
 
         return super()._get_responsible_for_approval()
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Email notification helpers
+    # ─────────────────────────────────────────────────────────────────────
+
+    def _get_email_approval_token(self, action, approver_id):
+        """
+        Generate a secure HMAC-SHA256 token tied to this leave record,
+        the requested action, and the intended approver.
+        """
+        self.ensure_one()
+        secret = self.env['ir.config_parameter'].sudo().get_param(
+            'database.secret', 'odoo-default-secret'
+        )
+        msg = f'{self.id}:{action}:{approver_id}'
+        return _hmac.new(
+            secret.encode('utf-8'),
+            msg.encode('utf-8'),
+            hashlib.sha256,
+        ).hexdigest()[:32]
+
+    def _send_leave_approval_email(self, approvers, stage_label):
+        """
+        Send an approval-request email to each user in *approvers* with
+        direct Approve / Refuse hyperlinks pointing at the controller.
+
+        :param approvers: res.users recordset
+        :param stage_label: e.g. '1st Approval', '2nd Approval', 'Final Approval'
+        """
+        self.ensure_one()
+        if not approvers:
+            return
+
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '')
+        emp = self.employee_id
+        leave_type = self.holiday_status_id.name or ''
+        date_from_str = self.date_from.strftime('%d %b %Y') if self.date_from else ''
+        date_to_str = self.date_to.strftime('%d %b %Y') if self.date_to else ''
+        duration = self.number_of_days
+
+        for approver in approvers:
+            if not approver or not approver.email:
+                continue
+
+            approve_token = self._get_email_approval_token('approve', approver.id)
+            refuse_token = self._get_email_approval_token('refuse', approver.id)
+            approve_url = (
+                f'{base_url}/leave/action/approve/{self.id}/{approver.id}/{approve_token}'
+            )
+            refuse_url = (
+                f'{base_url}/leave/action/refuse/{self.id}/{approver.id}/{refuse_token}'
+            )
+
+            subject = (
+                f'[Action Required] Leave — {emp.name}'
+                f' ({leave_type}: {date_from_str} → {date_to_str})'
+            )
+
+            body_html = f"""
+<div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#333;">
+  <div style="background:#875A7B;padding:22px 28px;border-radius:6px 6px 0 0;">
+    <h2 style="color:#fff;margin:0;font-size:17px;font-weight:600;">
+      Leave Approval Required &mdash; {stage_label}
+    </h2>
+  </div>
+  <div style="border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px;padding:28px 28px 24px;">
+    <p style="margin:0 0 16px;">Dear <strong>{approver.name}</strong>,</p>
+    <p style="margin:0 0 20px;color:#555;">
+      The following leave request requires your approval:
+    </p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:28px;">
+      <tr style="background:#f7f3f6;">
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;width:36%;">Employee</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{emp.name}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">Department</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{emp.department_id.name or '&mdash;'}</td>
+      </tr>
+      <tr style="background:#f7f3f6;">
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">Leave Type</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{leave_type}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">From</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{date_from_str}</td>
+      </tr>
+      <tr style="background:#f7f3f6;">
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">To</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{date_to_str}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">Duration</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{duration:.1f} day(s)</td>
+      </tr>
+    </table>
+    <div style="text-align:center;margin:8px 0 24px;">
+      <a href="{approve_url}"
+         style="display:inline-block;padding:13px 38px;background:#28a745;color:#fff;
+                text-decoration:none;border-radius:4px;font-size:15px;font-weight:bold;
+                margin-right:14px;">
+        &#10003;&nbsp; Approve
+      </a>
+      <a href="{refuse_url}"
+         style="display:inline-block;padding:13px 38px;background:#dc3545;color:#fff;
+                text-decoration:none;border-radius:4px;font-size:15px;font-weight:bold;">
+        &#10007;&nbsp; Refuse
+      </a>
+    </div>
+    <p style="font-size:12px;color:#aaa;text-align:center;margin:0;">
+      You will be asked to log in if you are not already signed in.&nbsp;
+      <a href="{base_url}/odoo/time-off" style="color:#875A7B;">Open Time Off in Odoo</a>
+    </p>
+  </div>
+</div>
+"""
+
+            self.env['mail.mail'].sudo().create({
+                'subject': subject,
+                'body_html': body_html,
+                'email_to': approver.email_formatted,
+                'author_id': self.env.company.partner_id.id,
+                'auto_delete': True,
+            }).send()

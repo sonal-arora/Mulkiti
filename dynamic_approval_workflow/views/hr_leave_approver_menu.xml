@@ -47,11 +47,10 @@
                 <attribute name="groups">hr_holidays.group_hr_holidays_user</attribute>
             </xpath>
 
-            <!--
-                Statusbar is already updated to show validate1,validate2,validate
-                by hr_leave_view_form_multi_approval (which extends the base form).
-                No need to touch it here again.
-            -->
+            <!-- Fix statusbar order: confirm → validate1 → validate2 → validate -->
+            <xpath expr="//field[@name='state']" position="attributes">
+                <attribute name="statusbar_visible">confirm,validate1,validate2,validate</attribute>
+            </xpath>
 
             <!-- Show approver names below holiday_status_id -->
             <xpath expr="//field[@name='holiday_status_id']" position="after">

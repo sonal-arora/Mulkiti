@@ -20,10 +20,12 @@ States: Draft → Confirm → 1st Approved (validate1) → 2nd Approved (validat
     'author': 'Mulkiti',
     'depends': ['hr_holidays'],
     'data': [
+        'security/ir.model.access.csv',
         'security/security.xml',
         'views/hr_employee_views.xml',
         'views/hr_leave_views.xml',
         'views/hr_leave_approver_menu.xml',
+        'views/hr_leave_summary_views.xml',
     ],
     'installable': True,
     'application': False,

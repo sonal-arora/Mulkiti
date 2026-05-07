@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_leave_summary_officer,hr.leave.summary.officer,model_hr_leave_summary,hr_holidays.group_hr_holidays_user,1,0,0,0
+access_hr_leave_summary_manager,hr.leave.summary.manager,model_hr_leave_summary,hr_holidays.group_hr_holidays_manager,1,0,0,0
