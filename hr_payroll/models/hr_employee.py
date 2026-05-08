@@ -7,6 +7,13 @@ class HrEmployee(models.Model):
     _inherit = 'hr.employee'
     _description = 'Employee'
 
+    # Remove hr.group_hr_user restriction from version_id.
+    # This computed field is accessed implicitly whenever Odoo resolves
+    # _inherits fields (department_id, job_id, etc.) on hr.employee.
+    # Without this override, any non-HR user (e.g. a leave approver) who
+    # opens a leave form gets "Access Error: version_id on hr.employee".
+    version_id = fields.Many2one(groups=False, compute_sudo=True)
+
     currency_id = fields.Many2one(
         "res.currency",
         string='Currency',
