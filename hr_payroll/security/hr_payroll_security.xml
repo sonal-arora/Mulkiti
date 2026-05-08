@@ -161,7 +161,28 @@
         <field name="groups" eval="[(4, ref('base.group_user'))]"/>
     </record>
 
-    
+    <!-- hr.version: regular users can read versions of:
+         - their own employee record
+         - employees they manage or approve leaves for
+         Sensitive fields (wage, dates, etc.) are already field-level restricted. -->
+    <record id="hr_version_rule_base_user" model="ir.rule">
+        <field name="name">Employee Contract: Base User Read Own &amp; Managed</field>
+        <field name="model_id" ref="model_hr_version"/>
+        <field name="domain_force">
+            ['|', '|', '|', '|',
+                ('employee_id.user_id', '=', user.id),
+                ('employee_id.parent_id.user_id', '=', user.id),
+                ('employee_id.leave_manager_id', '=', user.id),
+                ('employee_id.x_leave_approver_1_id', '=', user.id),
+                ('employee_id.x_leave_approver_2_id', '=', user.id),
+            ]
+        </field>
+        <field name="perm_read"   eval="True"/>
+        <field name="perm_write"  eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record>
 
 </data>
 </odoo>
