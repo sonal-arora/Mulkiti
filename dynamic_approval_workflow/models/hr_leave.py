@@ -47,6 +47,13 @@ class HrLeave(models.Model):
         export_string_translation=False,
     )
 
+    # ── Refusal reason ────────────────────────────────────────────────────
+    refuse_reason = fields.Text(
+        string='Reason for Refusal',
+        readonly=True,
+        copy=False,
+    )
+
     # ─────────────────────────────────────────────────────────────────────
     # Compute: copy approvers from employee using sudo so no group error
     # ─────────────────────────────────────────────────────────────────────
@@ -497,7 +504,25 @@ class HrLeave(models.Model):
                     leave._send_leave_approval_email(mgr, 'Final Approval')
         return True
 
+    def action_open_refuse_wizard(self):
+        """Open a wizard to collect refusal reason before refusing the leave."""
+        wizard = self.env['hr.leave.refuse.wizard'].create({
+            'leave_ids': [(6, 0, self.ids)],
+        })
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Refuse Leave'),
+            'res_model': 'hr.leave.refuse.wizard',
+            'res_id': wizard.id,
+            'view_mode': 'form',
+            'target': 'new',
+        }
+
     def action_refuse(self):
+        # Open wizard to collect reason — unless already called from wizard
+        if not self.env.context.get('skip_refuse_wizard'):
+            return self.action_open_refuse_wizard()
+
         pending = ('confirm', 'validate1', 'validate2')
         custom = self.filtered(lambda l: l._use_custom_flow() and l.state in pending)
         remaining = self - custom

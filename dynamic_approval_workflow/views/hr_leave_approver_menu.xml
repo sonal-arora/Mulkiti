@@ -60,6 +60,14 @@
                        invisible="not x_leave_approver_2_id"/>
             </xpath>
 
+            <!-- Show refuse reason (read-only) when leave is refused -->
+            <xpath expr="//field[@name='holiday_status_id']" position="after">
+                <field name="refuse_reason"
+                       string="Reason for Refusal"
+                       readonly="1"
+                       invisible="state != 'refuse' or not refuse_reason"/>
+            </xpath>
+
         </field>
     </record>
 

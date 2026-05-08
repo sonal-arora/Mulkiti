@@ -22,6 +22,7 @@ States: Draft → Confirm → 1st Approved (validate1) → 2nd Approved (validat
     'data': [
         'security/ir.model.access.csv',
         'security/security.xml',
+        'wizard/hr_leave_refuse_wizard_views.xml',
         'views/hr_employee_views.xml',
         'views/hr_leave_views.xml',
         'views/hr_leave_approver_menu.xml',
