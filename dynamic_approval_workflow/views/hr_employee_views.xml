@@ -32,11 +32,11 @@
         <field name="inherit_id" ref="hr.view_employee_form"/>
         <field name="arch" type="xml">
             <div name="contract_dates" position="after">
-<!--                <field-->
-<!--                    name="probation_end_date"-->
-<!--                    string="Probation End Date"-->
-<!--                    help="Employee cannot take Annual Leave before this date. Defaults to 6 months after contract start date."-->
-<!--                />-->
+                <field
+                    name="probation_end_date"
+                    string="Probation End Date"
+                    help="Employee cannot take Annual Leave before this date. Defaults to 6 months after contract start date."
+                />
             </div>
         </field>
     </record>
