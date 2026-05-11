@@ -25,4 +25,20 @@
         </field>
     </record>
 
+    <!-- Add Probation End Date after Contract Start Date in Work Information tab -->
+    <record id="hr_employee_view_form_probation" model="ir.ui.view">
+        <field name="name">hr.employee.form.probation</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <div name="contract_dates" position="after">
+                <field
+                    name="probation_end_date"
+                    string="Probation End Date"
+                    help="Employee cannot take Annual Leave before this date. Defaults to 6 months after contract start date."
+                />
+            </div>
+        </field>
+    </record>
+
 </odoo>

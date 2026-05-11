@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_company_document_manager,company.document.manager,model_company_document,company_documents.group_company_document_manager,1,1,1,1
+access_company_document_user,company.document.user,model_company_document,base.group_user,1,0,0,0
+access_company_document_category_manager,company.document.category.manager,model_company_document_category,company_documents.group_company_document_manager,1,1,1,1
+access_company_document_category_user,company.document.category.user,model_company_document_category,base.group_user,1,0,0,0
+access_company_document_log_manager,company.document.log.manager,model_company_document_log,company_documents.group_company_document_manager,1,1,1,1
+access_company_document_log_user,company.document.log.user,model_company_document_log,base.group_user,0,0,1,0
+access_company_document_signature_manager,company.document.signature.manager,model_company_document_signature,company_documents.group_company_document_manager,1,1,1,1
+access_company_document_signature_user,company.document.signature.user,model_company_document_signature,base.group_user,1,0,0,0
+access_send_signature_wizard_manager,company.document.send.signature.wizard,model_company_document_send_signature_wizard,company_documents.group_company_document_manager,1,1,1,1

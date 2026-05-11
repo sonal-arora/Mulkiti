@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Portal: Company Documents page for employees -->
+    <template id="portal_company_documents" name="Company Documents Portal">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Company Documents</t>
+            </t>
+
+            <t t-if="not documents">
+                <div class="alert alert-info">
+                    No public documents available at this time.
+                </div>
+            </t>
+            <t t-else="">
+                <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mt-2">
+                    <t t-foreach="documents" t-as="doc">
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fa fa-file-text-o me-2 text-primary"/>
+                                        <t t-esc="doc.name"/>
+                                    </h5>
+                                    <p class="card-text text-muted small" t-if="doc.category_id">
+                                        <i class="fa fa-tag me-1"/>
+                                        <t t-esc="doc.category_id.name"/>
+                                    </p>
+                                    <p class="card-text text-muted small">
+                                        <i class="fa fa-calendar me-1"/>
+                                        <t t-esc="doc.published_date"/>
+                                    </p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <t t-if="doc.document_file">
+                                        <a t-attf-href="/web/content/company.document/#{doc.id}/document_file/#{doc.document_filename}?download=true"
+                                           class="btn btn-sm btn-primary w-100">
+                                            <i class="fa fa-download me-1"/> Download
+                                        </a>
+                                    </t>
+                                    <t t-elif="doc.document_url">
+                                        <a t-att-href="doc.document_url" target="_blank"
+                                           class="btn btn-sm btn-outline-primary w-100">
+                                            <i class="fa fa-external-link me-1"/> Open
+                                        </a>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </template>
+
+</odoo>

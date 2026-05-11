@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══ CATEGORY VIEWS ══════════════════════════════════════════════════ -->
+    <record id="view_document_category_list" model="ir.ui.view">
+        <field name="name">company.document.category.list</field>
+        <field name="model">company.document.category</field>
+        <field name="arch" type="xml">
+            <list string="Document Categories" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="document_count"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ══ DOCUMENT FORM VIEW ══════════════════════════════════════════════ -->
+    <record id="view_company_document_form" model="ir.ui.view">
+        <field name="name">company.document.form</field>
+        <field name="model">company.document</field>
+        <field name="arch" type="xml">
+            <form string="Company Document">
+                <header>
+                    <button name="%(company_documents.action_send_signature_wizard)d"
+                            string="✍️ Send for Signature"
+                            type="action"
+                            class="btn-primary"
+                            groups="company_documents.group_company_document_manager"/>
+                    <button name="action_send_notification"
+                            string="📢 Notify All Employees"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="visibility != 'public'"
+                            groups="company_documents.group_company_document_manager"
+                            confirm="This will send an email to all employees. Continue?"/>
+                    <field name="visibility" widget="statusbar"
+                           statusbar_visible="public,private"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object"
+                                name="action_view_history"
+                                icon="fa-eye"
+                                groups="company_documents.group_company_document_manager">
+                            <field name="view_count" widget="statinfo"
+                                   string="Views"/>
+                        </button>
+                        <button class="oe_stat_button" type="object"
+                                name="action_view_history"
+                                icon="fa-download"
+                                groups="company_documents.group_company_document_manager">
+                            <field name="download_count" widget="statinfo"
+                                   string="Downloads"/>
+                        </button>
+                        <button class="oe_stat_button" type="object"
+                                name="action_send_notification"
+                                icon="fa-envelope"
+                                invisible="not notification_sent"
+                                groups="company_documents.group_company_document_manager">
+                            <field name="notification_count" widget="statinfo"
+                                   string="Notified"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="Document Title..."/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="category_id"/>
+                            <field name="published_date"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="visibility" widget="radio"/>
+                            <field name="notification_sent" readonly="1"
+                                   groups="company_documents.group_company_document_manager"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="document" string="Document">
+                            <group string="Upload File">
+                                <field name="document_file" filename="document_filename" widget="binary"/>
+                                <field name="document_filename" invisible="1"/>
+                            </group>
+                            <group string="Or External Link">
+                                <field name="document_url" placeholder="https://..."/>
+                            </group>
+                        </page>
+                        <page name="description" string="Description / Notes">
+                            <field name="description" placeholder="Add description or summary of this document..."/>
+                        </page>
+                        <page name="signatures" string="Signatures"
+                              groups="company_documents.group_company_document_manager">
+                            <field name="signature_ids" readonly="1">
+                                <list string="Signature Requests"
+                                      decoration-success="state == 'signed'"
+                                      decoration-warning="state == 'pending'"
+                                      decoration-danger="state == 'declined'">
+                                    <field name="employee_id"/>
+                                    <field name="sent_date" string="Sent On"/>
+                                    <field name="signed_date" string="Signed On"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'signed'"
+                                           decoration-warning="state == 'pending'"
+                                           decoration-danger="state == 'declined'"/>
+                                    <field name="signature" widget="image"
+                                           string="Signature" optional="show"/>
+                                    <field name="decline_reason" string="Decline Reason"
+                                           optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="history" string="View/Download History"
+                              groups="company_documents.group_company_document_manager">
+                            <field name="log_ids" readonly="1">
+                                <list string="History" default_order="date desc">
+                                    <field name="date" string="Date &amp; Time"/>
+                                    <field name="employee_id" string="Employee"/>
+                                    <field name="user_id" string="User"/>
+                                    <field name="action" string="Action"
+                                           widget="badge"
+                                           decoration-info="action == 'viewed'"
+                                           decoration-success="action == 'downloaded'"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ══ DOCUMENT LIST VIEW ══════════════════════════════════════════════ -->
+    <record id="view_company_document_list" model="ir.ui.view">
+        <field name="name">company.document.list</field>
+        <field name="model">company.document</field>
+        <field name="arch" type="xml">
+            <list string="Company Documents" decoration-muted="visibility == 'private'">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="category_id"/>
+                <field name="published_date"/>
+                <field name="visibility" widget="badge"
+                       decoration-success="visibility == 'public'"
+                       decoration-warning="visibility == 'private'"/>
+                <field name="document_file" widget="binary" string="Download"
+                       optional="show"/>
+                <field name="document_url" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ══ DOCUMENT KANBAN VIEW ════════════════════════════════════════════ -->
+    <record id="view_company_document_kanban" model="ir.ui.view">
+        <field name="name">company.document.kanban</field>
+        <field name="model">company.document</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_mobile" default_group_by="category_id">
+                <field name="name"/>
+                <field name="category_id"/>
+                <field name="visibility"/>
+                <field name="document_file"/>
+                <field name="document_filename"/>
+                <field name="document_url"/>
+                <field name="published_date"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click">
+                            <div class="d-flex align-items-start mb-2">
+                                <div class="flex-grow-1">
+                                    <strong class="o_kanban_record_title">
+                                        <field name="name"/>
+                                    </strong>
+                                </div>
+                                <span t-if="record.visibility.raw_value == 'public'"
+                                      class="badge text-bg-success ms-2">Public</span>
+                                <span t-else=""
+                                      class="badge text-bg-warning ms-2">Private</span>
+                            </div>
+                            <div class="text-muted small mb-2">
+                                <field name="published_date"/>
+                            </div>
+                            <div t-if="record.document_file.raw_value" class="mt-2">
+                                <a t-attf-href="/company-documents/download/#{record.id.raw_value}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fa fa-download me-1"/> Download
+                                </a>
+                            </div>
+                            <div t-elif="record.document_url.raw_value" class="mt-2">
+                                <a t-att-href="record.document_url.raw_value" target="_blank"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fa fa-external-link me-1"/> Open Link
+                                </a>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- ══ SEARCH VIEW ═════════════════════════════════════════════════════ -->
+    <record id="view_company_document_search" model="ir.ui.view">
+        <field name="name">company.document.search</field>
+        <field name="model">company.document</field>
+        <field name="arch" type="xml">
+            <search string="Search Documents">
+                <field name="name" string="Document"/>
+                <field name="category_id"/>
+                <filter string="Public" name="public" domain="[('visibility','=','public')]"/>
+                <filter string="Private" name="private" domain="[('visibility','=','private')]"/>
+                <separator/>
+                <filter string="Archived" name="archived" domain="[('active','=',False)]"/>
+                <separator/>
+                <filter string="Category" name="group_category" context="{'group_by': 'category_id'}"/>
+                <filter string="Visibility" name="group_visibility" context="{'group_by': 'visibility'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- ══ ACTIONS ═════════════════════════════════════════════════════════ -->
+    <record id="action_company_document" model="ir.actions.act_window">
+        <field name="name">Company Documents</field>
+        <field name="res_model">company.document</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_company_document_search"/>
+        <field name="context">{'search_default_public': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No documents yet!
+            </p>
+            <p>Upload company policies, handbooks and announcements for your employees.</p>
+        </field>
+    </record>
+
+    <record id="action_company_document_all" model="ir.actions.act_window">
+        <field name="name">All Documents</field>
+        <field name="res_model">company.document</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="search_view_id" ref="view_company_document_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No documents yet!</p>
+        </field>
+    </record>
+
+    <record id="action_document_category" model="ir.actions.act_window">
+        <field name="name">Document Categories</field>
+        <field name="res_model">company.document.category</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

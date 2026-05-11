@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══ SIGNATURE PAGE ══════════════════════════════════════════════════ -->
+    <template id="sign_page" name="Document Sign Page">
+        <t t-call="web.layout">
+            <t t-set="head_website">
+                <style>
+                    body { background: #f5f5f5; font-family: Arial, sans-serif; }
+                    .sign-container { max-width: 750px; margin: 40px auto; background: white;
+                                      border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden; }
+                    .sign-header { background: #875A7B; color: white; padding: 25px 30px; }
+                    .sign-header h2 { margin: 0; font-size: 22px; }
+                    .sign-header p { margin: 5px 0 0; opacity: 0.85; font-size: 14px; }
+                    .sign-body { padding: 30px; }
+                    .doc-info { background: #f9f5fb; border-left: 4px solid #875A7B;
+                                padding: 15px; border-radius: 4px; margin-bottom: 25px; }
+                    .doc-info h3 { margin: 0 0 5px; color: #875A7B; }
+                    .doc-info p { margin: 0; color: #666; font-size: 14px; }
+                    .signature-area { border: 2px dashed #875A7B; border-radius: 8px;
+                                      background: #fafafa; margin: 20px 0; }
+                    #signature-canvas { width: 100%; height: 200px; cursor: crosshair; display: block; }
+                    .btn-sign { background: #875A7B; color: white; border: none; padding: 13px 35px;
+                                border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; }
+                    .btn-sign:hover { background: #6d4862; }
+                    .btn-clear { background: #e0e0e0; color: #333; border: none; padding: 8px 20px;
+                                 border-radius: 4px; cursor: pointer; font-size: 13px; }
+                    .btn-decline { background: white; color: #e53935; border: 2px solid #e53935;
+                                   padding: 10px 25px; border-radius: 6px; cursor: pointer;
+                                   font-size: 14px; width: 100%; margin-top: 10px; }
+                    .error-msg { background: #ffebee; color: #c62828; padding: 12px;
+                                 border-radius: 4px; margin-bottom: 15px; }
+                    .section-title { font-weight: bold; color: #555; margin-bottom: 8px; font-size: 14px; }
+                    .decline-area { display: none; margin-top: 15px; }
+                    .decline-area textarea { width: 100%; border: 1px solid #ddd; border-radius: 4px;
+                                             padding: 10px; font-size: 14px; box-sizing: border-box; }
+                </style>
+            </t>
+            <div class="sign-container">
+                <div class="sign-header">
+                    <h2>✍️ Document Signature</h2>
+                    <p><t t-esc="document.company_id.name"/></p>
+                </div>
+                <div class="sign-body">
+                    <t t-if="error">
+                        <div class="error-msg"><t t-esc="error"/></div>
+                    </t>
+
+                    <!-- Document Info -->
+                    <div class="doc-info">
+                        <h3><t t-esc="document.name"/></h3>
+                        <p t-if="document.category_id"><t t-esc="document.category_id.name"/></p>
+                    </div>
+
+                    <!-- Document Description -->
+                    <t t-if="document.description">
+                        <div style="margin-bottom:20px;color:#555;line-height:1.6;">
+                            <div t-out="document.description"/>
+                        </div>
+                    </t>
+
+                    <!-- Download Link -->
+                    <t t-if="document.document_file">
+                        <div style="margin-bottom:20px;text-align:center;">
+                            <a t-attf-href="/company-documents/download/#{document.id}"
+                               style="color:#875A7B;font-weight:bold;">
+                                📎 Download Document to Review
+                            </a>
+                        </div>
+                    </t>
+                    <t t-elif="document.document_url">
+                        <div style="margin-bottom:20px;text-align:center;">
+                            <a t-att-href="document.document_url" target="_blank"
+                               style="color:#875A7B;font-weight:bold;">
+                                🔗 Open Document to Review
+                            </a>
+                        </div>
+                    </t>
+
+                    <!-- Signature Form -->
+                    <form method="POST" action="/document/sign/submit" id="sign-form">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="document_id" t-att-value="document.id"/>
+                        <input type="hidden" name="token" t-att-value="sig.token"/>
+                        <input type="hidden" name="action" value="sign" id="form-action"/>
+                        <input type="hidden" name="signature" id="signature-data"/>
+                        <input type="hidden" name="reason" id="decline-reason-input"/>
+
+                        <div class="section-title">Draw Your Signature Below:</div>
+                        <div class="signature-area">
+                            <canvas id="signature-canvas" width="700" height="200"></canvas>
+                        </div>
+                        <div style="text-align:right;margin-bottom:15px;">
+                            <button type="button" class="btn-clear" onclick="clearSignature()">
+                                🗑️ Clear Signature
+                            </button>
+                        </div>
+
+                        <p style="color:#888;font-size:12px;margin-bottom:20px;">
+                            By signing, I confirm that I have read and understood the document
+                            "<strong><t t-esc="document.name"/></strong>".
+                        </p>
+
+                        <button type="submit" class="btn-sign" onclick="return submitSign()">
+                            ✅ I Agree &amp; Sign
+                        </button>
+
+                        <button type="button" class="btn-decline" onclick="showDecline()">
+                            ❌ Decline to Sign
+                        </button>
+
+                        <div class="decline-area" id="decline-area">
+                            <div class="section-title" style="margin-top:15px;">Reason for Declining:</div>
+                            <textarea id="decline-reason" rows="3" placeholder="Please provide a reason..."></textarea>
+                            <button type="button" class="btn-decline"
+                                    style="margin-top:8px;" onclick="submitDecline()">
+                                Confirm Decline
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <script>
+                // ── Signature Canvas Setup ────────────────────────────────
+                const canvas = document.getElementById('signature-canvas');
+                const ctx = canvas.getContext('2d');
+                let drawing = false;
+                let hasSignature = false;
+
+                // Fix canvas size
+                function resizeCanvas() {
+                    const rect = canvas.getBoundingClientRect();
+                    canvas.width = rect.width;
+                    canvas.height = 200;
+                }
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+
+                ctx.lineWidth = 2.5;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = '#1a1a1a';
+
+                function getPos(e) {
+                    const rect = canvas.getBoundingClientRect();
+                    if (e.touches) {
+                        return {
+                            x: e.touches[0].clientX - rect.left,
+                            y: e.touches[0].clientY - rect.top
+                        };
+                    }
+                    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                }
+
+                canvas.addEventListener('mousedown', (e) => { drawing = true; ctx.beginPath(); ctx.moveTo(getPos(e).x, getPos(e).y); });
+                canvas.addEventListener('mousemove', (e) => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSignature = true; });
+                canvas.addEventListener('mouseup', () => { drawing = false; });
+                canvas.addEventListener('mouseleave', () => { drawing = false; });
+
+                // Touch support
+                canvas.addEventListener('touchstart', (e) => { e.preventDefault(); drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
+                canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSignature = true; });
+                canvas.addEventListener('touchend', () => { drawing = false; });
+
+                function clearSignature() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    hasSignature = false;
+                }
+
+                function submitSign() {
+                    if (!hasSignature) {
+                        alert('Please draw your signature before submitting.');
+                        return false;
+                    }
+                    document.getElementById('signature-data').value = canvas.toDataURL('image/png');
+                    document.getElementById('form-action').value = 'sign';
+                    return true;
+                }
+
+                function showDecline() {
+                    document.getElementById('decline-area').style.display = 'block';
+                }
+
+                function submitDecline() {
+                    const reason = document.getElementById('decline-reason').value.trim();
+                    if (!reason) { alert('Please provide a reason for declining.'); return; }
+                    document.getElementById('decline-reason-input').value = reason;
+                    document.getElementById('form-action').value = 'decline';
+                    document.getElementById('sign-form').submit();
+                }
+            </script>
+        </t>
+    </template>
+
+    <!-- ══ SUCCESS PAGE ════════════════════════════════════════════════════ -->
+    <template id="sign_page_success" name="Document Signed Successfully">
+        <t t-call="web.layout">
+            <div style="max-width:600px;margin:80px auto;text-align:center;font-family:Arial,sans-serif;">
+                <div style="background:#875A7B;width:80px;height:80px;border-radius:50%;margin:0 auto 20px;
+                            display:flex;align-items:center;justify-content:center;">
+                    <span style="font-size:36px;">✅</span>
+                </div>
+                <h2 style="color:#875A7B;">Document Signed Successfully!</h2>
+                <p style="color:#555;">You have successfully signed <strong><t t-esc="document.name"/></strong>.</p>
+                <p style="color:#888;font-size:13px;">Your signature has been recorded. Thank you!</p>
+                <a href="/odoo" style="display:inline-block;margin-top:20px;background:#875A7B;
+                   color:white;padding:12px 30px;border-radius:6px;text-decoration:none;font-weight:bold;">
+                    Go to Dashboard
+                </a>
+            </div>
+        </t>
+    </template>
+
+    <!-- ══ ALREADY SIGNED PAGE ═════════════════════════════════════════════ -->
+    <template id="sign_page_already_signed" name="Already Signed">
+        <t t-call="web.layout">
+            <div style="max-width:600px;margin:80px auto;text-align:center;font-family:Arial,sans-serif;">
+                <div style="font-size:60px;margin-bottom:20px;">✍️</div>
+                <h2 style="color:#875A7B;">Already Signed</h2>
+                <p style="color:#555;">You have already signed this document on
+                    <strong><t t-esc="sig.signed_date"/></strong>.
+                </p>
+                <a href="/odoo" style="display:inline-block;margin-top:20px;background:#875A7B;
+                   color:white;padding:12px 30px;border-radius:6px;text-decoration:none;font-weight:bold;">
+                    Go to Dashboard
+                </a>
+            </div>
+        </t>
+    </template>
+
+    <!-- ══ DECLINED PAGE ═══════════════════════════════════════════════════ -->
+    <template id="sign_page_declined" name="Document Declined">
+        <t t-call="web.layout">
+            <div style="max-width:600px;margin:80px auto;text-align:center;font-family:Arial,sans-serif;">
+                <div style="font-size:60px;margin-bottom:20px;">❌</div>
+                <h2 style="color:#e53935;">Document Declined</h2>
+                <p style="color:#555;">You have declined to sign <strong><t t-esc="sig.document_id.name"/></strong>.</p>
+                <p style="color:#888;font-size:13px;">The HR team has been notified.</p>
+                <a href="/odoo" style="display:inline-block;margin-top:20px;background:#875A7B;
+                   color:white;padding:12px 30px;border-radius:6px;text-decoration:none;font-weight:bold;">
+                    Go to Dashboard
+                </a>
+            </div>
+        </t>
+    </template>
+
+    <!-- ══ ERROR PAGE ══════════════════════════════════════════════════════ -->
+    <template id="sign_page_error" name="Signature Error">
+        <t t-call="web.layout">
+            <div style="max-width:600px;margin:80px auto;text-align:center;font-family:Arial,sans-serif;">
+                <div style="font-size:60px;margin-bottom:20px;">⚠️</div>
+                <h2 style="color:#e53935;">Invalid Link</h2>
+                <p style="color:#555;"><t t-esc="error"/></p>
+                <a href="/odoo" style="display:inline-block;margin-top:20px;background:#875A7B;
+                   color:white;padding:12px 30px;border-radius:6px;text-decoration:none;font-weight:bold;">
+                    Go to Dashboard
+                </a>
+            </div>
+        </t>
+    </template>
+
+</odoo>

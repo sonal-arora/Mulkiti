@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══ SEND SIGNATURE WIZARD ═══════════════════════════════════════════ -->
+    <record id="view_send_signature_wizard_form" model="ir.ui.view">
+        <field name="name">company.document.send.signature.wizard.form</field>
+        <field name="model">company.document.send.signature.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Send Document for Signature">
+                <div class="alert alert-info" role="alert">
+                    <i class="fa fa-info-circle me-1"/>
+                    Selected employees will receive an email with a link to review and sign the document.
+                </div>
+                <group>
+                    <field name="document_id" readonly="1"/>
+                    <field name="employee_ids" widget="many2many_tags"
+                           placeholder="Select employees..."
+                           options="{'no_create': True}"/>
+                    <field name="message" widget="text"
+                           placeholder="Optional message to include in the email..."/>
+                </group>
+                <footer>
+                    <button string="Send for Signature"
+                            name="action_send"
+                            type="object"
+                            class="btn-primary"/>
+                    <button string="Cancel"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- ══ SIGNATURE LIST VIEW ════════════════════════════════════════════ -->
+    <record id="view_document_signature_list" model="ir.ui.view">
+        <field name="name">company.document.signature.list</field>
+        <field name="model">company.document.signature</field>
+        <field name="arch" type="xml">
+            <list string="Signature Requests" decoration-success="state == 'signed'"
+                  decoration-warning="state == 'pending'" decoration-danger="state == 'declined'">
+                <field name="employee_id"/>
+                <field name="sent_date" string="Sent On"/>
+                <field name="signed_date" string="Signed On"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'signed'"
+                       decoration-warning="state == 'pending'"
+                       decoration-danger="state == 'declined'"/>
+                <field name="signature" widget="image" string="Signature" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ══ WIZARD ACTION ══════════════════════════════════════════════════ -->
+    <record id="action_send_signature_wizard" model="ir.actions.act_window">
+        <field name="name">Send for Signature</field>
+        <field name="res_model">company.document.send.signature.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_send_signature_wizard_form"/>
+        <field name="target">new</field>
+        <field name="context">{'active_id': active_id}</field>
+    </record>
+
+</odoo>

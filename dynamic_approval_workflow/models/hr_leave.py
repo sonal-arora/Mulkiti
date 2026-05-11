@@ -1,8 +1,13 @@
 import hashlib
 import hmac as _hmac
+import logging
+
+from markupsafe import Markup
 
 from odoo import api, fields, models, _
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, UserError, ValidationError
+
+_logger = logging.getLogger(__name__)
 
 
 class HrLeave(models.Model):
@@ -426,11 +431,37 @@ class HrLeave(models.Model):
         super()._check_double_validation_rules(employees, state)
 
     # ─────────────────────────────────────────────────────────────────────
+    # Create override — send employee confirmation same time as activity mail
+    # ─────────────────────────────────────────────────────────────────────
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        leaves = super().create(vals_list)
+        for leave in leaves:
+            if leave.state == 'confirm' and leave.employee_id:
+                leave._send_employee_submission_email()
+        return leaves
+
+    # ─────────────────────────────────────────────────────────────────────
     # Action buttons
     # ─────────────────────────────────────────────────────────────────────
 
     def action_confirm(self):
-        """Override: after confirming, notify the 1st approver(s) by email."""
+        """Override: block Annual Leave during probation, then notify 1st approvers."""
+        for leave in self:
+            emp = leave.employee_id
+            if not emp:
+                continue
+            leave_type_name = (leave.holiday_status_id.name or '').strip().lower()
+            if leave_type_name == 'annual leave':
+                probation_end = emp.sudo().probation_end_date
+                if probation_end and leave.date_from and leave.date_from.date() < probation_end:
+                    raise ValidationError(_(
+                        "%(employee)s is still in the probation period (ends %(date)s). "
+                        "Annual Leave cannot be taken before the probation period ends.",
+                        employee=emp.name,
+                        date=fields.Date.to_string(probation_end),
+                    ))
         result = super().action_confirm()
         for leave in self:
             if leave._use_custom_flow():
@@ -462,15 +493,18 @@ class HrLeave(models.Model):
                 remaining += leave
 
         if to_validate1:
-            # Use leave_fast_create=True to skip the redundant _check_double_validation_rules
-            # call inside write() — we already validated the user in _check_approval_update above.
             to_validate1.with_context(leave_fast_create=True).write(
                 {'state': 'validate1', 'first_approver_id': current_employee.id}
             )
             if not self.env.context.get('leave_fast_create'):
                 to_validate1.activity_update()
-            # Notify next approver by email
             for leave in to_validate1:
+                # Notify employee: 1st approval done
+                leave._send_employee_status_email(
+                    approved_by=self.env.user,
+                    status='approved_1st',
+                )
+                # Notify next approver
                 second = leave._get_second_approver()
                 if second:
                     leave._send_leave_approval_email(second, '2nd Approval')
@@ -496,13 +530,28 @@ class HrLeave(models.Model):
         self.with_context(leave_fast_create=True).write({'state': 'validate2'})
         if not self.env.context.get('leave_fast_create'):
             self.activity_update()
-        # Notify Time Off Manager for final approval
         for leave in self:
             if leave._use_custom_flow():
+                # Notify employee: 2nd approval done, waiting for final
+                leave._send_employee_status_email(
+                    approved_by=self.env.user,
+                    status='approved_2nd',
+                )
+                # Notify Time Off Manager for final approval
                 mgr = leave.employee_id.sudo().leave_manager_id
                 if mgr:
                     leave._send_leave_approval_email(mgr, 'Final Approval')
         return True
+
+    def _action_validate(self, check_state=True):
+        """Override: after final validation, notify employee fully approved."""
+        result = super()._action_validate(check_state)
+        for leave in self:
+            leave._send_employee_status_email(
+                approved_by=self.env.user,
+                status='fully_approved',
+            )
+        return result
 
     def action_open_refuse_wizard(self):
         """Open a wizard to collect refusal reason before refusing the leave."""
@@ -538,14 +587,33 @@ class HrLeave(models.Model):
             custom.mapped('meeting_id').write({'active': False})
             for holiday in custom:
                 employee_sudo = holiday.employee_id.sudo()
+                reason = holiday.refuse_reason or ''
+
+                # Format date nicely
+                date_str = (
+                    holiday.date_from.strftime('%d %b %Y')
+                    if holiday.date_from else ''
+                )
+
+                # Build HTML body using Markup so tags render properly
+                body_msg = Markup(
+                    'Your <strong>%(leave_type)s</strong> planned on '
+                    '<strong>%(date)s</strong> has been refused.'
+                ) % {
+                    'leave_type': holiday.holiday_status_id.display_name,
+                    'date': date_str,
+                }
+                if reason:
+                    body_msg += Markup(
+                        '<br/><br/><strong>Reason:</strong> %(reason)s'
+                    ) % {'reason': reason}
+
                 if employee_sudo.user_id:
                     holiday.message_post(
-                        body=_(
-                            'Your %(leave_type)s planned on %(date)s has been refused.',
-                            leave_type=holiday.holiday_status_id.display_name,
-                            date=holiday.date_from,
-                        ),
+                        body=body_msg,
                         partner_ids=employee_sudo.user_id.partner_id.ids,
+                        message_type='comment',
+                        subtype_xmlid='mail.mt_comment',
                     )
             custom.activity_update()
 
@@ -709,3 +777,246 @@ class HrLeave(models.Model):
                 'author_id': self.env.company.partner_id.id,
                 'auto_delete': True,
             }).send()
+
+    def _send_employee_submission_email(self):
+        """Send a confirmation email to the employee when they submit a leave request."""
+        self.ensure_one()
+        emp = self.employee_id
+        if not emp:
+            return
+
+        # Try all possible email sources
+        email = (
+            emp.sudo().work_email
+            or (emp.sudo().user_id and emp.sudo().user_id.email)
+            or (emp.sudo().user_id and emp.sudo().user_id.partner_id
+                and emp.sudo().user_id.partner_id.email)
+            or self.env.user.email
+        )
+
+        _logger.info(
+            'Leave submission email: employee=%s email=%s leave_id=%s',
+            emp.name, email, self.id
+        )
+
+        if not email:
+            _logger.warning('No email found for employee %s, skipping submission email.', emp.name)
+            return
+
+        leave_type    = self.holiday_status_id.name or ''
+        date_from_str = self.date_from.strftime('%d %b %Y') if self.date_from else ''
+        date_to_str   = self.date_to.strftime('%d %b %Y') if self.date_to else ''
+        duration      = self.number_of_days
+        description   = self.name or ''
+        base_url      = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '')
+        desc_row      = (
+            f'<tr style="background:#f7f3f6;">'
+            f'<td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">Description</td>'
+            f'<td style="padding:10px 14px;border:1px solid #e5e5e5;">{description}</td></tr>'
+            if description else ''
+        )
+
+        subject = f'Leave Request Submitted — {leave_type} ({date_from_str})'
+
+        body_html = f"""
+<div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#333;">
+  <div style="background:#875A7B;padding:22px 28px;border-radius:6px 6px 0 0;">
+    <h2 style="color:#fff;margin:0;font-size:17px;font-weight:600;">
+      Leave Request Submitted Successfully
+    </h2>
+  </div>
+  <div style="border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px;padding:28px 28px 24px;">
+    <p style="margin:0 0 16px;">Dear <strong>{emp.name}</strong>,</p>
+    <p style="margin:0 0 20px;color:#555;">
+      Your leave request has been submitted and is pending approval. Below are the details:
+    </p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px;">
+      <tr style="background:#f7f3f6;">
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;width:36%;">Leave Type</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{leave_type}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">From</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{date_from_str}</td>
+      </tr>
+      <tr style="background:#f7f3f6;">
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">To</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{date_to_str}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">Duration</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{duration:.1f} day(s)</td>
+      </tr>
+      {desc_row}
+      <tr style="background:#f7f3f6;">
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">Status</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">
+          <span style="background:#fff3cd;color:#856404;padding:3px 10px;
+                       border-radius:10px;font-size:13px;font-weight:bold;">
+            Pending Approval
+          </span>
+        </td>
+      </tr>
+    </table>
+    <p style="color:#555;font-size:13px;">
+      You will receive another email once your request is approved or refused.
+    </p>
+    <div style="text-align:center;margin-top:20px;">
+      <a href="{base_url}/odoo/time-off"
+         style="display:inline-block;padding:11px 30px;background:#875A7B;color:#fff;
+                text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;">
+        View My Time Off
+      </a>
+    </div>
+  </div>
+  <p style="text-align:center;font-size:11px;color:#aaa;margin-top:12px;">
+    This is an automated message from {self.env.company.name}.
+  </p>
+</div>"""
+
+        try:
+            mail = self.env['mail.mail'].sudo().create({
+                'subject': subject,
+                'body_html': body_html,
+                'email_to': email,
+                'email_from': self.env.company.email or self.env.user.email,
+                'author_id': self.env.company.partner_id.id,
+                'auto_delete': True,
+            })
+            mail.send(raise_exception=False)
+            _logger.info('Leave submission email sent to %s (mail.mail id=%s)', email, mail.id)
+        except Exception as e:
+            _logger.error('Failed to send leave submission email to %s: %s', email, str(e))
+
+    def _send_employee_status_email(self, approved_by, status):
+        """
+        Send email to employee about leave status change.
+        status: 'approved_1st' | 'approved_2nd' | 'fully_approved' | 'refused'
+        """
+        self.ensure_one()
+        emp = self.employee_id
+        if not emp:
+            return
+        email = (
+            emp.sudo().work_email
+            or (emp.sudo().user_id and emp.sudo().user_id.email)
+        )
+        if not email:
+            return
+
+        leave_type    = self.holiday_status_id.name or ''
+        date_from_str = self.date_from.strftime('%d %b %Y') if self.date_from else ''
+        date_to_str   = self.date_to.strftime('%d %b %Y') if self.date_to else ''
+        duration      = self.number_of_days
+        approver_name = approved_by.name if approved_by else 'HR'
+        base_url      = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '')
+        refuse_reason = self.refuse_reason or ''
+
+        # Status-specific content
+        if status == 'approved_1st':
+            header_color = '#1976D2'
+            header_title = '✅ Leave — 1st Approval Done'
+            status_badge = '<span style="background:#d1ecf1;color:#0c5460;padding:4px 12px;border-radius:10px;font-weight:bold;">1st Approval Completed</span>'
+            status_msg   = f'Your leave request has been approved by <strong>{approver_name}</strong>. It is now pending the next level of approval.'
+            subject      = f'Leave Update: 1st Approval Done — {leave_type} ({date_from_str})'
+
+        elif status == 'approved_2nd':
+            header_color = '#388E3C'
+            header_title = '✅ Leave — 2nd Approval Done'
+            status_badge = '<span style="background:#d4edda;color:#155724;padding:4px 12px;border-radius:10px;font-weight:bold;">2nd Approval Completed</span>'
+            status_msg   = f'Your leave request has been approved by <strong>{approver_name}</strong>. It is now pending final approval from HR.'
+            subject      = f'Leave Update: 2nd Approval Done — {leave_type} ({date_from_str})'
+
+        elif status == 'fully_approved':
+            header_color = '#2E7D32'
+            header_title = '🎉 Leave Fully Approved!'
+            status_badge = '<span style="background:#d4edda;color:#155724;padding:4px 12px;border-radius:10px;font-weight:bold;">Fully Approved</span>'
+            status_msg   = f'Your leave request has been <strong>fully approved</strong> by <strong>{approver_name}</strong>. Enjoy your time off!'
+            subject      = f'Leave Approved — {leave_type} ({date_from_str})'
+
+        elif status == 'refused':
+            header_color = '#C62828'
+            header_title = '❌ Leave Request Refused'
+            status_badge = '<span style="background:#f8d7da;color:#721c24;padding:4px 12px;border-radius:10px;font-weight:bold;">Refused</span>'
+            status_msg   = f'Your leave request has been <strong>refused</strong> by <strong>{approver_name}</strong>.'
+            subject      = f'Leave Refused — {leave_type} ({date_from_str})'
+        else:
+            return
+
+        reason_row = (
+            f'<tr style="background:#fff3cd;">'
+            f'<td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;color:#856404;">Reason</td>'
+            f'<td style="padding:10px 14px;border:1px solid #e5e5e5;color:#856404;">{refuse_reason}</td></tr>'
+            if status == 'refused' and refuse_reason else ''
+        )
+
+        body_html = f"""
+<div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#333;">
+  <div style="background:{header_color};padding:22px 28px;border-radius:6px 6px 0 0;">
+    <h2 style="color:#fff;margin:0;font-size:17px;font-weight:600;">{header_title}</h2>
+  </div>
+  <div style="border:1px solid #ddd;border-top:none;border-radius:0 0 6px 6px;padding:28px 28px 24px;">
+    <p style="margin:0 0 16px;">Dear <strong>{emp.name}</strong>,</p>
+    <p style="margin:0 0 20px;color:#555;">{status_msg}</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px;">
+      <tr style="background:#f7f3f6;">
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;width:36%;">Leave Type</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{leave_type}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">From</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{date_from_str}</td>
+      </tr>
+      <tr style="background:#f7f3f6;">
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">To</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{date_to_str}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">Duration</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{duration:.1f} day(s)</td>
+      </tr>
+      <tr style="background:#f7f3f6;">
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">Approved By</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{approver_name}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">Status</td>
+        <td style="padding:10px 14px;border:1px solid #e5e5e5;">{status_badge}</td>
+      </tr>
+      {reason_row}
+    </table>
+    <div style="text-align:center;margin-top:20px;">
+      <a href="{base_url}/odoo/time-off"
+         style="display:inline-block;padding:11px 30px;background:{header_color};color:#fff;
+                text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;">
+        View My Time Off
+      </a>
+    </div>
+  </div>
+  <p style="text-align:center;font-size:11px;color:#aaa;margin-top:12px;">
+    This is an automated message from {self.env.company.name}.
+  </p>
+</div>"""
+
+        # email_from = the person who took the action (approver/refuser)
+        from_email = (
+            approved_by.email
+            or approved_by.partner_id.email
+            if approved_by
+            else (self.env.company.email or self.env.user.email)
+        )
+
+        try:
+            mail = self.env['mail.mail'].sudo().create({
+                'subject': subject,
+                'body_html': body_html,
+                'email_to': email,
+                'email_from': from_email,
+                'author_id': (approved_by.partner_id.id if approved_by
+                              else self.env.company.partner_id.id),
+                'auto_delete': True,
+            })
+            mail.send(raise_exception=False)
+            _logger.info('Leave status email [%s] sent to %s', status, email)
+        except Exception as e:
+            _logger.error('Failed to send leave status email to %s: %s', email, str(e))

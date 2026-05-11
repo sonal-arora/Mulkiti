@@ -64,8 +64,9 @@
             <xpath expr="//field[@name='holiday_status_id']" position="after">
                 <field name="refuse_reason"
                        string="Reason for Refusal"
+                       widget="text"
                        readonly="1"
-                       invisible="state != 'refuse' or not refuse_reason"/>
+                       invisible="state != 'refuse'"/>
             </xpath>
 
         </field>

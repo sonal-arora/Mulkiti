@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══ TOP LEVEL MENU ══════════════════════════════════════════════════ -->
+    <menuitem
+        id="menu_company_documents_root"
+        name="Documents"
+        sequence="50"
+        web_icon="company_documents,static/description/icon.png"
+        groups="base.group_user"/>
+
+    <!-- ══ EMPLOYEE VIEW — Public documents only ═══════════════════════════ -->
+    <menuitem
+        id="menu_company_documents_public"
+        name="Company Documents"
+        parent="menu_company_documents_root"
+        action="action_company_document"
+        sequence="10"
+        groups="base.group_user"/>
+
+    <!-- ══ MANAGER MENU ════════════════════════════════════════════════════ -->
+    <menuitem
+        id="menu_company_documents_manage"
+        name="Manage"
+        parent="menu_company_documents_root"
+        sequence="20"
+        groups="company_documents.group_company_document_manager"/>
+
+    <menuitem
+        id="menu_company_documents_all"
+        name="All Documents"
+        parent="menu_company_documents_manage"
+        action="action_company_document_all"
+        sequence="10"
+        groups="company_documents.group_company_document_manager"/>
+
+    <menuitem
+        id="menu_document_categories"
+        name="Categories"
+        parent="menu_company_documents_manage"
+        action="action_document_category"
+        sequence="20"
+        groups="company_documents.group_company_document_manager"/>
+
+</odoo>

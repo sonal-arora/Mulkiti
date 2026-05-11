@@ -12,7 +12,6 @@ class LeaveApprovalController(Controller):
         auth='user',
         methods=['GET'],
         csrf=False,
-        save_session=False,
     )
     def leave_email_action(self, action, leave_id, approver_id, token, **kwargs):
         """
