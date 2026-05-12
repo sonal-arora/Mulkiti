@@ -470,13 +470,8 @@ class HrLeave(models.Model):
                 ))
 
     def action_confirm(self):
-        """Override: notify 1st approvers on confirmation."""
-        result = super().action_confirm()
-        for leave in self:
-            if leave._use_custom_flow():
-                approvers = leave._get_first_approvers()
-                leave._send_leave_approval_email(approvers, '1st Approval')
-        return result
+        """Override: standard Odoo activity email handles approver notification."""
+        return super().action_confirm()
 
     def action_approve(self, check_state=True):
         """Handles both 'Approve' (confirm→validate1) and 'Validate' (final step)."""
@@ -508,19 +503,15 @@ class HrLeave(models.Model):
             if not self.env.context.get('leave_fast_create'):
                 to_validate1.activity_update()
             for leave in to_validate1:
-                # Notify employee: 1st approval done
+                # Notify employee: chatter + inbox + email
+                leave._notify_employee_leave_status(
+                    approved_by=self.env.user,
+                    status='approved_1st',
+                )
                 leave._send_employee_status_email(
                     approved_by=self.env.user,
                     status='approved_1st',
                 )
-                # Notify next approver
-                second = leave._get_second_approver()
-                if second:
-                    leave._send_leave_approval_email(second, '2nd Approval')
-                else:
-                    mgr = leave.employee_id.sudo().leave_manager_id
-                    if mgr:
-                        leave._send_leave_approval_email(mgr, 'Final Approval')
 
         if to_validate_final:
             to_validate_final._action_validate(check_state)
@@ -541,21 +532,26 @@ class HrLeave(models.Model):
             self.activity_update()
         for leave in self:
             if leave._use_custom_flow():
-                # Notify employee: 2nd approval done, waiting for final
+                # Notify employee: chatter + inbox + email
+                leave._notify_employee_leave_status(
+                    approved_by=self.env.user,
+                    status='approved_2nd',
+                )
                 leave._send_employee_status_email(
                     approved_by=self.env.user,
                     status='approved_2nd',
                 )
-                # Notify Time Off Manager for final approval
-                mgr = leave.employee_id.sudo().leave_manager_id
-                if mgr:
-                    leave._send_leave_approval_email(mgr, 'Final Approval')
         return True
 
     def _action_validate(self, check_state=True):
         """Override: after final validation, notify employee fully approved."""
         result = super()._action_validate(check_state)
         for leave in self:
+            # Notify employee: chatter + inbox + email
+            leave._notify_employee_leave_status(
+                approved_by=self.env.user,
+                status='fully_approved',
+            )
             leave._send_employee_status_email(
                 approved_by=self.env.user,
                 status='fully_approved',
@@ -814,11 +810,12 @@ class HrLeave(models.Model):
             return
 
         leave_type    = self.holiday_status_id.name or ''
-        date_from_str = self.date_from.strftime('%d %b %Y') if self.date_from else ''
-        date_to_str   = self.date_to.strftime('%d %b %Y') if self.date_to else ''
+        date_from_str = self.date_from.strftime('%d/%m/%Y') if self.date_from else ''
+        date_to_str   = self.date_to.strftime('%d/%m/%Y') if self.date_to else ''
         duration      = self.number_of_days
         description   = self.name or ''
         base_url      = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '')
+        leave_url     = f'{base_url}/web#model=hr.leave&id={self.id}&view_type=form'
         desc_row      = (
             f'<tr style="background:#f7f3f6;">'
             f'<td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">Description</td>'
@@ -872,10 +869,10 @@ class HrLeave(models.Model):
       You will receive another email once your request is approved or refused.
     </p>
     <div style="text-align:center;margin-top:20px;">
-      <a href="{base_url}/odoo/time-off"
+      <a href="{leave_url}"
          style="display:inline-block;padding:11px 30px;background:#875A7B;color:#fff;
                 text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;">
-        View My Time Off
+        View Leave Request
       </a>
     </div>
   </div>
@@ -889,7 +886,10 @@ class HrLeave(models.Model):
                 'subject': subject,
                 'body_html': body_html,
                 'email_to': email,
-                'email_from': self.env.company.email or self.env.user.email,
+                'email_from': (
+                    f"{self.env.company.name} <{self.env.company.email}>"
+                    if self.env.company.email else self.env.company.name
+                ),
                 'author_id': self.env.company.partner_id.id,
                 'reply_to': False,
                 'auto_delete': True,
@@ -916,11 +916,12 @@ class HrLeave(models.Model):
             return
 
         leave_type    = self.holiday_status_id.name or ''
-        date_from_str = self.date_from.strftime('%d %b %Y') if self.date_from else ''
-        date_to_str   = self.date_to.strftime('%d %b %Y') if self.date_to else ''
+        date_from_str = self.date_from.strftime('%d/%m/%Y') if self.date_from else ''
+        date_to_str   = self.date_to.strftime('%d/%m/%Y') if self.date_to else ''
         duration      = self.number_of_days
         approver_name = approved_by.name if approved_by else 'HR'
         base_url      = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '')
+        leave_url     = f'{base_url}/web#model=hr.leave&id={self.id}&view_type=form'
         refuse_reason = self.refuse_reason or ''
 
         # Status-specific content
@@ -997,10 +998,10 @@ class HrLeave(models.Model):
       {reason_row}
     </table>
     <div style="text-align:center;margin-top:20px;">
-      <a href="{base_url}/odoo/time-off"
+      <a href="{leave_url}"
          style="display:inline-block;padding:11px 30px;background:{header_color};color:#fff;
                 text-decoration:none;border-radius:4px;font-size:14px;font-weight:bold;">
-        View My Time Off
+        View Leave Request
       </a>
     </div>
   </div>
@@ -1009,13 +1010,10 @@ class HrLeave(models.Model):
   </p>
 </div>"""
 
-        # email_from = the person who took the action (approver/refuser)
-        from_email = (
-            approved_by.email
-            or approved_by.partner_id.email
-            if approved_by
-            else (self.env.company.email or self.env.user.email)
-        )
+        # email_from = Company Name — outgoing server email will be used anyway,
+        # so name and email must match to avoid "Name <wrong@email.com>" mismatch.
+        company = self.env.company
+        from_email = f"{company.name} <{company.email}>" if company.email else company.name
 
         try:
             mail = self.env['mail.mail'].sudo().create({
@@ -1023,8 +1021,7 @@ class HrLeave(models.Model):
                 'body_html': body_html,
                 'email_to': email,
                 'email_from': from_email,
-                'author_id': (approved_by.partner_id.id if approved_by
-                              else self.env.company.partner_id.id),
+                'author_id': company.partner_id.id,
                 'reply_to': False,
                 'auto_delete': True,
             })
@@ -1032,3 +1029,87 @@ class HrLeave(models.Model):
             _logger.info('Leave status email [%s] sent to %s', status, email)
         except Exception as e:
             _logger.error('Failed to send leave status email to %s: %s', email, str(e))
+
+    def _notify_employee_leave_status(self, approved_by, status):
+        """
+        Notify employee about leave status change via:
+          1. Odoo chatter message (visible on the leave form)
+          2. Odoo inbox notification (bell icon)
+          3. Email (via message_post auto-send)
+
+        status: 'approved_1st' | 'approved_2nd' | 'fully_approved' | 'refused'
+        """
+        self.ensure_one()
+        emp = self.employee_id
+        if not emp or not emp.sudo().user_id:
+            # Fallback to raw email if no Odoo user linked
+            self._send_employee_status_email(approved_by=approved_by, status=status)
+            return
+
+        partner = emp.sudo().user_id.partner_id
+        approver_name = approved_by.name if approved_by else 'HR'
+        leave_type = self.holiday_status_id.name or ''
+        date_from_str = self.date_from.strftime('%d/%m/%Y') if self.date_from else ''
+        date_to_str = self.date_to.strftime('%d/%m/%Y') if self.date_to else ''
+
+        if status == 'approved_1st':
+            icon = '🕐'
+            msg = Markup(
+                '<b>%(icon)s 1st Approval Completed</b><br/>'
+                'Your <b>%(leave_type)s</b> request (%(from)s → %(to)s) has been '
+                'approved by <b>%(approver)s</b>.<br/>'
+                'It is now pending the next level of approval.'
+            ) % {
+                'icon': icon, 'leave_type': leave_type,
+                'from': date_from_str, 'to': date_to_str,
+                'approver': approver_name,
+            }
+        elif status == 'approved_2nd':
+            icon = '🕑'
+            msg = Markup(
+                '<b>%(icon)s 2nd Approval Completed</b><br/>'
+                'Your <b>%(leave_type)s</b> request (%(from)s → %(to)s) has been '
+                'approved by <b>%(approver)s</b>.<br/>'
+                'It is now pending final approval from HR.'
+            ) % {
+                'icon': icon, 'leave_type': leave_type,
+                'from': date_from_str, 'to': date_to_str,
+                'approver': approver_name,
+            }
+        elif status == 'fully_approved':
+            icon = '✅'
+            msg = Markup(
+                '<b>%(icon)s Leave Fully Approved!</b><br/>'
+                'Your <b>%(leave_type)s</b> request (%(from)s → %(to)s) has been '
+                '<b>fully approved</b> by <b>%(approver)s</b>.<br/>'
+                'Enjoy your time off!'
+            ) % {
+                'icon': icon, 'leave_type': leave_type,
+                'from': date_from_str, 'to': date_to_str,
+                'approver': approver_name,
+            }
+        elif status == 'refused':
+            reason = self.refuse_reason or ''
+            msg = Markup(
+                '<b>❌ Leave Request Refused</b><br/>'
+                'Your <b>%(leave_type)s</b> request (%(from)s → %(to)s) has been '
+                '<b>refused</b> by <b>%(approver)s</b>.'
+            ) % {
+                'leave_type': leave_type,
+                'from': date_from_str, 'to': date_to_str,
+                'approver': approver_name,
+            }
+            if reason:
+                msg += Markup('<br/><b>Reason:</b> %(reason)s') % {'reason': reason}
+        else:
+            return
+
+        try:
+            self.message_post(
+                body=msg,
+                partner_ids=[partner.id],
+                message_type='comment',
+                subtype_xmlid='mail.mt_comment',
+            )
+        except Exception as e:
+            _logger.error('Failed to notify employee %s on leave %s: %s', emp.name, self.id, str(e))
