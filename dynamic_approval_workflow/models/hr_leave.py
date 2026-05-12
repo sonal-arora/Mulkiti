@@ -6,6 +6,7 @@ from markupsafe import Markup
 
 from odoo import api, fields, models, _
 from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.tools.misc import clean_context
 
 _logger = logging.getLogger(__name__)
 
@@ -355,6 +356,47 @@ class HrLeave(models.Model):
     # Override _check_validity
     # ─────────────────────────────────────────────────────────────────────
 
+    def _validate_leave_request(self):
+        """
+        Override: suppress the standard Odoo 'Your leave has been accepted' email
+        for custom-flow leaves because _send_employee_status_email() already sends
+        a single branded HTML email to the employee.
+        Standard flow leaves still get the default Odoo notification.
+        """
+        custom = self.filtered(lambda l: l._use_custom_flow())
+        standard = self - custom
+
+        if standard:
+            super(HrLeave, standard)._validate_leave_request()
+
+        if custom:
+            # Run everything in _validate_leave_request EXCEPT the message_post
+            # that sends "Your leave has been accepted" to the employee.
+            custom._create_resource_leave()
+            meeting_holidays = custom.filtered(
+                lambda l: l.holiday_status_id.create_calendar_meeting
+            )
+            if meeting_holidays:
+                Meeting = self.env['calendar.event']
+                Meeting.check_access('create')
+                meeting_values_for_user_id = meeting_holidays._prepare_holidays_meeting_values()
+                meetings = self.env['calendar.event']
+                for user_id, meeting_values in meeting_values_for_user_id.items():
+                    meetings += Meeting.with_user(user_id or self.env.uid).sudo().with_context(
+                        clean_context({
+                            **self.env.context,
+                            'allowed_company_ids': [],
+                            'no_mail_to_attendees': True,
+                            'calendar_no_videocall': True,
+                            'active_model': self._name,
+                        })
+                    ).create(meeting_values)
+                Holiday = self.env['hr.leave']
+                for meeting in meetings:
+                    Holiday.browse(meeting.res_id).meeting_id = meeting
+            # NOTE: message_post("Your leave has been accepted") intentionally skipped —
+            # _send_employee_status_email(status='fully_approved') handles the email.
+
     def _check_validity(self):
         """
         Odoo calls _check_validity() after every write() that touches 'state'.
@@ -470,8 +512,14 @@ class HrLeave(models.Model):
                 ))
 
     def action_confirm(self):
-        """Override: standard Odoo activity email handles approver notification."""
-        return super().action_confirm()
+        """Override: after confirming, send email to 1st level approver."""
+        result = super().action_confirm()
+        for leave in self:
+            if leave._use_custom_flow():
+                first_approvers = leave._get_first_approvers()
+                if first_approvers:
+                    leave._send_leave_approval_email(first_approvers, '1st Approval')
+        return result
 
     def action_approve(self, check_state=True):
         """Handles both 'Approve' (confirm→validate1) and 'Validate' (final step)."""
@@ -503,7 +551,7 @@ class HrLeave(models.Model):
             if not self.env.context.get('leave_fast_create'):
                 to_validate1.activity_update()
             for leave in to_validate1:
-                # Notify employee: chatter + inbox + email
+                # Notify employee: chatter note + HTML email
                 leave._notify_employee_leave_status(
                     approved_by=self.env.user,
                     status='approved_1st',
@@ -512,6 +560,12 @@ class HrLeave(models.Model):
                     approved_by=self.env.user,
                     status='approved_1st',
                 )
+                # Notify next approver: 2nd approver if set, else Time Off Manager
+                emp_sudo = leave.employee_id.sudo()
+                next_approver = leave._get_second_approver() or emp_sudo.leave_manager_id
+                if next_approver:
+                    stage = '2nd Approval' if leave._has_second_level() else 'Final Approval'
+                    leave._send_leave_approval_email(next_approver, stage)
 
         if to_validate_final:
             to_validate_final._action_validate(check_state)
@@ -532,7 +586,7 @@ class HrLeave(models.Model):
             self.activity_update()
         for leave in self:
             if leave._use_custom_flow():
-                # Notify employee: chatter + inbox + email
+                # Notify employee: chatter note + HTML email
                 leave._notify_employee_leave_status(
                     approved_by=self.env.user,
                     status='approved_2nd',
@@ -541,6 +595,10 @@ class HrLeave(models.Model):
                     approved_by=self.env.user,
                     status='approved_2nd',
                 )
+                # Notify Time Off Manager (final approver) for final validation
+                final_approver = leave.employee_id.sudo().leave_manager_id
+                if final_approver:
+                    leave._send_leave_approval_email(final_approver, 'Final Approval')
         return True
 
     def _action_validate(self, check_state=True):
@@ -1109,12 +1167,14 @@ class HrLeave(models.Model):
             return
 
         try:
+            # Use 'mail.mt_note' (internal note) so Odoo does NOT send its own
+            # notification email. The single branded HTML email is sent exclusively
+            # by _send_employee_status_email() called right after this.
             self.message_post(
                 subject=subject,
                 body=msg,
-                partner_ids=[partner.id],
                 message_type='comment',
-                subtype_xmlid='mail.mt_comment',
+                subtype_xmlid='mail.mt_note',
             )
         except Exception as e:
-            _logger.error('Failed to notify employee %s on leave %s: %s', emp.name, self.id, str(e))
+            _logger.error('Failed to post chatter note for employee %s on leave %s: %s', emp.name, self.id, str(e))
