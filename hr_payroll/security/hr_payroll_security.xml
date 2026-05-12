@@ -161,6 +161,19 @@
         <field name="groups" eval="[(4, ref('base.group_user'))]"/>
     </record>
 
+    <!-- Payroll users (managers/admins) can read ALL pay runs — overrides the
+         employee-only restriction above via OR union of group rules -->
+    <record id="hr_payslip_run_rule_payroll_user" model="ir.rule">
+        <field name="name">Pay Run: Payroll User sees all pay runs</field>
+        <field name="model_id" ref="model_hr_payslip_run"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read"   eval="True"/>
+        <field name="perm_write"  eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="groups" eval="[(4, ref('hr_payroll.group_hr_payroll_user'))]"/>
+    </record>
+
     <!-- hr.version: regular users can read versions of:
          - their own employee record
          - employees they manage or approve leaves for

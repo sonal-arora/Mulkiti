@@ -5,6 +5,16 @@
         <field name="model">hr.employee</field>
         <field name="inherit_id" ref="hr_payroll.payroll_hr_employee_view_form"/>
         <field name="arch" type="xml">
+            <!-- WPS Employee Unique ID — shown in Private Information tab near Emirates ID -->
+            <field name="identification_id" position="after">
+                <field
+                    name="l10n_ae_wps_employee_id"
+                    string="WPS Employee Unique ID"
+                    invisible="country_code != 'AE'"
+                    placeholder="14-digit MoHRE identifier"
+                />
+            </field>
+
             <group name="payroll_group" position="inside">
                 <group string="Allowances" invisible="country_code != 'AE'">
                     <label for="l10n_ae_housing_allowance" string="Housing"/>

@@ -165,7 +165,7 @@ class HrEos(models.Model):
     @api.depends('employee_id')
     def _compute_salary_details(self):
         for rec in self:
-            ver = rec.employee_id.version_id if rec.employee_id else False
+            ver = rec.employee_id.sudo().version_id if rec.employee_id else False
             if ver:
                 rec.basic_salary = ver.wage
                 rec.housing_allowance = ver.l10n_ae_housing_allowance
@@ -203,42 +203,76 @@ class HrEos(models.Model):
 
     @api.depends('employee_id')
     def _compute_leave_details(self):
+        # Collect all employee IDs needing computation
+        emp_ids = self.filtered('employee_id').mapped('employee_id.id')
+
+        if not emp_ids:
+            for rec in self:
+                rec.total_leave_allocated = 0.0
+                rec.leave_availed = 0.0
+                rec.leave_balance = 0.0
+            return
+
+        # Find annual leave type(s) once — not per record
+        leave_types = self.env['hr.leave.type'].search([
+            ('requires_allocation', '=', True),
+            ('time_type', '=', 'leave'),
+        ])
+        annual_types = leave_types.filtered(
+            lambda lt: 'annual' in lt.name.lower()
+        ) or leave_types[:1]
+
+        if not annual_types:
+            for rec in self:
+                rec.total_leave_allocated = 0.0
+                rec.leave_availed = 0.0
+                rec.leave_balance = 0.0
+            return
+
+        annual_type_ids = annual_types.ids
+
+        # Single aggregated query for allocations across all employees
+        alloc_rows = self.env['hr.leave.allocation'].read_group(
+            domain=[
+                ('employee_id', 'in', emp_ids),
+                ('holiday_status_id', 'in', annual_type_ids),
+                ('state', '=', 'validate'),
+            ],
+            fields=['employee_id', 'number_of_days:sum'],
+            groupby=['employee_id'],
+        )
+        allocated_by_emp = {
+            row['employee_id'][0]: row['number_of_days']
+            for row in alloc_rows
+        }
+
+        # Single aggregated query for taken leaves across all employees
+        leave_rows = self.env['hr.leave'].read_group(
+            domain=[
+                ('employee_id', 'in', emp_ids),
+                ('holiday_status_id', 'in', annual_type_ids),
+                ('state', '=', 'validate'),
+            ],
+            fields=['employee_id', 'number_of_days:sum'],
+            groupby=['employee_id'],
+        )
+        taken_by_emp = {
+            row['employee_id'][0]: row['number_of_days']
+            for row in leave_rows
+        }
+
         for rec in self:
             if not rec.employee_id:
                 rec.total_leave_allocated = 0.0
                 rec.leave_availed = 0.0
                 rec.leave_balance = 0.0
-                continue
-
-            # Find annual leave type(s)
-            leave_types = self.env['hr.leave.type'].search([
-                ('requires_allocation', '=', True),
-                ('time_type', '=', 'leave'),
-            ])
-            annual_types = leave_types.filtered(
-                lambda lt: 'annual' in lt.name.lower()
-            ) or leave_types[:1]
-
-            allocated = 0.0
-            taken = 0.0
-            for lt in annual_types:
-                allocs = self.env['hr.leave.allocation'].search([
-                    ('employee_id', '=', rec.employee_id.id),
-                    ('holiday_status_id', '=', lt.id),
-                    ('state', '=', 'validate'),
-                ])
-                allocated += sum(allocs.mapped('number_of_days'))
-
-                leaves = self.env['hr.leave'].search([
-                    ('employee_id', '=', rec.employee_id.id),
-                    ('holiday_status_id', '=', lt.id),
-                    ('state', '=', 'validate'),
-                ])
-                taken += sum(leaves.mapped('number_of_days'))
-
-            rec.total_leave_allocated = allocated
-            rec.leave_availed = taken
-            rec.leave_balance = allocated - taken
+            else:
+                emp_id = rec.employee_id.id
+                allocated = allocated_by_emp.get(emp_id, 0.0)
+                taken = taken_by_emp.get(emp_id, 0.0)
+                rec.total_leave_allocated = allocated
+                rec.leave_availed = taken
+                rec.leave_balance = allocated - taken
 
     @api.depends('basic_salary', 'leave_balance')
     def _compute_leave_pay(self):
@@ -305,18 +339,6 @@ class HrEos(models.Model):
                 + rec.other_income
             )
 
-    @api.depends('employee_id')
-    def _compute_loan_advance(self):
-        for rec in self:
-            if not rec.employee_id:
-                rec.loan_advance = 0.0
-                continue
-            loans = self.env['hr.loan'].search([
-                ('employee_id', '=', rec.employee_id.id),
-                ('state', '=', 'approve'),
-            ])
-            rec.loan_advance = sum(loans.mapped('balance_amount'))
-
     @api.depends('loan_advance', 'notice_period_shortfall', 'other_deductions')
     def _compute_total_b(self):
         for rec in self:
@@ -336,6 +358,73 @@ class HrEos(models.Model):
             if rec.state != 'draft':
                 raise UserError(_('Only Draft EOS can be submitted for approval.'))
             rec.state = 'waiting_approval'
+            # Cancel future leaves first
+            rec._cancel_future_leaves()
+            # Recompute leave balance after cancellation
+            rec._compute_leave_details()
+            rec._compute_leave_pay()
+
+    def _cancel_future_leaves(self):
+        """
+        Refuse/cancel all future leave requests for the employee on EOS submission.
+        Odoo automatically restores leave balance when a leave is refused.
+        """
+        self.ensure_one()
+        if not self.employee_id:
+            return
+
+        # Find all future leaves (today onwards) in any active state
+        future_leaves = self.env['hr.leave'].sudo().search([
+            ('employee_id', '=', self.employee_id.id),
+            ('state', 'in', ('draft', 'confirm', 'validate1', 'validate2', 'validate')),
+            ('date_from', '>=', fields.Datetime.today()),
+        ])
+
+        if not future_leaves:
+            return
+
+        refused = self.env['hr.leave']
+        for leave in future_leaves:
+            try:
+                if leave.state in ('confirm', 'validate1', 'validate2', 'validate'):
+                    # Refuse → Odoo auto-restores balance
+                    leave.with_context(
+                        skip_refuse_wizard=True,
+                        leave_fast_create=True,
+                    ).action_refuse()
+                    leave.message_post(
+                        body=_(
+                            'Automatically refused: <strong>%(emp)s</strong> has '
+                            'submitted resignation (EOS: %(eos)s). '
+                            'Leave balance has been restored.',
+                            emp=self.employee_id.name,
+                            eos=self.name,
+                        )
+                    )
+                elif leave.state == 'draft':
+                    leave.action_cancel()
+                    leave.message_post(
+                        body=_(
+                            'Automatically cancelled: <strong>%(emp)s</strong> has '
+                            'submitted resignation (EOS: %(eos)s).',
+                            emp=self.employee_id.name,
+                            eos=self.name,
+                        )
+                    )
+                refused |= leave
+            except Exception as e:
+                leave.message_post(
+                    body=_('Could not cancel this leave automatically: %(err)s', err=str(e))
+                )
+
+        if refused:
+            self.message_post(
+                body=_(
+                    '%(count)d future leave(s) automatically cancelled/refused. '
+                    'Leave balances have been restored.',
+                    count=len(refused),
+                )
+            )
 
     def action_approve(self):
         if not self.env.user.has_group('EOS.group_hr_eos_head'):

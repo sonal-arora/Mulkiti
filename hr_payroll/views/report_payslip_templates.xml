@@ -157,6 +157,9 @@
                         <t t-set="bank" t-value="o.employee_id.bank_account_ids.filtered(lambda b: str(b.id) == alloc[0])[0]"/>
                         Paid to
                         <span class="fw-bold" t-esc="bank.acc_number or 'N/A'"/>
+                        <t t-if="bank.bank_id">
+                            (<span t-esc="bank.bank_id.name"/>)
+                        </t>
                         of <span class="fst-italic" t-field="bank.acc_holder_name"/>:
 
                         <span t-esc="alloc[1]" class="fw-bold" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>

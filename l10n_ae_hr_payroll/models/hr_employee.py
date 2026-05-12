@@ -6,6 +6,15 @@ from odoo import fields, models
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
+    l10n_ae_wps_employee_id = fields.Char(
+        string='WPS Employee Unique ID',
+        groups='hr.group_hr_user',
+        copy=False,
+        tracking=True,
+        help='14-digit Employee Unique ID used in the UAE Wage Protection System (WPS/SIF) file. '
+             'This is issued by the Ministry of Human Resources and Emiratisation (MoHRE).',
+    )
+
     l10n_ae_annual_leave_days_taken = fields.Float(
         string="Annual Leave Days Taken",
         groups="hr.group_hr_user",

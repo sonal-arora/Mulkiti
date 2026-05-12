@@ -135,7 +135,7 @@ class HrPayslip(models.Model):
             l10n_ae_routing_code = bank_account.bank_id.l10n_ae_routing_code
             rows.append([
                 "EDR",
-                (employee.identification_id or '').zfill(14),
+                (employee.l10n_ae_wps_employee_id or employee.identification_id or '').zfill(14),
                 (l10n_ae_routing_code or '').zfill(9),
                 employee.primary_bank_account_id.acc_number or '',
                 payslip.date_from.strftime('%Y-%m-%d'),
@@ -149,7 +149,7 @@ class HrPayslip(models.Model):
             if not payslip.currency_id.is_zero(total_evp):
                 rows.append([
                     "EVP",
-                    (employee.identification_id or '').zfill(14),
+                    (employee.l10n_ae_wps_employee_id or employee.identification_id or '').zfill(14),
                     (l10n_ae_routing_code or '').zfill(9),
                     *map(self._l10n_ae_get_wps_formatted_amount, (max(0, v) for v in evp_inputs))
                 ])
