@@ -448,21 +448,26 @@ class HrLeave(models.Model):
 
     @api.constrains('holiday_status_id', 'date_from', 'employee_id')
     def _check_probation_period(self):
-        """Block Annual Leave if employee is still in probation period."""
+        """Block Annual Leave if employee is still in probation period.
+        Leave Officers / HR Managers are exempt from this check."""
+        # Skip check for Time Off Officers and HR Managers
+        is_officer = self.env.user.has_group('hr_holidays.group_hr_holidays_user')
+        is_hr_mgr  = self.env.user.has_group('hr_holidays.group_hr_holidays_manager')
+        if is_officer or is_hr_mgr:
+            return
+
         for leave in self:
             emp = leave.employee_id
             if not emp:
                 continue
-            leave_type_name = (leave.holiday_status_id.name or '').strip().lower()
-            if leave_type_name == 'annual leave':
-                probation_end = emp.sudo().probation_end_date
-                if probation_end and leave.date_from and leave.date_from.date() < probation_end:
-                    raise ValidationError(_(
-                        "%(employee)s is still in the probation period (ends %(date)s). "
-                        "Annual Leave cannot be taken before the probation period ends.",
-                        employee=emp.name,
-                        date=probation_end.strftime('%d %b %Y'),
-                    ))
+            probation_end = emp.sudo().probation_end_date
+            if probation_end and leave.date_from and leave.date_from.date() < probation_end:
+                raise ValidationError(_(
+                    "%(employee)s is still in the probation period (ends %(date)s). "
+                    "Leave cannot be taken before the probation period ends.",
+                    employee=emp.name,
+                    date=probation_end.strftime('%d %b %Y'),
+                ))
 
     def action_confirm(self):
         """Override: notify 1st approvers on confirmation."""
