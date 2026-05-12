@@ -133,12 +133,9 @@ class HrPayrollPaymentReportWizard(models.TransientModel):
             'Pay Start Date',
             'Pay End Date',
             'Days in Period',
-            'Income Fixed Component',
-            'Income Variable Component',
-            'Days on Leave for Period',
-            'Validation Remarks',
+            'Net Salary',
         ]
-        col_widths = [24, 20, 20, 32, 14, 14, 14, 24, 24, 22, 22]
+        col_widths = [24, 20, 20, 32, 14, 14, 14, 24]
 
         worksheet.set_row(0, 30)
         for col, (header, width) in enumerate(zip(headers, col_widths)):
@@ -146,15 +143,8 @@ class HrPayrollPaymentReportWizard(models.TransientModel):
             worksheet.write(0, col, header, header_fmt)
 
         # ── Data rows ─────────────────────────────────────────────────
-        input_codes = [
-            "HOUALLOWINP", "CONVALLOWINP", "MEDALLOWINP",
-            "ANNUALPASSALLOWINP", "OVERTIMEALLOWINP", "OTALLOWINP", "LEAVEENCASHINP",
-        ]
-        inputs_dict = self.payslip_ids._get_line_values(input_codes)
-
         row_idx = 1
-        total_fixed = 0.0
-        total_variable = 0.0
+        total_net = 0.0
 
         payslips = self.payslip_ids.filtered(
             lambda p: p.state == "validated" and p.net_wage > 0
@@ -164,17 +154,6 @@ class HrPayrollPaymentReportWizard(models.TransientModel):
             employee = payslip.employee_id
             bank_account = employee.primary_bank_account_id
             routing_code = bank_account.bank_id.l10n_ae_routing_code or ''
-
-            # Variable inputs
-            evp_inputs = [inputs_dict[code][payslip.id]['total'] for code in input_codes]
-            total_evp = sum(evp_inputs)
-            fixed_component = payslip.net_wage - total_evp
-
-            # Unpaid (leave) days
-            unpaid_days = payslip.worked_days_line_ids.filtered(
-                lambda x: x.work_entry_type_id in payslip.struct_id.unpaid_work_entry_type_ids
-            )
-            leave_days = sum(unpaid_days.mapped('number_of_days'))
 
             wps_uid = (employee.l10n_ae_wps_employee_id or employee.identification_id or '').zfill(14)
 
@@ -186,13 +165,9 @@ class HrPayrollPaymentReportWizard(models.TransientModel):
             worksheet.write_datetime(row_idx, 4, payslip.date_from, date_fmt)
             worksheet.write_datetime(row_idx, 5, payslip.date_to, date_fmt)
             worksheet.write(row_idx, 6, (payslip.date_to - payslip.date_from).days + 1, int_fmt)
-            worksheet.write(row_idx, 7, round(fixed_component, 2), number_fmt)
-            worksheet.write(row_idx, 8, round(total_evp, 2), number_fmt)
-            worksheet.write(row_idx, 9, leave_days, int_fmt)
-            worksheet.write(row_idx, 10, '', cell_fmt)  # Validation Remarks
+            worksheet.write(row_idx, 7, round(payslip.net_wage, 2), number_fmt)
 
-            total_fixed += fixed_component
-            total_variable += total_evp
+            total_net += payslip.net_wage
             row_idx += 1
 
         # ── Totals row ────────────────────────────────────────────────
@@ -205,14 +180,10 @@ class HrPayrollPaymentReportWizard(models.TransientModel):
             worksheet.write(row_idx, col, '', workbook.add_format({
                 'bold': True, 'border': 1, 'bg_color': '#D9E1F2',
             }))
-        worksheet.write(row_idx, 7, round(total_fixed, 2), total_fmt)
-        worksheet.write(row_idx, 8, round(total_variable, 2), total_fmt)
-        for col in range(9, 11):
-            worksheet.write(row_idx, col, '', workbook.add_format({
-                'bold': True, 'border': 1, 'bg_color': '#D9E1F2',
-            }))
+        worksheet.write(row_idx, 7, round(total_net, 2), total_fmt)
 
         workbook.close()
+
         return base64.encodebytes(output.getvalue())
 
     # TODO: adjust for multiple bank accounts
