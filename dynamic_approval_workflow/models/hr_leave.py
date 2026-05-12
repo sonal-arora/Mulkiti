@@ -1054,6 +1054,7 @@ class HrLeave(models.Model):
 
         if status == 'approved_1st':
             icon = '🕐'
+            subject = f'Leave Update: 1st Approval Done — {leave_type} ({date_from_str})'
             msg = Markup(
                 '<b>%(icon)s 1st Approval Completed</b><br/>'
                 'Your <b>%(leave_type)s</b> request (%(from)s → %(to)s) has been '
@@ -1066,6 +1067,7 @@ class HrLeave(models.Model):
             }
         elif status == 'approved_2nd':
             icon = '🕑'
+            subject = f'Leave Update: 2nd Approval Done — {leave_type} ({date_from_str})'
             msg = Markup(
                 '<b>%(icon)s 2nd Approval Completed</b><br/>'
                 'Your <b>%(leave_type)s</b> request (%(from)s → %(to)s) has been '
@@ -1078,6 +1080,7 @@ class HrLeave(models.Model):
             }
         elif status == 'fully_approved':
             icon = '✅'
+            subject = f'Leave Approved — {leave_type} ({date_from_str})'
             msg = Markup(
                 '<b>%(icon)s Leave Fully Approved!</b><br/>'
                 'Your <b>%(leave_type)s</b> request (%(from)s → %(to)s) has been '
@@ -1090,6 +1093,7 @@ class HrLeave(models.Model):
             }
         elif status == 'refused':
             reason = self.refuse_reason or ''
+            subject = f'Leave Refused — {leave_type} ({date_from_str})'
             msg = Markup(
                 '<b>❌ Leave Request Refused</b><br/>'
                 'Your <b>%(leave_type)s</b> request (%(from)s → %(to)s) has been '
@@ -1106,6 +1110,7 @@ class HrLeave(models.Model):
 
         try:
             self.message_post(
+                subject=subject,
                 body=msg,
                 partner_ids=[partner.id],
                 message_type='comment',
