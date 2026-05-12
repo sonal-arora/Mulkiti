@@ -827,7 +827,7 @@ class HrLeave(models.Model):
     </div>
     <p style="font-size:12px;color:#aaa;text-align:center;margin:0;">
       You will be asked to log in if you are not already signed in.&nbsp;
-      <a href="{base_url}/odoo/time-off" style="color:#875A7B;">Open Time Off in Odoo</a>
+      <a href="{approve_url}" style="color:#875A7B;">Open in Odoo</a>
     </p>
   </div>
 </div>
@@ -873,7 +873,7 @@ class HrLeave(models.Model):
         duration      = self.number_of_days
         description   = self.name or ''
         base_url      = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '')
-        leave_url     = f'{base_url}/web#model=hr.leave&id={self.id}&view_type=form'
+        leave_url     = f'{base_url}/odoo/time-off/{self.id}'
         desc_row      = (
             f'<tr style="background:#f7f3f6;">'
             f'<td style="padding:10px 14px;border:1px solid #e5e5e5;font-weight:bold;">Description</td>'
@@ -979,7 +979,7 @@ class HrLeave(models.Model):
         duration      = self.number_of_days
         approver_name = approved_by.name if approved_by else 'HR'
         base_url      = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '')
-        leave_url     = f'{base_url}/web#model=hr.leave&id={self.id}&view_type=form'
+        leave_url     = f'{base_url}/odoo/time-off/{self.id}'
         refuse_reason = self.refuse_reason or ''
 
         # Status-specific content
