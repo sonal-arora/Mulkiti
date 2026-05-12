@@ -1,6 +1,7 @@
 import hmac as _hmac
 
-from odoo.exceptions import AccessError, UserError
+from werkzeug.utils import redirect
+
 from odoo.http import Controller, request, route
 
 
@@ -9,20 +10,18 @@ class LeaveApprovalController(Controller):
     @route(
         '/leave/action/<string:action>/<int:leave_id>/<int:approver_id>/<string:token>',
         type='http',
-        auth='user',
+        auth='public',
         methods=['GET'],
         csrf=False,
     )
     def leave_email_action(self, action, leave_id, approver_id, token, **kwargs):
         """
-        Handle direct Approve / Refuse actions from email hyperlinks.
+        Handle Approve / Refuse links from approval emails.
 
         Flow:
-          1.  Odoo redirects unauthenticated users to /web/login, then back here.
-          2.  Token is validated (HMAC, specific to leave + action + approver).
-          3.  The logged-in user must match the intended approver_id.
-          4.  The matching leave action is called.
-          5.  A minimal HTML confirmation page is returned.
+          - Not logged in            → warning page (do NOT redirect to login)
+          - Logged in, wrong user    → warning page
+          - Logged in, correct user  → redirect to leave form in Odoo UI
         """
         leave = request.env['hr.leave'].sudo().browse(leave_id)
 
@@ -34,6 +33,19 @@ class LeaveApprovalController(Controller):
         if not _hmac.compare_digest(token, expected):
             return request.not_found()
 
+        # ── Must be logged in ────────────────────────────────────────────────
+        if request.env.user._is_public():
+            approver_name = request.env['res.users'].sudo().browse(approver_id).name
+            return self._render_page(
+                title='Login Required',
+                message=(
+                    f'This approval link was sent to <strong>{approver_name}</strong>.<br/><br/>'
+                    f'Please open Odoo and log in with that account to approve or refuse this request.'
+                ),
+                success=False,
+                leave_id=None,
+            )
+
         # ── Caller must be the intended approver ─────────────────────────────
         if request.env.user.id != approver_id:
             expected_name = request.env['res.users'].sudo().browse(approver_id).name
@@ -44,59 +56,20 @@ class LeaveApprovalController(Controller):
                     f'Please log in with the correct account and try again.'
                 ),
                 success=False,
+                leave_id=None,
             )
 
-        leave_as_user = leave.with_user(request.env.user)
-
-        try:
-            if action == 'approve':
-                if leave.state == 'confirm':
-                    leave_as_user.action_approve()
-                elif leave.state == 'validate1':
-                    leave_as_user.action_second_approve()
-                elif leave.state == 'validate2':
-                    leave_as_user.action_approve()
-                else:
-                    return self._render_page(
-                        title='Already Processed',
-                        message='This leave request has already been processed.',
-                        success=False,
-                    )
-
-            elif action == 'refuse':
-                if leave.state in ('confirm', 'validate1', 'validate2'):
-                    leave_as_user.action_refuse()
-                else:
-                    return self._render_page(
-                        title='Already Processed',
-                        message='This leave request has already been processed.',
-                        success=False,
-                    )
-
-            else:
-                return request.not_found()
-
-        except (UserError, AccessError) as exc:
-            return self._render_page(
-                title='Action Failed',
-                message=str(exc),
-                success=False,
-            )
-
-        action_label = 'approved' if action == 'approve' else 'refused'
-        emp_name = leave.employee_id.name
-        return self._render_page(
-            title='Done!',
-            message=f'Leave request for <strong>{emp_name}</strong> has been <strong>{action_label}</strong> successfully.',
-            success=True,
-        )
+        # ── Logged in as the correct approver → open the leave form ─────────
+        return redirect(f'/odoo/time-off-approval/{leave_id}')
 
     # ── Helpers ───────────────────────────────────────────────────────────────
 
-    def _render_page(self, title, message, success=True):
-        """Return a minimal self-contained HTML confirmation page."""
+    def _render_page(self, title, message, success=True, leave_id=None):
+        """Return a minimal self-contained HTML warning/confirmation page."""
         color = '#28a745' if success else '#dc3545'
-        icon = '&#10003;' if success else '&#10005;'
+        icon = '&#10003;' if success else '&#9888;'
+        btn_href = f'/odoo/time-off-approval/{leave_id}' if leave_id else '/odoo/time-off'
+        btn_label = 'Go to Leave Request' if leave_id else 'Go to Time Off'
         html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -150,7 +123,7 @@ class LeaveApprovalController(Controller):
     <div class="icon">{icon}</div>
     <h2>{title}</h2>
     <p>{message}</p>
-    <a class="btn" href="/odoo/time-off">Go to Time Off</a>
+    <a class="btn" href="{btn_href}">{btn_label}</a>
   </div>
 </body>
 </html>"""
