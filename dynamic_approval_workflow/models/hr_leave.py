@@ -549,7 +549,7 @@ class HrLeave(models.Model):
                 {'state': 'validate1', 'first_approver_id': current_employee.id}
             )
             if not self.env.context.get('leave_fast_create'):
-                to_validate1.activity_update()
+                to_validate1.with_context(mail_activity_quick_update=True).activity_update()
             for leave in to_validate1:
                 # Notify employee: chatter note + HTML email
                 leave._notify_employee_leave_status(
