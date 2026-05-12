@@ -446,8 +446,9 @@ class HrLeave(models.Model):
     # Action buttons
     # ─────────────────────────────────────────────────────────────────────
 
-    def action_confirm(self):
-        """Override: block Annual Leave during probation, then notify 1st approvers."""
+    @api.constrains('holiday_status_id', 'date_from', 'employee_id')
+    def _check_probation_period(self):
+        """Block Annual Leave if employee is still in probation period."""
         for leave in self:
             emp = leave.employee_id
             if not emp:
@@ -460,8 +461,11 @@ class HrLeave(models.Model):
                         "%(employee)s is still in the probation period (ends %(date)s). "
                         "Annual Leave cannot be taken before the probation period ends.",
                         employee=emp.name,
-                        date=fields.Date.to_string(probation_end),
+                        date=probation_end.strftime('%d %b %Y'),
                     ))
+
+    def action_confirm(self):
+        """Override: notify 1st approvers on confirmation."""
         result = super().action_confirm()
         for leave in self:
             if leave._use_custom_flow():
@@ -775,6 +779,7 @@ class HrLeave(models.Model):
                 'body_html': body_html,
                 'email_to': approver.email_formatted,
                 'author_id': self.env.company.partner_id.id,
+                'reply_to': False,
                 'auto_delete': True,
             }).send()
 
@@ -881,6 +886,7 @@ class HrLeave(models.Model):
                 'email_to': email,
                 'email_from': self.env.company.email or self.env.user.email,
                 'author_id': self.env.company.partner_id.id,
+                'reply_to': False,
                 'auto_delete': True,
             })
             mail.send(raise_exception=False)
@@ -1014,6 +1020,7 @@ class HrLeave(models.Model):
                 'email_from': from_email,
                 'author_id': (approved_by.partner_id.id if approved_by
                               else self.env.company.partner_id.id),
+                'reply_to': False,
                 'auto_delete': True,
             })
             mail.send(raise_exception=False)
