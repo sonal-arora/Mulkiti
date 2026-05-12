@@ -98,7 +98,7 @@
     </record>
 
     <!-- ══════════════════════════════════════════════════════════════════════
-         MENU — under Management, visible to Time Off Officer only
+         MENU — under Management, visible to Time Off Officer (sees all)
     ══════════════════════════════════════════════════════════════════════ -->
     <menuitem
         id="menu_hr_leave_summary"
@@ -107,5 +107,17 @@
         action="action_hr_leave_summary"
         sequence="20"
         groups="hr_holidays.group_hr_holidays_user"/>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MENU — under Team Approvals tab, visible to 1st/2nd approvers
+         (record rule filters to only their reportees)
+    ══════════════════════════════════════════════════════════════════════ -->
+    <menuitem
+        id="menu_hr_leave_summary_approver"
+        name="Team Leave Summary"
+        parent="dynamic_approval_workflow.menu_hr_leave_team_approvals"
+        action="action_hr_leave_summary"
+        sequence="3"
+        groups="base.group_user"/>
 
 </odoo>
