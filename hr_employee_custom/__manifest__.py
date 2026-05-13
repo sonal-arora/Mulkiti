@@ -10,6 +10,7 @@
         'hr_payroll',
         'hr_holidays',
         'hr_org_chart',
+        'auth_signup',
     ],
     'assets': {
         'web.assets_backend': [
@@ -23,6 +24,7 @@
         'views/hr_employee_views.xml',
         'views/employee_document_views.xml',
         'views/hr_leave_allocation_view.xml',
+        'views/auth_signup_override.xml',
 
     ],
     'installable': True,

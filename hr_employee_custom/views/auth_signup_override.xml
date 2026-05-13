@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="hide_reset_password" inherit_id="auth_signup.login" name="Hide Reset Password Link">
+        <xpath expr="//a[contains(@t-attf-href, 'reset_password')]" position="replace"/>
+    </template>
+</odoo>
