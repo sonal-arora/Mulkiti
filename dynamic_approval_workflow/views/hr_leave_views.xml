@@ -47,7 +47,7 @@
             </xpath>
 
             <!-- 5. Show refuse reason on employee's own form when refused -->
-            <xpath expr="//form/field[@name='employee_id']" position="after">
+            <xpath expr="//field[@name='holiday_status_id']" position="after">
                 <field name="refuse_reason"
                        string="Reason for Refusal"
                        widget="text"
