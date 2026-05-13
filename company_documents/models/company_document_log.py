@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class CompanyDocumentLog(models.Model):
@@ -39,6 +39,18 @@ class CompanyDocumentLog(models.Model):
         required=True,
     )
 
+    viewed_by = fields.Char(
+        string='Viewed By',
+        compute='_compute_viewed_by',
+        store=True,
+    )
+
+    @api.depends('employee_id', 'user_id')
+    def _compute_viewed_by(self):
+        for log in self:
+            log.viewed_by = log.employee_id.name or log.user_id.name or ''
+
+    @api.depends('user_id')
     def _compute_employee_id(self):
         for log in self:
             employee = self.env['hr.employee'].sudo().search(

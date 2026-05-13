@@ -14,6 +14,11 @@
     'category': 'Human Resources',
     'author': 'Mulkiti',
     'depends': ['hr', 'mail', 'portal'],
+    'assets': {
+        'web.assets_backend': [
+            'company_documents/static/src/js/document_view_tracker.js',
+        ],
+    },
     'data': [
         'security/company_documents_security.xml',
         'security/ir.model.access.csv',

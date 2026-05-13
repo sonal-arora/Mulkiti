@@ -164,6 +164,20 @@ class CompanyDocument(models.Model):
     # Email Notification
     # ─────────────────────────────────────────────────────────────────────────
 
+    def action_view_notification_info(self):
+        """Show info about the notification that was sent."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Notification Info'),
+                'message': _('Email notification was sent to %d employee(s) for this document.') % self.notification_count,
+                'type': 'info',
+                'sticky': True,
+            },
+        }
+
     def action_send_notification(self):
         """Send email notification to all active employees about this document."""
         self.ensure_one()

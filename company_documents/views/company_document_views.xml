@@ -53,7 +53,7 @@
                                    string="Downloads"/>
                         </button>
                         <button class="oe_stat_button" type="object"
-                                name="action_send_notification"
+                                name="action_view_notification_info"
                                 icon="fa-envelope"
                                 invisible="not notification_sent"
                                 groups="company_documents.group_company_document_manager">
@@ -119,8 +119,7 @@
                             <field name="log_ids" readonly="1">
                                 <list string="History" default_order="date desc">
                                     <field name="date" string="Date &amp; Time"/>
-                                    <field name="employee_id" string="Employee"/>
-                                    <field name="user_id" string="User"/>
+                                    <field name="viewed_by" string="Employee"/>
                                     <field name="action" string="Action"
                                            widget="badge"
                                            decoration-info="action == 'viewed'"

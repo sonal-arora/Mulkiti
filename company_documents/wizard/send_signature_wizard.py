@@ -44,32 +44,36 @@ class SendSignatureWizard(models.TransientModel):
         skipped = []
 
         for employee in self.employee_ids:
-            # Check if already sent
             existing = self.env['company.document.signature'].search([
                 ('document_id', '=', self.document_id.id),
                 ('employee_id', '=', employee.id),
-                ('state', '!=', 'declined'),
             ], limit=1)
 
-            if existing:
+            if existing and existing.state == 'signed':
                 skipped.append(employee.name)
                 continue
 
-            # Create signature request
-            sig = self.env['company.document.signature'].create({
-                'document_id': self.document_id.id,
-                'employee_id': employee.id,
-            })
-            # Send email
             try:
-                sig.with_context(wizard_message=self.message).action_send_email()
+                if existing and existing.state == 'pending':
+                    # Resend reminder to pending employee
+                    existing.with_context(wizard_message=self.message).action_send_email()
+                elif existing and existing.state == 'declined':
+                    # Re-open declined request and resend
+                    existing.write({'state': 'pending', 'decline_reason': False})
+                    existing.with_context(wizard_message=self.message).action_send_email()
+                else:
+                    sig = self.env['company.document.signature'].create({
+                        'document_id': self.document_id.id,
+                        'employee_id': employee.id,
+                    })
+                    sig.with_context(wizard_message=self.message).action_send_email()
                 sent_count += 1
             except Exception:
                 skipped.append(employee.name)
 
         msg = _('Signature request sent to %d employee(s).') % sent_count
         if skipped:
-            msg += _('\nSkipped (already sent or no email): %s') % ', '.join(skipped)
+            msg += _('\nSkipped (already signed): %s') % ', '.join(skipped)
 
         return {
             'type': 'ir.actions.client',
