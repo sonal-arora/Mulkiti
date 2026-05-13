@@ -73,6 +73,34 @@
         <field name="groups" eval="[(4, ref('base.group_user'))]"/>
     </record>
 
+    <!-- Indirect manager (2 levels up) can READ leaves of indirect reports
+         e.g. Rohit → Ramnath → Maricor: Rohit can see Maricor's leaves -->
+    <record id="hr_leave_rule_indirect_manager_read" model="ir.rule">
+        <field name="name">Leave: Indirect Manager — Read</field>
+        <field name="model_id" ref="hr_holidays.model_hr_leave"/>
+        <field name="domain_force">
+            [('employee_id.parent_id.parent_id.user_id', '=', user.id)]
+        </field>
+        <field name="perm_read"   eval="True"/>
+        <field name="perm_write"  eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- Indirect manager can see indirect reports in org chart (hr.employee.public) -->
+    <record id="hr_employee_public_indirect_manager_rule" model="ir.rule">
+        <field name="name">Employee Public: Indirect Manager — Read</field>
+        <field name="model_id" ref="hr.model_hr_employee_public"/>
+        <field name="domain_force">
+            [('parent_id.parent_id.user_id', '=', user.id)]
+        </field>
+        <field name="perm_read"   eval="True"/>
+        <field name="perm_write"  eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record>
 
     <!-- ─── Leave Summary record rules ───────────────────────────────────────
          base.group_user (approvers) see ONLY employees they approve for.
@@ -80,15 +108,16 @@
          no separate "see all" rule needed for them.
     ──────────────────────────────────────────────────────────────────────── -->
 
-    <!-- 1st/2nd approver & direct manager: see only their reportees -->
+    <!-- 1st/2nd approver, direct manager & indirect manager: see their reportees -->
     <record id="hr_leave_summary_rule_approver" model="ir.rule">
         <field name="name">Leave Summary: Approver sees own reportees only</field>
         <field name="model_id" ref="model_hr_leave_summary"/>
         <field name="domain_force">
-            ['|', '|',
-                ('employee_id.x_leave_approver_1_id', '=', user.id),
-                ('employee_id.x_leave_approver_2_id', '=', user.id),
-                ('employee_id.parent_id.user_id',      '=', user.id),
+            ['|', '|', '|',
+                ('employee_id.x_leave_approver_1_id',          '=', user.id),
+                ('employee_id.x_leave_approver_2_id',          '=', user.id),
+                ('employee_id.parent_id.user_id',              '=', user.id),
+                ('employee_id.parent_id.parent_id.user_id',    '=', user.id),
             ]
         </field>
         <field name="perm_read"   eval="True"/>

@@ -18,7 +18,7 @@ States: Draft → Confirm → 1st Approved (validate1) → 2nd Approved (validat
     """,
     'category': 'Human Resources/Time Off',
     'author': 'Mulkiti',
-    'depends': ['hr_holidays'],
+    'depends': ['hr', 'hr_holidays'],
     'data': [
         'security/ir.model.access.csv',
         'security/security.xml',
