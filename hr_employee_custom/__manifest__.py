@@ -9,7 +9,13 @@
         # 'hr_contract',
         'hr_payroll',
         'hr_holidays',
+        'hr_org_chart',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'hr_employee_custom/static/src/xml/hr_org_chart_override.xml',
+        ],
+    },
     'data': [
         # 'security/security.xml',
         'security/ir.model.access.csv',
