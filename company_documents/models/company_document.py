@@ -176,30 +176,31 @@ class CompanyDocument(models.Model):
             ('active', '=', True),
         ])
 
-        # Collect email addresses
-        email_list = []
-        for emp in employees:
-            email = emp.work_email or (emp.user_id and emp.user_id.email)
-            if email:
-                email_list.append(email)
-
-        if not email_list:
-            raise UserError(_('No employee email addresses found to send notification.'))
-
-        # Send using mail template
         template = self.env.ref(
             'company_documents.email_template_document_notification',
             raise_if_not_found=False,
         )
-        if template:
-            for email in set(email_list):
-                template.with_context(recipient_email=email).send_mail(
+
+        email_list = []
+        for emp in employees:
+            email = emp.work_email or (emp.user_id and emp.user_id.email)
+            if not email:
+                continue
+            email_list.append(email)
+            if template:
+                template.with_context(
+                    recipient_name=emp.name,
+                    recipient_email=email,
+                ).send_mail(
                     self.id,
                     force_send=True,
                     email_values={'email_to': email},
                 )
-        else:
-            # Fallback: send simple email
+
+        if not email_list:
+            raise UserError(_('No employee email addresses found to send notification.'))
+
+        if not template:
             self._send_simple_email(email_list)
 
         self.write({

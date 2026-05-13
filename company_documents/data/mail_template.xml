@@ -14,6 +14,8 @@
         <p style="color:#f0d9f0;margin:8px 0 0 0;font-size:14px;">{{ object.company_id.name }}</p>
     </div>
     <div style="padding:30px;background:#fff;border:1px solid #e0e0e0;">
+        <p style="margin:0 0 16px;">Dear <strong>{{ ctx.get('recipient_name', 'Team Member') }}</strong>,</p>
+        <p style="color:#555;margin:0 0 20px;">A new document has been published for your reference:</p>
         <h3 style="color:#333;margin-top:0;">{{ object.name }}</h3>
         <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
             <tr>
@@ -57,15 +59,15 @@
         <p style="color:#555;">You have been requested to review and sign the following document:</p>
         <div style="background:#f5f0f7;border-left:4px solid #875A7B;padding:15px;margin:20px 0;border-radius:4px;">
             <h3 style="margin:0;color:#875A7B;">{{ object.document_id.name }}</h3>
-            % if object.document_id.category_id:
+            {% if object.document_id.category_id %}
             <p style="margin:5px 0 0 0;color:#666;">{{ object.document_id.category_id.name }}</p>
-            % endif
+            {% endif %}
         </div>
-        % if ctx.get('wizard_message'):
+        {% if ctx.get('wizard_message') %}
         <div style="background:#fff8e1;border:1px solid #ffe082;padding:15px;border-radius:4px;margin-bottom:20px;">
             <p style="margin:0;color:#555;"><strong>Message:</strong> {{ ctx.get('wizard_message') }}</p>
         </div>
-        % endif
+        {% endif %}
         <p style="color:#555;">Please click the button below to review and sign the document.</p>
         <div style="text-align:center;margin:30px 0;">
             <a href="{{ object.sign_url }}"

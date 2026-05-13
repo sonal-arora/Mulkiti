@@ -654,7 +654,7 @@ class HrLeave(models.Model):
 
                 # Format date nicely
                 date_str = (
-                    holiday.date_from.strftime('%d %b %Y')
+                    holiday.date_from.strftime('%d/%m/%Y')
                     if holiday.date_from else ''
                 )
 
@@ -752,8 +752,8 @@ class HrLeave(models.Model):
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '')
         emp = self.employee_id
         leave_type = self.holiday_status_id.name or ''
-        date_from_str = self.date_from.strftime('%d %b %Y') if self.date_from else ''
-        date_to_str = self.date_to.strftime('%d %b %Y') if self.date_to else ''
+        date_from_str = self.date_from.strftime('%d/%m/%Y') if self.date_from else ''
+        date_to_str = self.date_to.strftime('%d/%m/%Y') if self.date_to else ''
         duration = self.number_of_days
 
         for approver in approvers:
