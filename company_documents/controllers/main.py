@@ -23,7 +23,7 @@ class CompanyDocumentController(http.Controller):
         ).get_response(as_attachment=True)
 
     # ── View log ─────────────────────────────────────────────────────────────
-    @http.route('/company-documents/view/<int:document_id>', auth='user', type='json')
+    @http.route('/company-documents/view/<int:document_id>', auth='user', type='jsonrpc')
     def log_view(self, document_id, **kwargs):
         doc = request.env['company.document'].browse(document_id)
         if not doc.exists():

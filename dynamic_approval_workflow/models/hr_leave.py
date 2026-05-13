@@ -53,6 +53,17 @@ class HrLeave(models.Model):
         export_string_translation=False,
     )
 
+    # ── Whether this leave has a 2nd approver (non-stored, no DB column) ──
+    has_second_approver = fields.Boolean(
+        compute='_compute_has_second_approver',
+        export_string_translation=False,
+    )
+
+    @api.depends('x_leave_approver_2_id')
+    def _compute_has_second_approver(self):
+        for leave in self:
+            leave.has_second_approver = bool(leave.x_leave_approver_2_id)
+
     # ── Refusal reason ────────────────────────────────────────────────────
     refuse_reason = fields.Text(
         string='Reason for Refusal',
@@ -118,6 +129,20 @@ class HrLeave(models.Model):
         self.ensure_one()
         return self.employee_id.sudo().leave_manager_id == self.env.user
 
+    def _get_fallback_time_off_officer(self):
+        """Return any active Time Off Officer in the same company when no
+        leave_manager_id is set. Used so validate1 never goes unnoticed."""
+        self.ensure_one()
+        group = self.env.ref('hr_holidays.group_hr_holidays_user', raise_if_not_found=False)
+        if not group:
+            return self.env['res.users']
+        officers = self.env['res.users'].search([
+            ('group_ids', '=', group.id),
+            ('active', '=', True),
+            ('company_ids', 'in', self.employee_id.company_id.id),
+        ], limit=1)
+        return officers
+
     def _use_custom_flow(self):
         """True when the employee has at least one 1st-level approver configured
         (manager or custom field).  Falls back to standard Odoo flow otherwise."""
@@ -172,15 +197,15 @@ class HrLeave(models.Model):
     )
     def _compute_can_validate(self):
         """Validate button: Time Off Manager (final step).
-        - No 2nd approver: state must be validate1
-        - 2nd approver set: state must be validate2
+        Final HR approval always comes from validate2 — whether or not a 2nd
+        approver is set. Without a 2nd approver the 1st approval jumps
+        directly to validate2, so the path is always validate2 → validate.
         """
         custom = self.filtered(lambda h: h._use_custom_flow())
         for h in custom:
             is_officer = self.env.user.has_group('hr_holidays.group_hr_holidays_user')
             is_time_off_mgr = h._is_time_off_manager()
-            expected_prev = 'validate2' if h._has_second_level() else 'validate1'
-            h.can_validate = h.state == expected_prev and (is_time_off_mgr or is_officer)
+            h.can_validate = h.state == 'validate2' and (is_time_off_mgr or is_officer)
         others = self - custom
         if others:
             super(HrLeave, others)._compute_can_validate()
@@ -238,9 +263,9 @@ class HrLeave(models.Model):
             result.setdefault('validate2', set()).add('refuse')
 
         # ── Time Off Manager (final → validate) ───────────────────────────
+        # Always from validate2, whether or not a 2nd approver is set.
         if is_time_off_mgr or is_officer:
-            expected_prev = 'validate2' if has_second else 'validate1'
-            result.setdefault(expected_prev, set()).add('validate')
+            result.setdefault('validate2', set()).add('validate')
 
         # ── Employee can always cancel a pending leave ─────────────────────
         if is_own:
@@ -316,9 +341,9 @@ class HrLeave(models.Model):
                 return False
 
             # ── validate: final approval ───────────────────────────────────
+            # Always from validate2 — with or without a 2nd approver.
             if state == 'validate':
-                expected_prev = 'validate2' if has_second else 'validate1'
-                if holiday.state != expected_prev:
+                if holiday.state != 'validate2':
                     if raise_if_not_possible:
                         raise UserError(_("Final approval is not possible from the current state."))
                     return False
@@ -522,9 +547,10 @@ class HrLeave(models.Model):
         return result
 
     def action_approve(self, check_state=True):
-        """Handles both 'Approve' (confirm→validate1) and 'Validate' (final step)."""
+        """1st approval (confirm → validate1 or validate2) and final validate."""
         current_employee = self.env.user.employee_id
-        to_validate1 = self.env['hr.leave']
+        to_validate1 = self.env['hr.leave']   # has 2nd approver → wait at validate1
+        to_validate2_direct = self.env['hr.leave']  # no 2nd approver → skip to validate2
         to_validate_final = self.env['hr.leave']
         remaining = self.env['hr.leave']
 
@@ -534,11 +560,14 @@ class HrLeave(models.Model):
                 continue
 
             if leave.state == 'confirm' and (not check_state or leave.can_approve):
-                # 1st approval
-                leave._check_approval_update('validate1')
-                to_validate1 += leave
-            elif leave.state in ('validate1', 'validate2') and (not check_state or leave.can_validate):
-                # Final approval
+                if leave._has_second_level():
+                    # Has 2nd approver: go to validate1 so 2nd approver can act
+                    to_validate1 += leave
+                else:
+                    # No 2nd approver: skip validate1, go directly to HR Approval (validate2)
+                    to_validate2_direct += leave
+            elif leave.state == 'validate2' and (not check_state or leave.can_validate):
+                # Final HR validation
                 leave._check_approval_update('validate')
                 to_validate_final += leave
             else:
@@ -551,21 +580,26 @@ class HrLeave(models.Model):
             if not self.env.context.get('leave_fast_create'):
                 to_validate1.with_context(mail_activity_quick_update=True).activity_update()
             for leave in to_validate1:
-                # Notify employee: chatter note + HTML email
-                leave._notify_employee_leave_status(
-                    approved_by=self.env.user,
-                    status='approved_1st',
-                )
-                leave._send_employee_status_email(
-                    approved_by=self.env.user,
-                    status='approved_1st',
-                )
-                # Notify next approver: 2nd approver if set, else Time Off Manager
+                leave._notify_employee_leave_status(approved_by=self.env.user, status='approved_1st')
+                leave._send_employee_status_email(approved_by=self.env.user, status='approved_1st')
+                second = leave._get_second_approver()
+                if second:
+                    leave._send_leave_approval_email(second, '2nd Approval')
+
+        if to_validate2_direct:
+            to_validate2_direct.with_context(leave_fast_create=True).write(
+                {'state': 'validate2', 'first_approver_id': current_employee.id}
+            )
+            if not self.env.context.get('leave_fast_create'):
+                to_validate2_direct.with_context(mail_activity_quick_update=True).activity_update()
+            for leave in to_validate2_direct:
+                leave._notify_employee_leave_status(approved_by=self.env.user, status='approved_1st')
+                leave._send_employee_status_email(approved_by=self.env.user, status='approved_1st')
+                # Notify HR (Time Off Manager / Officer) for final approval
                 emp_sudo = leave.employee_id.sudo()
-                next_approver = leave._get_second_approver() or emp_sudo.leave_manager_id
-                if next_approver:
-                    stage = '2nd Approval' if leave._has_second_level() else 'Final Approval'
-                    leave._send_leave_approval_email(next_approver, stage)
+                hr_approver = emp_sudo.leave_manager_id or leave._get_fallback_time_off_officer()
+                if hr_approver:
+                    leave._send_leave_approval_email(hr_approver, 'HR Approval')
 
         if to_validate_final:
             to_validate_final._action_validate(check_state)
@@ -703,12 +737,15 @@ class HrLeave(models.Model):
                 return employee.parent_id.user_id
 
         elif self.state == 'validate1':
-            # Notify 2nd approver if set, else Time Off Manager
+            # Notify 2nd approver if set, else Time Off Manager, else any officer
             second = self._get_second_approver()
             if second:
                 return second
             if employee.leave_manager_id:
                 return employee.leave_manager_id
+            fallback = self._get_fallback_time_off_officer()
+            if fallback:
+                return fallback
 
         elif self.state == 'validate2':
             # Notify Time Off Manager for final approval

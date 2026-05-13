@@ -19,9 +19,10 @@
         <field name="priority">20</field>
         <field name="arch" type="xml">
 
-            <!-- Inject can_validate2 invisible field -->
+            <!-- Inject invisible helper fields -->
             <xpath expr="//field[@name='user_id']" position="after">
                 <field name="can_validate2" invisible="1"/>
+                <field name="has_second_approver" invisible="1"/>
             </xpath>
 
             <!-- Second Approve button for 2nd-level approvers
@@ -47,9 +48,16 @@
                 <attribute name="groups">hr_holidays.group_hr_holidays_user</attribute>
             </xpath>
 
-            <!-- Fix statusbar order: confirm → validate1 → validate2 → validate -->
-            <xpath expr="//field[@name='state']" position="attributes">
-                <attribute name="statusbar_visible">confirm,validate1,validate2,validate</attribute>
+            <!-- Statusbar: replace with conditional bars based on 2nd approver presence -->
+            <xpath expr="//field[@name='state']" position="replace">
+                <!-- With 2nd approver: confirm → validate1 → validate2 (HR) → validate -->
+                <field name="state" widget="statusbar"
+                       statusbar_visible="confirm,validate1,validate2,validate"
+                       invisible="not has_second_approver"/>
+                <!-- Without 2nd approver: confirm → validate2 (HR) → validate -->
+                <field name="state" widget="statusbar"
+                       statusbar_visible="confirm,validate2,validate"
+                       invisible="has_second_approver"/>
             </xpath>
 
             <!-- Show approver names below holiday_status_id -->

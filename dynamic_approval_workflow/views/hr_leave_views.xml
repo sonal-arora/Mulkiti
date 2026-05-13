@@ -10,9 +10,10 @@
         <field name="inherit_id" ref="hr_holidays.hr_leave_view_form"/>
         <field name="arch" type="xml">
 
-            <!-- 1. Inject can_validate2 invisible field after user_id invisible field -->
+            <!-- 1. Inject helper fields -->
             <xpath expr="//field[@name='user_id']" position="after">
                 <field name="can_validate2" invisible="1"/>
+                <field name="has_second_approver" invisible="1"/>
             </xpath>
 
             <!-- 2. Add "Second Approve" button before the Refuse button -->
@@ -26,16 +27,24 @@
                 />
             </xpath>
 
-            <!-- 3. Replace both status-bar fields with unified bars -->
+            <!-- 3. Replace both status-bar fields with conditional bars -->
             <xpath expr="//field[@name='state'][@statusbar_visible='confirm,validate,validate1']" position="replace">
+                <!-- With 2nd approver: confirm → validate1 → validate2 (HR) → validate -->
                 <field name="state" widget="statusbar"
                        statusbar_visible="confirm,validate1,validate2,validate"
-                       invisible="validation_type != 'both'"/>
+                       invisible="validation_type != 'both' or not has_second_approver"/>
+                <!-- Without 2nd approver: confirm → validate2 (HR) → validate -->
+                <field name="state" widget="statusbar"
+                       statusbar_visible="confirm,validate2,validate"
+                       invisible="validation_type != 'both' or has_second_approver"/>
             </xpath>
             <xpath expr="//field[@name='state'][@statusbar_visible='confirm,validate']" position="replace">
                 <field name="state" widget="statusbar"
                        statusbar_visible="confirm,validate1,validate2,validate"
-                       invisible="validation_type == 'both'"/>
+                       invisible="validation_type == 'both' or not has_second_approver"/>
+                <field name="state" widget="statusbar"
+                       statusbar_visible="confirm,validate2,validate"
+                       invisible="validation_type == 'both' or has_second_approver"/>
             </xpath>
 
             <!-- 4. Show approver names after the top-level invisible employee_id -->

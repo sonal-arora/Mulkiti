@@ -1,6 +1,7 @@
 import secrets
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
+from odoo.orm.table_objects import Constraint
 
 
 class CompanyDocumentSignature(models.Model):
@@ -33,7 +34,6 @@ class CompanyDocumentSignature(models.Model):
         ],
         string='Status',
         default='pending',
-        tracking=True,
         required=True,
     )
     token = fields.Char(
@@ -66,10 +66,10 @@ class CompanyDocumentSignature(models.Model):
         compute='_compute_sign_url',
     )
 
-    _sql_constraints = [
-        ('unique_doc_employee', 'UNIQUE(document_id, employee_id)',
-         'A signature request already exists for this employee and document.'),
-    ]
+    _unique_doc_employee = Constraint(
+        'UNIQUE(document_id, employee_id)',
+        'A signature request already exists for this employee and document.',
+    )
 
     @api.depends('token', 'document_id')
     def _compute_sign_url(self):

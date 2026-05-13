@@ -12,9 +12,9 @@ class HrLeaveAllocation(models.Model):
 class HrLeave(models.Model):
     _inherit = 'hr.leave'
 
-    state = fields.Selection(selection_add=[
-        ('second_approve', 'Second Approval')
-    ])
+    # state = fields.Selection(selection_add=[
+    #     ('second_approve', 'Second Approval')
+    # ])
 
     # def action_approve(self):
     #     for leave in self:
