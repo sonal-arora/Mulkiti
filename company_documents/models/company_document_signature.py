@@ -111,10 +111,9 @@ class CompanyDocumentSignature(models.Model):
 
     def _notify_manager_signed(self):
         """Send notification to document manager when employee signs."""
-        managers = self.env['res.users'].search([
-            ('groups_id', 'in', self.env.ref(
-                'company_documents.group_company_document_manager').ids),
-        ])
+        managers = self.env.ref(
+            'company_documents.group_company_document_manager'
+        ).users
         for manager in managers:
             self.document_id.message_post(
                 body=_('%s has signed the document "%s".') % (
