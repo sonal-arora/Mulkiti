@@ -274,7 +274,11 @@ class CompanyDocument(models.Model):
         mail_values = {
             'subject': _('New Document Published: %s') % self.name,
             'body_html': body,
-            'email_from': self.env.company.email or self.env.user.email,
+            'email_from': (
+                f"{self.env.company.name} <{self.env.company.email}>"
+                if self.env.company.email
+                else self.env.user.email
+            ),
             'email_to': ','.join(set(email_list)),
             'auto_delete': True,
         }

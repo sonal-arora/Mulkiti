@@ -6,7 +6,7 @@
         <field name="name">Company Document: New Publication Notification</field>
         <field name="model_id" ref="model_company_document"/>
         <field name="subject">New Document Published: {{ object.name }}</field>
-        <field name="email_from">{{ (object.company_id.email or user.email) }}</field>
+        <field name="email_from">{{ '%s &lt;%s&gt;' % (object.company_id.name, object.company_id.email or user.email) }}</field>
         <field name="body_html"><![CDATA[
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
     <div style="background:#875A7B;padding:25px;text-align:center;border-radius:8px 8px 0 0;">
@@ -50,7 +50,7 @@
         <field name="name">Company Document: Signature Request</field>
         <field name="model_id" ref="model_company_document_signature"/>
         <field name="subject">Action Required: Please Sign "{{ object.document_id.name }}"</field>
-        <field name="email_from">{{ (object.document_id.company_id.email or user.email) }}</field>
+        <field name="email_from">{{ '%s &lt;%s&gt;' % (object.document_id.company_id.name, object.document_id.company_id.email or user.email) }}</field>
         <field name="body_html"><![CDATA[
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
     <div style="background:#875A7B;padding:25px;text-align:center;border-radius:8px 8px 0 0;">
