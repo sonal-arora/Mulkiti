@@ -90,7 +90,7 @@
 
                                 <tr>
                                     <td><strong>Paid On:</strong></td>
-                                    <td><span t-field="o.compute_date" t-options='{"format": "dd/MM/yyyy"}'/></td>
+                                    <td><span t-field="o.date_to" t-options='{"format": "dd/MM/yyyy"}'/></td>
                                 </tr>
 
                                 <tr t-if="o.version_id.contract_type_id">
