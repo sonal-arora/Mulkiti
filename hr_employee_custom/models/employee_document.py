@@ -48,7 +48,6 @@ class EmployeeDocument(models.Model):
             else:
                 rec.state = 'valid'
 
-    # 🔔 Reminder Cron
     def cron_expiry_notification(self):
         today = fields.Date.today()
         alert_date = today + timedelta(days=30)
@@ -58,22 +57,24 @@ class EmployeeDocument(models.Model):
             ('expiry_date', '>=', today)
         ])
 
+        hr_group = self.env.ref('hr.group_hr_user')
+        hr_users = self.env['res.users'].sudo().search([
+            ('group_ids', 'in', [hr_group.id]),
+            ('active', '=', True),
+        ])
+        email_list = hr_users.filtered(lambda u: u.partner_id.email).mapped('partner_id.email')
+
         for doc in docs:
-            hr_users = self.env.ref('hr.group_hr_user').users
+            doc.message_post(
+                body=f"Document {doc.document_type} of {doc.employee_id.name} will expire on {doc.expiry_date}"
+            )
 
-            for user in hr_users:
-                # Notification
-                doc.message_post(
-                    body=f"Document {doc.document_type} of {doc.employee_id.name} will expire on {doc.expiry_date}"
-                )
-
-                # Email
-                if user.partner_id.email:
-                    self.env['mail.mail'].create({
-                        'subject': 'Document Expiry Alert',
-                        'body_html': f"""
-                            <p>Document <b>{doc.document_type}</b> of employee <b>{doc.employee_id.name}</b> 
-                            will expire on <b>{doc.expiry_date}</b></p>
-                        """,
-                        'email_to': user.partner_id.email,
-                    }).send()
+            if email_list:
+                self.env['mail.mail'].create({
+                    'subject': 'Document Expiry Alert',
+                    'body_html': f"""
+                        <p>Document <b>{doc.document_type}</b> of employee <b>{doc.employee_id.name}</b>
+                        will expire on <b>{doc.expiry_date}</b></p>
+                    """,
+                    'email_to': ','.join(email_list),
+                }).send()
