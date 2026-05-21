@@ -40,6 +40,11 @@
                        readonly="1"
                        decoration-danger="balance &lt;= 0"
                        decoration-success="balance &gt; 0"/>
+                <field name="negative_leaves"
+                       string="Negative Leaves"
+                       readonly="1"
+                       optional="show"
+                       decoration-danger="negative_leaves &gt; 0"/>
             </list>
         </field>
     </record>
@@ -64,6 +69,9 @@
                 <filter string="Has Balance"
                         name="has_balance"
                         domain="[('balance', '>', 0)]"/>
+                <filter string="Has Negative Leaves"
+                        name="has_negative"
+                        domain="[('negative_leaves', '&lt;', 0)]"/>
                 <filter string="Group by Employee"
                         name="group_employee"
                         context="{'group_by': 'employee_id'}"/>

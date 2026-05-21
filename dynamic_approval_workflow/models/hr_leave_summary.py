@@ -15,6 +15,7 @@ class HrLeaveSummary(models.Model):
     leaves_taken = fields.Float(string='Used', readonly=True, digits=(16, 2))
     pending_approval = fields.Float(string='Pending Approval', readonly=True, digits=(16, 2))
     balance = fields.Float(string='Balance', readonly=True, digits=(16, 2))
+    negative_leaves = fields.Float(string='Negative Leaves', readonly=True, digits=(16, 2))
 
     def init(self):
         tools.drop_view_if_exists(self.env.cr, self._table)
@@ -31,7 +32,11 @@ class HrLeaveSummary(models.Model):
                 GREATEST(
                     COALESCE(al.allocated, 0.0) - COALESCE(lv.taken, 0.0),
                     0.0
-                )                            AS balance
+                )                            AS balance,
+                LEAST(
+                    COALESCE(al.allocated, 0.0) - COALESCE(lv.taken, 0.0),
+                    0.0
+                )                            AS negative_leaves
             FROM hr_employee e
 
             -- Current version: latest active version on or before today
