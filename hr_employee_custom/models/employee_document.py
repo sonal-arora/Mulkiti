@@ -41,7 +41,8 @@ class EmployeeDocument(models.Model):
         for rec in self:
             if not rec.expiry_date:
                 rec.state = 'valid'
-            elif rec.expiry_date < today:
+            elif rec.expiry_date <= today:
+                # Expired: includes same day (22 May expiry, 22 May today → Expired)
                 rec.state = 'expired'
             elif rec.expiry_date <= today + timedelta(days=30):
                 rec.state = 'expire_soon'
@@ -50,13 +51,17 @@ class EmployeeDocument(models.Model):
 
     def cron_expiry_notification(self):
         today = fields.Date.today()
-        alert_date = today + timedelta(days=30)
 
-        docs = self.search([
-            ('expiry_date', '<=', alert_date),
-            ('expiry_date', '>=', today)
+        # Force recompute for expired/same-day docs
+        # Handles: same day expiry + missed scheduler (date jumped past expiry)
+        stale_docs = self.search([
+            ('expiry_date', '<=', today),
+            ('state', '!=', 'expired')
         ])
+        if stale_docs:
+            stale_docs._compute_state()
 
+        # Send notifications at 30, 5, and 3 days before expiry
         hr_group = self.env.ref('hr.group_hr_user')
         hr_users = self.env['res.users'].sudo().search([
             ('group_ids', 'in', [hr_group.id]),
@@ -64,17 +69,23 @@ class EmployeeDocument(models.Model):
         ])
         email_list = hr_users.filtered(lambda u: u.partner_id.email).mapped('partner_id.email')
 
-        for doc in docs:
-            doc.message_post(
-                body=f"Document {doc.document_type} of {doc.employee_id.name} will expire on {doc.expiry_date}"
-            )
+        for days_before in [30, 5, 3]:
+            target_date = today + timedelta(days=days_before)
+            docs = self.search([('expiry_date', '=', target_date)])
 
-            if email_list:
-                self.env['mail.mail'].create({
-                    'subject': 'Document Expiry Alert',
-                    'body_html': f"""
-                        <p>Document <b>{doc.document_type}</b> of employee <b>{doc.employee_id.name}</b>
-                        will expire on <b>{doc.expiry_date}</b></p>
-                    """,
-                    'email_to': ','.join(email_list),
-                }).send()
+            for doc in docs:
+                doc.message_post(
+                    body=f"Reminder: Document {doc.document_type} of {doc.employee_id.name} "
+                         f"will expire on {doc.expiry_date} ({days_before} days remaining)"
+                )
+
+                if email_list:
+                    self.env['mail.mail'].create({
+                        'subject': f'Document Expiry Alert - {days_before} Days Remaining',
+                        'body_html': f"""
+                            <p>Document <b>{doc.document_type}</b> of employee
+                            <b>{doc.employee_id.name}</b> will expire on
+                            <b>{doc.expiry_date}</b> (<b>{days_before} days</b> remaining)</p>
+                        """,
+                        'email_to': ','.join(email_list),
+                    }).send()
