@@ -153,7 +153,7 @@ class HrPayrollPaymentReportWizard(models.TransientModel):
         for payslip in payslips:
             employee = payslip.employee_id
             bank_account = employee.primary_bank_account_id
-            routing_code = bank_account.bank_id.l10n_ae_routing_code or ''
+            routing_code = bank_account.clearing_number or bank_account.bank_id.l10n_ae_routing_code or ''
 
             wps_uid = (employee.l10n_ae_wps_employee_id or employee.identification_id or '').zfill(14)
 
