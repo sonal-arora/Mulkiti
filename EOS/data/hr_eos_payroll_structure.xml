@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════
+         EOS Salary Structure Type
+         One dedicated type for all Final Settlement payslips —
+         works regardless of employee's regular salary structure.
+    ══════════════════════════════════════════════════════════ -->
+    <record id="hr_payroll_structure_type_eos" model="hr.payroll.structure.type">
+        <field name="name">End of Service</field>
+        <field name="wage_type">monthly</field>
+        <field name="country_id" ref="base.ae"/>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         EOS Salary Structure
+    ══════════════════════════════════════════════════════════ -->
+    <record id="hr_payroll_structure_eos_fnf" model="hr.payroll.structure">
+        <field name="name">Final Settlement (EOS)</field>
+        <field name="code">EOS_FNF</field>
+        <field name="type_id" ref="hr_payroll_structure_type_eos"/>
+    </record>
+
+    <!-- Set default_struct_id after both records exist (avoids circular reference) -->
+    <record id="hr_payroll_structure_type_eos" model="hr.payroll.structure.type">
+        <field name="default_struct_id" ref="hr_payroll_structure_eos_fnf"/>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SALARY RULES — ALLOWANCES
+         Each rule reads from payslip.eos_id
+    ══════════════════════════════════════════════════════════ -->
+
+    <!-- 1. Notice Period Salary -->
+    <record id="rule_eos_notice_salary" model="hr.salary.rule">
+        <field name="name">Notice Period Salary</field>
+        <field name="code">EOS_NOTICE_SAL</field>
+        <field name="category_id" ref="hr_payroll.ALW"/>
+        <field name="struct_id" ref="hr_payroll_structure_eos_fnf"/>
+        <field name="sequence">10</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result = payslip.eos_id.notice_period_salary if payslip.eos_id else 0.0</field>
+        <field name="appears_on_payslip">True</field>
+    </record>
+
+    <!-- 2. Leave Pay -->
+    <record id="rule_eos_leave_pay" model="hr.salary.rule">
+        <field name="name">Leave Pay</field>
+        <field name="code">EOS_LEAVE</field>
+        <field name="category_id" ref="hr_payroll.ALW"/>
+        <field name="struct_id" ref="hr_payroll_structure_eos_fnf"/>
+        <field name="sequence">20</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result = payslip.eos_id.leave_pay if payslip.eos_id else 0.0</field>
+        <field name="appears_on_payslip">True</field>
+    </record>
+
+    <!-- 3. Gratuity Pay -->
+    <record id="rule_eos_gratuity" model="hr.salary.rule">
+        <field name="name">Gratuity Pay</field>
+        <field name="code">EOS_GRATUITY</field>
+        <field name="category_id" ref="hr_payroll.ALW"/>
+        <field name="struct_id" ref="hr_payroll_structure_eos_fnf"/>
+        <field name="sequence">30</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result = payslip.eos_id.gratuity_pay if payslip.eos_id else 0.0</field>
+        <field name="appears_on_payslip">True</field>
+    </record>
+
+    <!-- 4. Ticket Reimbursement -->
+    <record id="rule_eos_ticket" model="hr.salary.rule">
+        <field name="name">Ticket Reimbursement</field>
+        <field name="code">EOS_TICKET</field>
+        <field name="category_id" ref="hr_payroll.ALW"/>
+        <field name="struct_id" ref="hr_payroll_structure_eos_fnf"/>
+        <field name="sequence">40</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result = payslip.eos_id.ticket_reimbursement if payslip.eos_id else 0.0</field>
+        <field name="appears_on_payslip">True</field>
+    </record>
+
+    <!-- 5. Other Income -->
+    <record id="rule_eos_other_income" model="hr.salary.rule">
+        <field name="name">Other Income</field>
+        <field name="code">EOS_OTHER_INC</field>
+        <field name="category_id" ref="hr_payroll.ALW"/>
+        <field name="struct_id" ref="hr_payroll_structure_eos_fnf"/>
+        <field name="sequence">50</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result = payslip.eos_id.other_income if payslip.eos_id else 0.0</field>
+        <field name="appears_on_payslip">True</field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SALARY RULES — DEDUCTIONS
+    ══════════════════════════════════════════════════════════ -->
+
+    <!-- 6. Loan / Salary Advance -->
+    <record id="rule_eos_loan" model="hr.salary.rule">
+        <field name="name">Loan / Salary Advance</field>
+        <field name="code">EOS_LOAN</field>
+        <field name="category_id" ref="hr_payroll.DED"/>
+        <field name="struct_id" ref="hr_payroll_structure_eos_fnf"/>
+        <field name="sequence">60</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result = -(payslip.eos_id.loan_advance) if payslip.eos_id else 0.0</field>
+        <field name="appears_on_payslip">True</field>
+    </record>
+
+    <!-- 7. Notice Period Shortfall -->
+    <record id="rule_eos_notice_shortfall" model="hr.salary.rule">
+        <field name="name">Notice Period Shortfall</field>
+        <field name="code">EOS_NOTICE_SHORT</field>
+        <field name="category_id" ref="hr_payroll.DED"/>
+        <field name="struct_id" ref="hr_payroll_structure_eos_fnf"/>
+        <field name="sequence">70</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result = -(payslip.eos_id.notice_period_shortfall) if payslip.eos_id else 0.0</field>
+        <field name="appears_on_payslip">True</field>
+    </record>
+
+    <!-- 8. Other Deductions -->
+    <record id="rule_eos_other_ded" model="hr.salary.rule">
+        <field name="name">Other Deductions</field>
+        <field name="code">EOS_OTHER_DED</field>
+        <field name="category_id" ref="hr_payroll.DED"/>
+        <field name="struct_id" ref="hr_payroll_structure_eos_fnf"/>
+        <field name="sequence">80</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result = -(payslip.eos_id.other_deductions) if payslip.eos_id else 0.0</field>
+        <field name="appears_on_payslip">True</field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SALARY RULES — NET
+    ══════════════════════════════════════════════════════════ -->
+
+    <!-- 9. Net Payable -->
+    <record id="rule_eos_net" model="hr.salary.rule">
+        <field name="name">Net Payable (EOS)</field>
+        <field name="code">EOS_NET</field>
+        <field name="category_id" ref="hr_payroll.NET"/>
+        <field name="struct_id" ref="hr_payroll_structure_eos_fnf"/>
+        <field name="sequence">200</field>
+        <field name="condition_select">none</field>
+        <field name="amount_select">code</field>
+        <field name="amount_python_compute">result = payslip.eos_id.net_payable if payslip.eos_id else 0.0</field>
+        <field name="appears_on_payslip">True</field>
+    </record>
+
+</odoo>

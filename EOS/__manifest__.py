@@ -16,10 +16,12 @@
         'security/hr_eos_security.xml',
         'security/ir.model.access.csv',
         'data/hr_eos_sequence.xml',
+        'data/hr_eos_payroll_structure.xml',
         'views/hr_eos_views.xml',
         'views/hr_eos_menu.xml',
     ],
     'installable': True,
     'application': True,
     'license': 'LGPL-3',
+    'post_init_hook': 'post_init_hook',
 }

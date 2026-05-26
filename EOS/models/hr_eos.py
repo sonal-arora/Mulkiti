@@ -469,25 +469,26 @@ class HrEos(models.Model):
         lwd = self.last_working_date
         date_from = lwd.replace(day=1)
 
-        # Prefer UAE regular pay structure; fall back to any available structure
-        struct = self.env['hr.payroll.structure'].search([
-            ('code', 'like', 'UAE'),
-            ('type_id.country_id.code', '=', 'AE'),
-        ], limit=1)
-        if not struct:
-            struct = self.env['hr.payroll.structure'].search([
-                ('type_id', '=', self.employee_id.structure_type_id.id),
-            ], limit=1)
+        # Always use dedicated EOS structure — works for ALL employees
+        # regardless of their regular salary structure (UAE Regular, Generic, etc.)
+        eos_struct = self.env.ref('EOS.hr_payroll_structure_eos_fnf', raise_if_not_found=False)
+        if not eos_struct:
+            raise UserError(_(
+                'EOS Final Settlement salary structure not found. '
+                'Please reinstall the EOS module.'
+            ))
 
-        payslip_vals = {
+        payslip = self.env['hr.payslip'].create({
             'name': f'Final Settlement - {self.employee_id.name} - {lwd.strftime("%m/%Y")}',
             'employee_id': self.employee_id.id,
             'date_from': date_from,
             'date_to': lwd,
+            'struct_id': eos_struct.id,
             'company_id': self.company_id.id,
-        }
-        if struct:
-            payslip_vals['struct_id'] = struct.id
+            'eos_id': self.id,  # Link EOS → Payslip (salary rules read from here)
+        })
 
-        payslip = self.env['hr.payslip'].create(payslip_vals)
+        # Compute payslip lines from EOS salary rules
+        payslip.compute_sheet()
+
         self.payslip_id = payslip.id
