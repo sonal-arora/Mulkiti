@@ -52,14 +52,32 @@ class EmployeeDocument(models.Model):
     def cron_expiry_notification(self):
         today = fields.Date.today()
 
-        # Force recompute for expired/same-day docs
-        # Handles: same day expiry + missed scheduler (date jumped past expiry)
-        stale_docs = self.search([
+        # ── Fix 1: docs that are expired but still showing valid/expire_soon ──
+        stale_expired = self.search([
             ('expiry_date', '<=', today),
-            ('state', '!=', 'expired')
+            ('state', '!=', 'expired'),
         ])
-        if stale_docs:
-            stale_docs._compute_state()
+        if stale_expired:
+            stale_expired._compute_state()
+
+        # ── Fix 2: docs within 30 days but still showing 'valid' ──────────────
+        # @api.depends('expiry_date') does NOT recompute when only the calendar
+        # date advances — we must manually trigger recompute here every day.
+        stale_expire_soon = self.search([
+            ('expiry_date', '>', today),
+            ('expiry_date', '<=', today + timedelta(days=30)),
+            ('state', '=', 'valid'),
+        ])
+        if stale_expire_soon:
+            stale_expire_soon._compute_state()
+
+        # ── Fix 3: docs back to valid if expiry moved far out ─────────────────
+        stale_back_valid = self.search([
+            ('expiry_date', '>', today + timedelta(days=30)),
+            ('state', '=', 'expire_soon'),
+        ])
+        if stale_back_valid:
+            stale_back_valid._compute_state()
 
         # Send notifications at 30, 5, and 3 days before expiry
         hr_group = self.env.ref('hr.group_hr_user')
