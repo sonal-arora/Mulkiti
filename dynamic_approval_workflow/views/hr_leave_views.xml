@@ -68,6 +68,27 @@
     </record>
 
     <!-- ══════════════════════════════════════════════════════════════════
+         LEAVE KANBAN VIEW — fix ribbons for the custom validate1/validate2
+         states. Base Odoo only knows confirm/validate1/validate/cancel/refuse,
+         so cards at our new 'validate2' (HR Approval) state showed NO ribbon
+         at all, and 'validate1' kept the generic base "To Validate" label
+         even though our flow now calls it "Second Approval".
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="hr_leave_view_kanban_multi_approval" model="ir.ui.view">
+        <field name="name">hr.leave.view.kanban.multi.approval</field>
+        <field name="model">hr.leave</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_view_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//widget[@name='web_ribbon'][2]" position="attributes">
+                <attribute name="title">2nd Approval</attribute>
+            </xpath>
+            <xpath expr="//widget[@name='web_ribbon'][2]" position="after">
+                <widget name="web_ribbon" title="HR Approval" bg_color="text-bg-warning" invisible="state != 'validate2'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════════════
          LEAVE LIST VIEW — optional approver columns
     ══════════════════════════════════════════════════════════════════ -->
     <record id="hr_leave_view_list_multi_approval" model="ir.ui.view">
