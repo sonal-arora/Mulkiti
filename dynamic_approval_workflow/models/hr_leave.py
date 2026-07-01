@@ -574,7 +574,7 @@ class HrLeave(models.Model):
                 remaining += leave
 
         if to_validate1:
-            to_validate1.with_context(leave_fast_create=True).write(
+            to_validate1.sudo().with_context(leave_fast_create=True).write(
                 {'state': 'validate1', 'first_approver_id': current_employee.id}
             )
             if not self.env.context.get('leave_fast_create'):
@@ -587,7 +587,7 @@ class HrLeave(models.Model):
                     leave._send_leave_approval_email(second, '2nd Approval')
 
         if to_validate2_direct:
-            to_validate2_direct.with_context(leave_fast_create=True).write(
+            to_validate2_direct.sudo().with_context(leave_fast_create=True).write(
                 {'state': 'validate2', 'first_approver_id': current_employee.id}
             )
             if not self.env.context.get('leave_fast_create'):
@@ -613,9 +613,10 @@ class HrLeave(models.Model):
         """2nd-level approval: validate1 → validate2."""
         for leave in self:
             leave._check_approval_update('validate2')
-        # Use leave_fast_create=True to skip the redundant _check_double_validation_rules
-        # call inside write() — we already validated the user in _check_approval_update above.
-        self.with_context(leave_fast_create=True).write({'state': 'validate2'})
+        # Use sudo() so base Odoo's past-date officer check in write() does not block
+        # the 2nd approver — our _check_approval_update above already verified the user.
+        # leave_fast_create=True skips the redundant _check_double_validation_rules.
+        self.sudo().with_context(leave_fast_create=True).write({'state': 'validate2'})
         if not self.env.context.get('leave_fast_create'):
             self.activity_update()
         for leave in self:
