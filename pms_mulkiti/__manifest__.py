@@ -1,0 +1,23 @@
+{
+    "name": "PMS - Performance Management System",
+    "version": "19.0.1.0.0",
+    "category": "Human Resources",
+    "summary": "Performance Management System for Mulkiti",
+    "author": "Mulkiti",
+    "depends": ["base", "hr", "mail", "dynamic_approval_workflow"],
+    "installable": True,
+    "application": True,
+    "data": [
+        "security/pms_security.xml",
+        "security/ir.model.access.csv",
+        "data/mail_template_data.xml",
+        "views/pms_financial_year_views.xml",
+        "views/pms_rating_views.xml",
+        "views/pms_kra_views.xml",
+        "views/pms_initialize_views.xml",
+        "views/pms_appraisal_views.xml",
+        "views/pms_reject_wizard_views.xml",
+        "views/pms_initialize_cancel_wizard_views.xml",
+        "views/pms_menu_views.xml",
+    ],
+}

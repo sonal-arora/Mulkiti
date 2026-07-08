@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="pms_reject_wizard_view_form" model="ir.ui.view">
+        <field name="name">pms.reject.wizard.form</field>
+        <field name="model">pms.reject.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="appraisal_id" invisible="1"/>
+                <field name="is_cancel" invisible="1"/>
+                <field name="is_reset_draft" invisible="1"/>
+                <group>
+                    <field name="cancel_reason"
+                           placeholder="Enter reason..."
+                           nolabel="1"
+                           widget="text"/>
+                </group>
+                <footer>
+                    <button name="action_confirm"
+                            string="Confirm"
+                            type="object"
+                            class="btn-danger"
+                            invisible="is_reset_draft"/>
+                    <button name="action_confirm"
+                            string="Send Back"
+                            type="object"
+                            class="btn-warning"
+                            invisible="not is_reset_draft"/>
+                    <button string="Discard" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="seq_pms_initialize" model="ir.sequence">
+        <field name="name">PMS Initialize Sequence</field>
+        <field name="code">pms.initialize</field>
+        <field name="prefix">PMS-INIT/</field>
+        <field name="padding">4</field>
+    </record>
+
+    <record id="seq_pms_appraisal" model="ir.sequence">
+        <field name="name">PMS Appraisal Sequence</field>
+        <field name="code">pms.appraisal</field>
+        <field name="prefix">PMS/</field>
+        <field name="padding">5</field>
+    </record>
+</odoo>

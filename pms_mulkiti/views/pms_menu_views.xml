@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Root Menu -->
+    <menuitem id="menu_pms_root"
+              name="PMS"
+              web_icon="pms_mulkiti,static/description/icon.png"
+              groups="pms_mulkiti.group_pms_user"
+              sequence="50"/>
+
+    <!-- My PMS (visible to all users) -->
+    <menuitem id="menu_pms_my"
+              name="My PMS"
+              parent="menu_pms_root"
+              action="action_pms_appraisal_my"
+              groups="pms_mulkiti.group_pms_user"
+              sequence="1"/>
+
+    <!-- Team PMS (visible to managers and head) -->
+    <menuitem id="menu_pms_team"
+              name="Team PMS"
+              parent="menu_pms_root"
+              action="action_pms_appraisal_team"
+              groups="pms_mulkiti.group_pms_manager"
+              sequence="2"/>
+
+    <!-- All PMS (head only) -->
+    <menuitem id="menu_pms_all"
+              name="All PMS Records"
+              parent="menu_pms_root"
+              action="action_pms_appraisal_all"
+              groups="pms_mulkiti.group_pms_head"
+              sequence="3"/>
+
+    <!-- Configuration (head only) -->
+    <menuitem id="menu_pms_config"
+              name="Configuration"
+              parent="menu_pms_root"
+              groups="pms_mulkiti.group_pms_head"
+              sequence="10"/>
+
+    <menuitem id="menu_pms_initialize"
+              name="PMS Initialization"
+              parent="menu_pms_config"
+              action="action_pms_initialize"
+              sequence="1"/>
+
+    <menuitem id="menu_pms_kra"
+              name="KRA Master"
+              parent="menu_pms_config"
+              action="action_pms_kra"
+              sequence="2"/>
+
+    <menuitem id="menu_pms_rating"
+              name="Rating Master"
+              parent="menu_pms_config"
+              action="action_pms_rating"
+              sequence="3"/>
+
+    <menuitem id="menu_pms_financial_year"
+              name="Financial Years"
+              parent="menu_pms_config"
+              action="action_pms_financial_year"
+              sequence="4"/>
+</odoo>

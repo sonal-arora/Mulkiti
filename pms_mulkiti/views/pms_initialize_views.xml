@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="pms_initialize_view_form" model="ir.ui.view">
+        <field name="name">pms.initialize.form</field>
+        <field name="model">pms.initialize</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_initialize"
+                            string="Initialize PMS"
+                            type="object"
+                            class="oe_highlight"
+                            invisible="state != 'draft'"
+                            groups="pms_mulkiti.group_pms_head"/>
+                    <button name="action_cancel"
+                            string="Cancel"
+                            type="object"
+                            class="btn-danger"
+                            invisible="state == 'cancelled'"
+                            groups="pms_mulkiti.group_pms_head"/>
+                    <button name="action_reset_draft"
+                            string="Reset to Draft"
+                            type="object"
+                            invisible="state != 'cancelled'"
+                            groups="pms_mulkiti.group_pms_head"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,initialized,cancelled"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button"
+                                name="action_view_appraisals"
+                                type="object"
+                                icon="fa-users"
+                                invisible="appraisal_count == 0">
+                            <field name="appraisal_count" widget="statinfo" string="PMS Records"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="financial_year_id"
+                                   readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+
+                    <group string="Select Employees">
+                        <field name="employee_ids"
+                               nolabel="1"
+                               readonly="state != 'draft'"
+                               widget="many2many_tags"
+                               domain="[('active','=',True)]"/>
+                    </group>
+
+                    <!-- Cancellation reason -->
+                    <group invisible="state != 'cancelled'">
+                        <field name="cancel_reason" readonly="1"/>
+                    </group>
+
+                    <!-- KRA Preview Table -->
+                    <group string="KRA Preview — Auto-detected by Job Position"
+                           invisible="not employee_ids or not financial_year_id">
+                        <field name="preview_line_ids" nolabel="1">
+                            <list>
+                                <field name="employee_id" readonly="1"
+                                       widget="many2one_avatar_employee"/>
+                                <field name="job_id" readonly="1"/>
+                                <field name="kra_id" readonly="1" string="KRA Assigned"/>
+                                <field name="kra_found" readonly="1"
+                                       widget="boolean"
+                                       string="KRA Found?"
+                                       decoration-success="kra_found == True"
+                                       decoration-danger="kra_found == False"/>
+                            </list>
+                        </field>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="pms_initialize_view_list" model="ir.ui.view">
+        <field name="name">pms.initialize.list</field>
+        <field name="model">pms.initialize</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="financial_year_id"/>
+                <field name="appraisal_count" string="PMS Records"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'initialized'"
+                       decoration-warning="state == 'draft'"
+                       decoration-danger="state == 'cancelled'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_pms_initialize" model="ir.actions.act_window">
+        <field name="name">PMS Initialization</field>
+        <field name="res_model">pms.initialize</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

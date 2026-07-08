@@ -1,0 +1,24 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pms_financial_year_head,pms.financial.year head,pms_mulkiti.model_pms_financial_year,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_financial_year_user,pms.financial.year user,pms_mulkiti.model_pms_financial_year,pms_mulkiti.group_pms_user,1,0,0,0
+access_pms_initialize_preview_head,pms.initialize.preview head,pms_mulkiti.model_pms_initialize_preview,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_initialize_preview_manager,pms.initialize.preview manager,pms_mulkiti.model_pms_initialize_preview,pms_mulkiti.group_pms_manager,1,0,0,0
+access_pms_initialize_preview_user,pms.initialize.preview user,pms_mulkiti.model_pms_initialize_preview,pms_mulkiti.group_pms_user,1,0,0,0
+access_pms_rating_head,pms.rating head,pms_mulkiti.model_pms_rating,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_rating_user,pms.rating user,pms_mulkiti.model_pms_rating,pms_mulkiti.group_pms_user,1,0,0,0
+access_pms_kra_head,pms.kra head,pms_mulkiti.model_pms_kra,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_kra_manager,pms.kra manager,pms_mulkiti.model_pms_kra,pms_mulkiti.group_pms_manager,1,0,0,0
+access_pms_kra_user,pms.kra user,pms_mulkiti.model_pms_kra,pms_mulkiti.group_pms_user,1,0,0,0
+access_pms_kra_line_head,pms.kra.line head,pms_mulkiti.model_pms_kra_line,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_kra_line_manager,pms.kra.line manager,pms_mulkiti.model_pms_kra_line,pms_mulkiti.group_pms_manager,1,0,0,0
+access_pms_kra_line_user,pms.kra.line user,pms_mulkiti.model_pms_kra_line,pms_mulkiti.group_pms_user,1,0,0,0
+access_pms_initialize_head,pms.initialize head,pms_mulkiti.model_pms_initialize,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_appraisal_head,pms.appraisal head,pms_mulkiti.model_pms_appraisal,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_appraisal_manager,pms.appraisal manager,pms_mulkiti.model_pms_appraisal,pms_mulkiti.group_pms_manager,1,1,0,0
+access_pms_appraisal_user,pms.appraisal user,pms_mulkiti.model_pms_appraisal,pms_mulkiti.group_pms_user,1,1,0,0
+access_pms_appraisal_line_head,pms.appraisal.line head,pms_mulkiti.model_pms_appraisal_line,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_appraisal_line_manager,pms.appraisal.line manager,pms_mulkiti.model_pms_appraisal_line,pms_mulkiti.group_pms_manager,1,1,0,0
+access_pms_appraisal_line_user,pms.appraisal.line user,pms_mulkiti.model_pms_appraisal_line,pms_mulkiti.group_pms_user,1,1,0,0
+access_pms_reject_wizard_head,pms.reject.wizard head,pms_mulkiti.model_pms_reject_wizard,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_reject_wizard_manager,pms.reject.wizard manager,pms_mulkiti.model_pms_reject_wizard,pms_mulkiti.group_pms_manager,1,1,1,1
+access_pms_init_cancel_wizard_head,pms.initialize.cancel.wizard head,pms_mulkiti.model_pms_initialize_cancel_wizard,pms_mulkiti.group_pms_head,1,1,1,1
