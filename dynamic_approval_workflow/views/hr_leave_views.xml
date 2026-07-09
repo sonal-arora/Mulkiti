@@ -85,6 +85,44 @@
             <xpath expr="//widget[@name='web_ribbon'][2]" position="after">
                 <widget name="web_ribbon" title="HR Approval" bg_color="text-bg-warning" invisible="state != 'validate2'"/>
             </xpath>
+
+            <!-- Fetch can_validate2 so kanban templates can read it -->
+            <xpath expr="//field[@name='can_refuse']" position="after">
+                <field name="can_validate2"/>
+            </xpath>
+
+            <!-- Force the action-button row to stay on a single line instead of
+                 wrapping "2nd Approve" above "Refuse". Tighter gap/padding frees
+                 up the extra width the smaller buttons need. -->
+            <xpath expr="//div[hasclass('o_hr_holidays_button')]" position="attributes">
+                <attribute name="class" add="flex-nowrap align-items-center" remove="flex-wrap pe-4 gap-2" separator=" "/>
+                <attribute name="class" add="pe-1 gap-1" separator=" "/>
+            </xpath>
+
+            <!-- Shrink Refuse to match the smaller "2nd Approve" button so both
+                 sit at the same height on the same row. -->
+            <xpath expr="//div[hasclass('o_hr_holidays_button')]/button[@name='action_refuse']" position="attributes">
+                <attribute name="class" add="btn-sm" separator=" "/>
+            </xpath>
+
+            <!-- Desktop card: Second Approve button, before Refuse.
+                 btn-sm keeps it the same height as Refuse so the row stays on
+                 one line instead of wrapping under the top-right ribbon. -->
+            <xpath expr="//div[hasclass('o_hr_holidays_button')]/button[@name='action_refuse']" position="before">
+                <button
+                    name="action_second_approve" type="object" class="btn btn-sm btn-primary text-nowrap"
+                    t-if="record.can_validate2.raw_value">
+                    2nd Approve
+                </button>
+            </xpath>
+
+            <!-- Mobile card: Second Approve button, before Refuse -->
+            <xpath expr="//bottom/button[@name='action_refuse']" position="before">
+                <button t-if="record.can_validate2.raw_value" name="action_second_approve" type="object" class="btn btn-sm btn-primary py-0"
+                    groups="hr_holidays.group_hr_holidays_user">
+                    2nd Approve
+                </button>
+            </xpath>
         </field>
     </record>
 
@@ -99,6 +137,23 @@
             <xpath expr="//field[@name='employee_id']" position="after">
                 <field name="x_leave_approver_1_id" optional="hide" string="1st Approver"/>
                 <field name="x_leave_approver_2_id" optional="hide" string="2nd Approver"/>
+            </xpath>
+
+            <!-- Header: bulk "Second Approve" action for selected rows -->
+            <xpath expr="//list/header/button[@name='action_refuse']" position="before">
+                <button type="object"
+                    name="action_second_approve"
+                    string="Second Approve"
+                    icon="fa-thumbs-up"
+                    class="btn btn-outline-success"
+                />
+            </xpath>
+
+            <!-- Row-level: "Second Approve" button, before Refuse -->
+            <xpath expr="//list/button[@name='action_refuse'][@invisible='not can_refuse']" position="before">
+                <button string="Second Approve" name="action_second_approve" type="object"
+                    icon="fa-thumbs-up"
+                    invisible="not can_validate2"/>
             </xpath>
         </field>
     </record>
