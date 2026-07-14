@@ -498,12 +498,21 @@ class PmsAppraisalLine(models.Model):
 
     # ── Employee self-assessment ──────────────────────────────────────────
     self_rating_id = fields.Many2one("pms.rating", string="Self Rating")
+    self_rating_description = fields.Text(
+        related="self_rating_id.description", string="Self Rating Description", readonly=True
+    )
     self_comments = fields.Text(string="Self Comments")
 
     # ── Manager rating ────────────────────────────────────────────────────
     manager_rating_id = fields.Many2one("pms.rating", string="Manager Rating")
+    manager_rating_description = fields.Text(
+        related="manager_rating_id.description", string="Manager Rating Description", readonly=True
+    )
     manager_comments = fields.Text(string="Manager Comments")
 
     # ── 2nd Approver rating ───────────────────────────────────────────────
     second_rating_id = fields.Many2one("pms.rating", string="2nd Approver Rating")
+    second_rating_description = fields.Text(
+        related="second_rating_id.description", string="2nd Approver Rating Description", readonly=True
+    )
     second_comments = fields.Text(string="2nd Approver Comments")

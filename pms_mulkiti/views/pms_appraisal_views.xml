@@ -87,12 +87,13 @@
                             <field name="line_ids" nolabel="1">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
-                                    <field name="job_responsibility" readonly="1" string="KRA / Responsibility"/>
-                                    <field name="deliverable" readonly="1"/>
+                                    <field name="job_responsibility" readonly="1" string="KRA / Responsibility" class="text-wrap"/>
+                                    <field name="deliverable" readonly="1" class="text-wrap"/>
 
                                     <!-- Employee fills self rating/comments (only in draft) -->
                                     <field name="self_rating_id"
                                            readonly="parent.state != 'draft' or not parent.is_own_record"/>
+                                    <field name="self_rating_description" readonly="1" optional="show"/>
                                     <field name="self_comments"
                                            readonly="parent.state != 'draft' or not parent.is_own_record"
                                            optional="hide"/>
@@ -101,6 +102,7 @@
                                     <field name="manager_rating_id"
                                            readonly="parent.state != 'submitted' or not parent.can_manager_approve"
                                            optional="show"/>
+                                    <field name="manager_rating_description" readonly="1" optional="show"/>
                                     <field name="manager_comments"
                                            readonly="parent.state != 'submitted' or not parent.can_manager_approve"
                                            optional="hide"/>
@@ -108,12 +110,11 @@
                                     <!-- 2nd approver fills (only in manager_review) -->
                                     <field name="second_rating_id"
                                            readonly="parent.state != 'manager_review' or not parent.can_second_approve"
-                                           optional="show"
-                                           groups="pms_mulkiti.group_pms_manager"/>
+                                           optional="show"/>
+                                    <field name="second_rating_description" readonly="1" optional="show"/>
                                     <field name="second_comments"
                                            readonly="parent.state != 'manager_review' or not parent.can_second_approve"
-                                           optional="hide"
-                                           groups="pms_mulkiti.group_pms_manager"/>
+                                           optional="hide"/>
                                 </list>
                             </field>
                         </page>
@@ -125,8 +126,7 @@
                                 <field name="overall_manager_comments"
                                        readonly="state != 'submitted' or not can_manager_approve"/>
                                 <field name="overall_second_comments"
-                                       readonly="state != 'manager_review' or not can_second_approve"
-                                       groups="pms_mulkiti.group_pms_manager"/>
+                                       readonly="state != 'manager_review' or not can_second_approve"/>
                             </group>
                         </page>
                     </notebook>
