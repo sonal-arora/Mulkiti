@@ -86,12 +86,18 @@ class PmsInitialize(models.Model):
                     ("company_id", "=", rec.company_id.id),
                 ], limit=1) if emp.job_id else False
 
+                attitude = self.env["pms.attitude"].search([
+                    ("financial_year_id", "=", rec.financial_year_id.id),
+                ], limit=1)
+
                 lines.append(self.env["pms.initialize.preview"].create({
                     "initialize_id": rec.id,
                     "employee_id": emp.id,
                     "job_id": emp.job_id.id if emp.job_id else False,
                     "kra_id": kra.id if kra else False,
                     "kra_found": bool(kra),
+                    "attitude_id": attitude.id if attitude else False,
+                    "attitude_found": bool(attitude),
                 }).id)
             rec.preview_line_ids = lines
 
@@ -116,6 +122,7 @@ class PmsInitialize(models.Model):
         created = 0
         skipped = 0
         no_kra = []
+        no_attitude = []
 
         for employee in self.employee_ids:
             # Check across ALL initializations for same employee + financial year
@@ -141,13 +148,23 @@ class PmsInitialize(models.Model):
                 no_kra.append(employee.name)
                 continue
 
+            attitude = self.env["pms.attitude"].search([
+                ("financial_year_id", "=", self.financial_year_id.id),
+            ], limit=1)
+
+            if not attitude:
+                no_attitude.append(employee.name)
+                continue
+
             appraisal = self.env["pms.appraisal"].create({
                 "employee_id": employee.id,
                 "initialize_id": self.id,
                 "financial_year_id": self.financial_year_id.id,
                 "kra_id": kra.id,
+                "attitude_id": attitude.id,
             })
             appraisal._populate_kra_lines()
+            appraisal._populate_attitude_lines()
             created += 1
 
             if appraisal.employee_user_id:
@@ -164,8 +181,10 @@ class PmsInitialize(models.Model):
             msg += _(" ⚠️ %d employee(s) skipped — PMS already exists for this Financial Year.") % skipped
         if no_kra:
             msg += _(" ⚠️ No KRA found for: %s") % ", ".join(no_kra)
+        if no_attitude:
+            msg += _(" ⚠️ No Work Attitude and Behavior found for: %s") % ", ".join(no_attitude)
 
-        notif_type = "warning" if no_kra else "success"
+        notif_type = "warning" if (no_kra or no_attitude) else "success"
         return {
             "type": "ir.actions.client",
             "tag": "display_notification",
@@ -174,6 +193,7 @@ class PmsInitialize(models.Model):
                 "message": msg,
                 "type": notif_type,
                 "sticky": bool(no_kra),
+                "next": {"type": "ir.actions.client", "tag": "soft_reload"},
             },
         }
 
@@ -259,3 +279,7 @@ class PmsInitializePreview(models.TransientModel):
     job_id = fields.Many2one("hr.job", string="Job Position", readonly=True)
     kra_id = fields.Many2one("pms.kra", string="KRA Assigned", readonly=True)
     kra_found = fields.Boolean(string="KRA Found", readonly=True)
+    attitude_id = fields.Many2one(
+        "pms.attitude", string="Work Attitude and Behavior Assigned", readonly=True
+    )
+    attitude_found = fields.Boolean(string="Work Attitude and Behavior Found", readonly=True)

@@ -92,6 +92,11 @@ class PmsAppraisal(models.Model):
         string="KRA",
         required=True,
     )
+    attitude_id = fields.Many2one(
+        "pms.attitude",
+        string="Work Attitude and Behavior",
+        required=True,
+    )
     # ── State ───────────────────────────────────────────────────────────────
     state = fields.Selection(
         [
@@ -114,10 +119,25 @@ class PmsAppraisal(models.Model):
         "appraisal_id",
         string="KRA Lines",
     )
+    attitude_line_ids = fields.One2many(
+        "pms.appraisal.attitude.line",
+        "appraisal_id",
+        string="Attitude & Behavior Lines",
+    )
+    incident_line_ids = fields.One2many(
+        "pms.appraisal.incident.line",
+        "appraisal_id",
+        string="Mistakes, Complaints & Incidents",
+    )
     # ── Overall comments ─────────────────────────────────────────────────────
     overall_self_comments = fields.Text(string="Overall Self Comments")
     overall_manager_comments = fields.Text(string="Overall Manager Comments")
     overall_second_comments = fields.Text(string="Overall 2nd Approver Comments")
+    general_comments = fields.Text(string="Comments and Suggestions")
+    # ── Sign-off ──────────────────────────────────────────────────────────────
+    employee_signature = fields.Binary(string="Employee Signature")
+    manager_signature = fields.Binary(string="Manager's Signature")
+    owner_signature = fields.Binary(string="Owner's Signature")
     # ── Dates ───────────────────────────────────────────────────────────────
     submit_date = fields.Date(string="Submitted On", readonly=True)
     manager_review_date = fields.Date(string="Manager Reviewed On", readonly=True)
@@ -199,6 +219,20 @@ class PmsAppraisal(models.Model):
         if lines:
             self.env["pms.appraisal.line"].create(lines)
 
+    def _populate_attitude_lines(self):
+        """Auto-create appraisal attitude lines from Work Attitude and Behavior lines."""
+        self.ensure_one()
+        lines = []
+        for attitude_line in self.attitude_id.line_ids:
+            lines.append({
+                "appraisal_id": self.id,
+                "attitude_line_id": attitude_line.id,
+                "name": attitude_line.name,
+                "description": attitude_line.description,
+            })
+        if lines:
+            self.env["pms.appraisal.attitude.line"].create(lines)
+
     # ── Workflow actions ──────────────────────────────────────────────────────
 
     def action_submit(self):
@@ -208,10 +242,15 @@ class PmsAppraisal(models.Model):
             raise UserError(_("Only draft PMS can be submitted."))
         if not self.line_ids:
             raise UserError(_("No KRA lines found. Please contact PMS Head."))
+        if not self.attitude_line_ids:
+            raise UserError(_("No Work Attitude and Behavior lines found. Please contact PMS Head."))
         # Check all self ratings filled
         unfilled = self.line_ids.filtered(lambda l: not l.self_rating_id)
         if unfilled:
             raise UserError(_("Please fill self-rating for all KRA lines before submitting."))
+        unfilled_attitude = self.attitude_line_ids.filtered(lambda l: not l.self_rating_id)
+        if unfilled_attitude:
+            raise UserError(_("Please fill self-rating for all Work Attitude and Behavior lines before submitting."))
 
         self.write({
             "state": "submitted",
@@ -240,6 +279,9 @@ class PmsAppraisal(models.Model):
         unfilled = self.line_ids.filtered(lambda l: not l.manager_rating_id)
         if unfilled:
             raise UserError(_("Please fill manager-rating for all KRA lines."))
+        unfilled_attitude = self.attitude_line_ids.filtered(lambda l: not l.manager_rating_id)
+        if unfilled_attitude:
+            raise UserError(_("Please fill manager-rating for all Work Attitude and Behavior lines."))
 
         self.write({
             "state": "manager_review",
@@ -325,6 +367,18 @@ class PmsAppraisal(models.Model):
         """Head only — reset without reason (from rejected/approved)."""
         self.ensure_one()
         self.write({"state": "draft", "cancel_reason": False})
+
+    def action_export_xlsx_report(self):
+        """Export a detailed Excel report — only for Approved PMS records."""
+        approved = self.filtered(lambda a: a.state == "approved")
+        if not approved:
+            raise UserError(_("Please select at least one Approved PMS record to export."))
+        ids_str = ",".join(str(i) for i in approved.ids)
+        return {
+            "type": "ir.actions.act_url",
+            "url": f"/pms/appraisal/export_xlsx?ids={ids_str}",
+            "target": "self",
+        }
 
     def action_reset_to_draft_with_reason(self):
         """Manager button — reset submitted PMS back to draft with reason."""
@@ -495,6 +549,57 @@ class PmsAppraisalLine(models.Model):
         readonly=True,
     )
     deliverable = fields.Text(string="Key Deliverable / Target", readonly=True)
+
+    # ── Employee self-assessment ──────────────────────────────────────────
+    self_rating_id = fields.Many2one("pms.rating", string="Self Rating")
+    self_rating_description = fields.Text(
+        related="self_rating_id.description", string="Self Rating Description", readonly=True
+    )
+    self_comments = fields.Text(string="Self Comments")
+
+    # ── Manager rating ────────────────────────────────────────────────────
+    manager_rating_id = fields.Many2one("pms.rating", string="Manager Rating")
+    manager_rating_description = fields.Text(
+        related="manager_rating_id.description", string="Manager Rating Description", readonly=True
+    )
+    manager_comments = fields.Text(string="Manager Comments")
+
+    # ── 2nd Approver rating ───────────────────────────────────────────────
+    second_rating_id = fields.Many2one("pms.rating", string="2nd Approver Rating")
+    second_rating_description = fields.Text(
+        related="second_rating_id.description", string="2nd Approver Rating Description", readonly=True
+    )
+    second_comments = fields.Text(string="2nd Approver Comments")
+
+
+class PmsAppraisalIncidentLine(models.Model):
+    _name = "pms.appraisal.incident.line"
+    _description = "PMS Appraisal Mistake, Complaint & Incident Line"
+    _order = "date desc, id desc"
+
+    appraisal_id = fields.Many2one(
+        "pms.appraisal", required=True, ondelete="cascade"
+    )
+    date = fields.Date(string="Date")
+    description = fields.Text(string="Description")
+    impact = fields.Text(string="Impact")
+    action_taken = fields.Text(string="Action Taken")
+
+
+class PmsAppraisalAttitudeLine(models.Model):
+    _name = "pms.appraisal.attitude.line"
+    _description = "PMS Appraisal Attitude Line"
+    _order = "sequence, id"
+
+    appraisal_id = fields.Many2one(
+        "pms.appraisal", required=True, ondelete="cascade"
+    )
+    attitude_line_id = fields.Many2one("pms.attitude.line", string="Attitude Line")
+    sequence = fields.Integer(related="attitude_line_id.sequence", store=True)
+
+    # ── Readonly fields from Work Attitude and Behavior Master ─────────────
+    name = fields.Char(string="Name", readonly=True)
+    description = fields.Text(string="Description", readonly=True)
 
     # ── Employee self-assessment ──────────────────────────────────────────
     self_rating_id = fields.Many2one("pms.rating", string="Self Rating")

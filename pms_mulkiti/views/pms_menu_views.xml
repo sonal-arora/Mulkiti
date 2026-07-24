@@ -50,15 +50,21 @@
               action="action_pms_kra"
               sequence="2"/>
 
+    <menuitem id="menu_pms_attitude"
+              name="Work Attitude and Behavior Master"
+              parent="menu_pms_config"
+              action="action_pms_attitude"
+              sequence="3"/>
+
     <menuitem id="menu_pms_rating"
               name="Rating Master"
               parent="menu_pms_config"
               action="action_pms_rating"
-              sequence="3"/>
+              sequence="4"/>
 
     <menuitem id="menu_pms_financial_year"
               name="Financial Years"
               parent="menu_pms_config"
               action="action_pms_financial_year"
-              sequence="4"/>
+              sequence="5"/>
 </odoo>

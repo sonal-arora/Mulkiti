@@ -51,6 +51,13 @@
                             invisible="state not in ['rejected','approved']"
                             groups="pms_mulkiti.group_pms_head"/>
 
+                    <!-- Export Excel Report (only once approved) -->
+                    <button name="action_export_xlsx_report"
+                            string="Export Excel Report"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state != 'approved'"/>
+
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,submitted,manager_review,second_review,approved"/>
                 </header>
@@ -72,6 +79,7 @@
                             <field name="manager_id" readonly="1"/>
                             <field name="second_manager_id" readonly="1"/>
                             <field name="kra_id" readonly="1"/>
+                            <field name="attitude_id" readonly="1"/>
                             <field name="submit_date" readonly="1"
                                    invisible="not submit_date"/>
                             <field name="manager_review_date" readonly="1"
@@ -119,6 +127,53 @@
                             </field>
                         </page>
 
+                        <page string="Work Attitude &amp; Behavior" name="attitude_lines">
+                            <field name="attitude_line_ids" nolabel="1">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name" readonly="1" class="text-wrap"/>
+                                    <field name="description" readonly="1" class="text-wrap"/>
+
+                                    <!-- Employee fills self rating/comments (only in draft) -->
+                                    <field name="self_rating_id"
+                                           readonly="parent.state != 'draft' or not parent.is_own_record"/>
+                                    <field name="self_rating_description" readonly="1" optional="show"/>
+                                    <field name="self_comments"
+                                           readonly="parent.state != 'draft' or not parent.is_own_record"
+                                           optional="hide"/>
+
+                                    <!-- Manager fills (only in submitted state) -->
+                                    <field name="manager_rating_id"
+                                           readonly="parent.state != 'submitted' or not parent.can_manager_approve"
+                                           optional="show"/>
+                                    <field name="manager_rating_description" readonly="1" optional="show"/>
+                                    <field name="manager_comments"
+                                           readonly="parent.state != 'submitted' or not parent.can_manager_approve"
+                                           optional="hide"/>
+
+                                    <!-- 2nd approver fills (only in manager_review) -->
+                                    <field name="second_rating_id"
+                                           readonly="parent.state != 'manager_review' or not parent.can_second_approve"
+                                           optional="show"/>
+                                    <field name="second_rating_description" readonly="1" optional="show"/>
+                                    <field name="second_comments"
+                                           readonly="parent.state != 'manager_review' or not parent.can_second_approve"
+                                           optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="Incidents" name="incident_lines">
+                            <field name="incident_line_ids" nolabel="1">
+                                <list editable="bottom">
+                                    <field name="date"/>
+                                    <field name="description"/>
+                                    <field name="impact"/>
+                                    <field name="action_taken"/>
+                                </list>
+                            </field>
+                        </page>
+
                         <page string="Overall Comments" name="overall_comments">
                             <group>
                                 <field name="overall_self_comments"
@@ -126,6 +181,23 @@
                                 <field name="overall_manager_comments"
                                        readonly="state != 'submitted' or not can_manager_approve"/>
                                 <field name="overall_second_comments"
+                                       readonly="state != 'manager_review' or not can_second_approve"/>
+                            </group>
+                            <group string="Comments and Suggestions">
+                                <field name="general_comments" nolabel="1"/>
+                            </group>
+                            <group string="Sign-off">
+                                <field name="employee_signature" widget="signature"
+                                       options="{'full_name': 'employee_id'}"
+                                       string="Employee Signature"
+                                       readonly="state != 'draft' or not is_own_record"/>
+                                <field name="manager_signature" widget="signature"
+                                       options="{'full_name': 'manager_id'}"
+                                       string="Manager's Signature"
+                                       readonly="state != 'submitted' or not can_manager_approve"/>
+                                <field name="owner_signature" widget="signature"
+                                       options="{'full_name': 'second_manager_id'}"
+                                       string="Owner's Signature"
                                        readonly="state != 'manager_review' or not can_second_approve"/>
                             </group>
                         </page>
@@ -162,11 +234,18 @@
                   decoration-warning="state in ('submitted','manager_review','second_review')"
                   decoration-danger="state in ('rejected','cancelled')"
                   decoration-muted="state == 'cancelled'">
+                <header>
+                    <button name="action_export_xlsx_report"
+                            type="object"
+                            string="Export Excel Report"
+                            class="btn-secondary"/>
+                </header>
                 <field name="name"/>
                 <field name="employee_id" widget="many2one_avatar_employee"/>
                 <field name="department_id"/>
                 <field name="financial_year_id"/>
                 <field name="kra_id"/>
+                <field name="attitude_id"/>
                 <field name="manager_id"/>
                 <field name="submit_date"/>
                 <field name="state" widget="badge"
@@ -188,6 +267,7 @@
                 <field name="employee_id"/>
                 <field name="financial_year_id"/>
                 <field name="kra_id"/>
+                <field name="attitude_id"/>
                 <field name="department_id"/>
                 <!-- Quick filters -->
                 <filter string="My PMS" name="my_pms"

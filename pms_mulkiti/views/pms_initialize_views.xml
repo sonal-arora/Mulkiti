@@ -60,8 +60,8 @@
                         <field name="cancel_reason" readonly="1"/>
                     </group>
 
-                    <!-- KRA Preview Table -->
-                    <group string="KRA Preview — Auto-detected by Job Position"
+                    <!-- KRA & Work Attitude Preview Table -->
+                    <group string="KRA &amp; Work Attitude Preview — Auto-detected by Job Position / Financial Year"
                            invisible="not employee_ids or not financial_year_id">
                         <field name="preview_line_ids" nolabel="1">
                             <list>
@@ -74,6 +74,12 @@
                                        string="KRA Found?"
                                        decoration-success="kra_found == True"
                                        decoration-danger="kra_found == False"/>
+                                <field name="attitude_id" readonly="1" string="Work Attitude and Behavior Assigned"/>
+                                <field name="attitude_found" readonly="1"
+                                       widget="boolean"
+                                       string="Work Attitude Found?"
+                                       decoration-success="attitude_found == True"
+                                       decoration-danger="attitude_found == False"/>
                             </list>
                         </field>
                     </group>
