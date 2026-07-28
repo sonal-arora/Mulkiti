@@ -97,6 +97,15 @@ class PmsAppraisal(models.Model):
         string="Work Attitude and Behavior",
         required=True,
     )
+    training_id = fields.Many2one(
+        "pms.training",
+        string="Training",
+    )
+    rating_legend_ids = fields.Many2many(
+        "pms.rating",
+        compute="_compute_rating_legend",
+        string="Rating Legend",
+    )
     # ── State ───────────────────────────────────────────────────────────────
     state = fields.Selection(
         [
@@ -129,6 +138,13 @@ class PmsAppraisal(models.Model):
         "appraisal_id",
         string="Mistakes, Complaints & Incidents",
     )
+    additional_tasks_initiatives = fields.Text(string="Additional Tasks and Initiatives")
+    training_line_ids = fields.One2many(
+        "pms.appraisal.training.line",
+        "appraisal_id",
+        string="Training Lines",
+    )
+    training_comments = fields.Text(string="Training Comments")
     # ── Overall comments ─────────────────────────────────────────────────────
     overall_self_comments = fields.Text(string="Overall Self Comments")
     overall_manager_comments = fields.Text(string="Overall Manager Comments")
@@ -149,6 +165,11 @@ class PmsAppraisal(models.Model):
     can_second_approve = fields.Boolean(compute="_compute_visibility")
     can_reject = fields.Boolean(compute="_compute_visibility")
     is_own_record = fields.Boolean(compute="_compute_visibility")
+
+    def _compute_rating_legend(self):
+        ratings = self.env["pms.rating"].search([])
+        for rec in self:
+            rec.rating_legend_ids = ratings
 
     # ── Compute approvers from employee ─────────────────────────────────────
 
@@ -233,6 +254,19 @@ class PmsAppraisal(models.Model):
         if lines:
             self.env["pms.appraisal.attitude.line"].create(lines)
 
+    def _populate_training_lines(self):
+        """Auto-create appraisal training lines from Training master lines."""
+        self.ensure_one()
+        lines = []
+        for training_line in self.training_id.line_ids:
+            lines.append({
+                "appraisal_id": self.id,
+                "training_line_id": training_line.id,
+                "training": training_line.name,
+            })
+        if lines:
+            self.env["pms.appraisal.training.line"].create(lines)
+
     # ── Workflow actions ──────────────────────────────────────────────────────
 
     def action_submit(self):
@@ -251,6 +285,17 @@ class PmsAppraisal(models.Model):
         unfilled_attitude = self.attitude_line_ids.filtered(lambda l: not l.self_rating_id)
         if unfilled_attitude:
             raise UserError(_("Please fill self-rating for all Work Attitude and Behavior lines before submitting."))
+        if not self.overall_self_comments:
+            raise UserError(_("Please fill Overall Self Comments before submitting."))
+        if self.training_line_ids:
+            any_checked = self.training_line_ids.filtered(
+                lambda l: l.want_to_learn or l.have_complete_knowledge or l.want_to_become_trainer
+            )
+            if not any_checked and not self.training_comments:
+                raise UserError(_(
+                    "Please tick at least one option in the Training lines "
+                    "or fill Training Comments before submitting."
+                ))
 
         self.write({
             "state": "submitted",
@@ -282,6 +327,8 @@ class PmsAppraisal(models.Model):
         unfilled_attitude = self.attitude_line_ids.filtered(lambda l: not l.manager_rating_id)
         if unfilled_attitude:
             raise UserError(_("Please fill manager-rating for all Work Attitude and Behavior lines."))
+        if not self.overall_manager_comments:
+            raise UserError(_("Please fill Overall Manager Comments before approving."))
 
         self.write({
             "state": "manager_review",
@@ -308,6 +355,8 @@ class PmsAppraisal(models.Model):
         self.ensure_one()
         if self.state != "manager_review":
             raise UserError(_("PMS must be in 'Manager Review' state for 2nd approval."))
+        if not self.overall_second_comments:
+            raise UserError(_("Please fill Overall 2nd Approver Comments before approving."))
 
         self.write({
             "state": "approved",
@@ -471,8 +520,8 @@ class PmsAppraisal(models.Model):
 
     def _get_pms_head_user(self):
         group = self.env.ref("pms_mulkiti.group_pms_head", raise_if_not_found=False)
-        if group and group.users:
-            return group.users[:1]
+        if group and group.all_user_ids:
+            return group.all_user_ids[:1]
         return False
 
     def _email_body(self, status):
@@ -552,23 +601,14 @@ class PmsAppraisalLine(models.Model):
 
     # ── Employee self-assessment ──────────────────────────────────────────
     self_rating_id = fields.Many2one("pms.rating", string="Self Rating")
-    self_rating_description = fields.Text(
-        related="self_rating_id.description", string="Self Rating Description", readonly=True
-    )
     self_comments = fields.Text(string="Self Comments")
 
     # ── Manager rating ────────────────────────────────────────────────────
     manager_rating_id = fields.Many2one("pms.rating", string="Manager Rating")
-    manager_rating_description = fields.Text(
-        related="manager_rating_id.description", string="Manager Rating Description", readonly=True
-    )
     manager_comments = fields.Text(string="Manager Comments")
 
     # ── 2nd Approver rating ───────────────────────────────────────────────
     second_rating_id = fields.Many2one("pms.rating", string="2nd Approver Rating")
-    second_rating_description = fields.Text(
-        related="second_rating_id.description", string="2nd Approver Rating Description", readonly=True
-    )
     second_comments = fields.Text(string="2nd Approver Comments")
 
 
@@ -603,21 +643,30 @@ class PmsAppraisalAttitudeLine(models.Model):
 
     # ── Employee self-assessment ──────────────────────────────────────────
     self_rating_id = fields.Many2one("pms.rating", string="Self Rating")
-    self_rating_description = fields.Text(
-        related="self_rating_id.description", string="Self Rating Description", readonly=True
-    )
     self_comments = fields.Text(string="Self Comments")
 
     # ── Manager rating ────────────────────────────────────────────────────
     manager_rating_id = fields.Many2one("pms.rating", string="Manager Rating")
-    manager_rating_description = fields.Text(
-        related="manager_rating_id.description", string="Manager Rating Description", readonly=True
-    )
     manager_comments = fields.Text(string="Manager Comments")
 
     # ── 2nd Approver rating ───────────────────────────────────────────────
     second_rating_id = fields.Many2one("pms.rating", string="2nd Approver Rating")
-    second_rating_description = fields.Text(
-        related="second_rating_id.description", string="2nd Approver Rating Description", readonly=True
-    )
     second_comments = fields.Text(string="2nd Approver Comments")
+
+
+class PmsAppraisalTrainingLine(models.Model):
+    _name = "pms.appraisal.training.line"
+    _description = "PMS Appraisal Training Line"
+    _order = "sequence, id"
+
+    appraisal_id = fields.Many2one(
+        "pms.appraisal", required=True, ondelete="cascade"
+    )
+    training_line_id = fields.Many2one("pms.training.line", string="Training Line")
+    sequence = fields.Integer(related="training_line_id.sequence", store=True)
+    training = fields.Char(string="Training", readonly=True)
+
+    # ── Employee self-assessment ──────────────────────────────────────────
+    want_to_learn = fields.Boolean(string="I want to learn")
+    have_complete_knowledge = fields.Boolean(string="I have complete Knowledge")
+    want_to_become_trainer = fields.Boolean(string="I want to become trainer")

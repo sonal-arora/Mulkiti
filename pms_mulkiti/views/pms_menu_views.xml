@@ -67,4 +67,10 @@
               parent="menu_pms_config"
               action="action_pms_financial_year"
               sequence="5"/>
+
+    <menuitem id="menu_pms_training"
+              name="Training Master"
+              parent="menu_pms_config"
+              action="action_pms_training"
+              sequence="6"/>
 </odoo>

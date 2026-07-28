@@ -31,6 +31,15 @@ access_pms_appraisal_attitude_line_user,pms.appraisal.attitude.line user,pms_mul
 access_pms_appraisal_incident_line_head,pms.appraisal.incident.line head,pms_mulkiti.model_pms_appraisal_incident_line,pms_mulkiti.group_pms_head,1,1,1,1
 access_pms_appraisal_incident_line_manager,pms.appraisal.incident.line manager,pms_mulkiti.model_pms_appraisal_incident_line,pms_mulkiti.group_pms_manager,1,1,1,1
 access_pms_appraisal_incident_line_user,pms.appraisal.incident.line user,pms_mulkiti.model_pms_appraisal_incident_line,pms_mulkiti.group_pms_user,1,1,1,1
+access_pms_appraisal_training_line_head,pms.appraisal.training.line head,pms_mulkiti.model_pms_appraisal_training_line,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_appraisal_training_line_manager,pms.appraisal.training.line manager,pms_mulkiti.model_pms_appraisal_training_line,pms_mulkiti.group_pms_manager,1,1,0,0
+access_pms_appraisal_training_line_user,pms.appraisal.training.line user,pms_mulkiti.model_pms_appraisal_training_line,pms_mulkiti.group_pms_user,1,1,0,0
 access_pms_reject_wizard_head,pms.reject.wizard head,pms_mulkiti.model_pms_reject_wizard,pms_mulkiti.group_pms_head,1,1,1,1
 access_pms_reject_wizard_manager,pms.reject.wizard manager,pms_mulkiti.model_pms_reject_wizard,pms_mulkiti.group_pms_manager,1,1,1,1
 access_pms_init_cancel_wizard_head,pms.initialize.cancel.wizard head,pms_mulkiti.model_pms_initialize_cancel_wizard,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_training_head,pms.training head,pms_mulkiti.model_pms_training,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_training_manager,pms.training manager,pms_mulkiti.model_pms_training,pms_mulkiti.group_pms_manager,1,0,0,0
+access_pms_training_user,pms.training user,pms_mulkiti.model_pms_training,pms_mulkiti.group_pms_user,1,0,0,0
+access_pms_training_line_head,pms.training.line head,pms_mulkiti.model_pms_training_line,pms_mulkiti.group_pms_head,1,1,1,1
+access_pms_training_line_manager,pms.training.line manager,pms_mulkiti.model_pms_training_line,pms_mulkiti.group_pms_manager,1,0,0,0
+access_pms_training_line_user,pms.training.line user,pms_mulkiti.model_pms_training_line,pms_mulkiti.group_pms_user,1,0,0,0

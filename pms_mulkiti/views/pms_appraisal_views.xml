@@ -80,6 +80,7 @@
                             <field name="second_manager_id" readonly="1"/>
                             <field name="kra_id" readonly="1"/>
                             <field name="attitude_id" readonly="1"/>
+                            <field name="training_id" readonly="1" invisible="not training_id"/>
                             <field name="submit_date" readonly="1"
                                    invisible="not submit_date"/>
                             <field name="manager_review_date" readonly="1"
@@ -89,11 +90,21 @@
                         </group>
                     </group>
 
+                    <!-- Rating Legend: reference for filling ratings below -->
+                    <group string="Rating Legend" name="rating_legend">
+                        <field name="rating_legend_ids" nolabel="1" readonly="1">
+                            <list create="false" edit="false" delete="false">
+                                <field name="name"/>
+                                <field name="description"/>
+                            </list>
+                        </field>
+                    </group>
+
                     <!-- KRA Lines -->
                     <notebook>
                         <page string="KRA &amp; Self Assessment" name="kra_lines">
                             <field name="line_ids" nolabel="1">
-                                <list editable="bottom">
+                                <list editable="bottom" create="false" delete="false">
                                     <field name="sequence" widget="handle"/>
                                     <field name="job_responsibility" readonly="1" string="KRA / Responsibility" class="text-wrap"/>
                                     <field name="deliverable" readonly="1" class="text-wrap"/>
@@ -101,7 +112,6 @@
                                     <!-- Employee fills self rating/comments (only in draft) -->
                                     <field name="self_rating_id"
                                            readonly="parent.state != 'draft' or not parent.is_own_record"/>
-                                    <field name="self_rating_description" readonly="1" optional="show"/>
                                     <field name="self_comments"
                                            readonly="parent.state != 'draft' or not parent.is_own_record"
                                            optional="hide"/>
@@ -110,8 +120,7 @@
                                     <field name="manager_rating_id"
                                            readonly="parent.state != 'submitted' or not parent.can_manager_approve"
                                            optional="show"/>
-                                    <field name="manager_rating_description" readonly="1" optional="show"/>
-                                    <field name="manager_comments"
+                                                    <field name="manager_comments"
                                            readonly="parent.state != 'submitted' or not parent.can_manager_approve"
                                            optional="hide"/>
 
@@ -119,8 +128,7 @@
                                     <field name="second_rating_id"
                                            readonly="parent.state != 'manager_review' or not parent.can_second_approve"
                                            optional="show"/>
-                                    <field name="second_rating_description" readonly="1" optional="show"/>
-                                    <field name="second_comments"
+                                                    <field name="second_comments"
                                            readonly="parent.state != 'manager_review' or not parent.can_second_approve"
                                            optional="hide"/>
                                 </list>
@@ -129,7 +137,7 @@
 
                         <page string="Work Attitude &amp; Behavior" name="attitude_lines">
                             <field name="attitude_line_ids" nolabel="1">
-                                <list editable="bottom">
+                                <list editable="bottom" create="false" delete="false">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name" readonly="1" class="text-wrap"/>
                                     <field name="description" readonly="1" class="text-wrap"/>
@@ -137,8 +145,7 @@
                                     <!-- Employee fills self rating/comments (only in draft) -->
                                     <field name="self_rating_id"
                                            readonly="parent.state != 'draft' or not parent.is_own_record"/>
-                                    <field name="self_rating_description" readonly="1" optional="show"/>
-                                    <field name="self_comments"
+                                                    <field name="self_comments"
                                            readonly="parent.state != 'draft' or not parent.is_own_record"
                                            optional="hide"/>
 
@@ -146,8 +153,7 @@
                                     <field name="manager_rating_id"
                                            readonly="parent.state != 'submitted' or not parent.can_manager_approve"
                                            optional="show"/>
-                                    <field name="manager_rating_description" readonly="1" optional="show"/>
-                                    <field name="manager_comments"
+                                                    <field name="manager_comments"
                                            readonly="parent.state != 'submitted' or not parent.can_manager_approve"
                                            optional="hide"/>
 
@@ -155,15 +161,14 @@
                                     <field name="second_rating_id"
                                            readonly="parent.state != 'manager_review' or not parent.can_second_approve"
                                            optional="show"/>
-                                    <field name="second_rating_description" readonly="1" optional="show"/>
-                                    <field name="second_comments"
+                                                    <field name="second_comments"
                                            readonly="parent.state != 'manager_review' or not parent.can_second_approve"
                                            optional="hide"/>
                                 </list>
                             </field>
                         </page>
 
-                        <page string="Incidents" name="incident_lines">
+                        <page string="Mistakes, Complaints, and Incidents" name="incident_lines">
                             <field name="incident_line_ids" nolabel="1">
                                 <list editable="bottom">
                                     <field name="date"/>
@@ -172,16 +177,42 @@
                                     <field name="action_taken"/>
                                 </list>
                             </field>
+                            <group>
+                                <field name="additional_tasks_initiatives"/>
+                            </group>
+                        </page>
+
+                        <page string="Training" name="training_lines">
+                            <field name="training_line_ids" nolabel="1">
+                                <list editable="bottom" delete="false">
+                                    <field name="sequence" widget="handle"
+                                           readonly="parent.state != 'draft' or not parent.is_own_record"/>
+                                    <field name="training" readonly="1"/>
+                                    <field name="want_to_learn"
+                                           readonly="parent.state != 'draft' or not parent.is_own_record"/>
+                                    <field name="have_complete_knowledge"
+                                           readonly="parent.state != 'draft' or not parent.is_own_record"/>
+                                    <field name="want_to_become_trainer"
+                                           readonly="parent.state != 'draft' or not parent.is_own_record"/>
+                                </list>
+                            </field>
+                            <group>
+                                <field name="training_comments"
+                                       readonly="state != 'draft' or not is_own_record"/>
+                            </group>
                         </page>
 
                         <page string="Overall Comments" name="overall_comments">
                             <group>
                                 <field name="overall_self_comments"
-                                       readonly="state != 'draft' or not is_own_record"/>
+                                       readonly="state != 'draft' or not is_own_record"
+                                       required="state == 'draft'"/>
                                 <field name="overall_manager_comments"
-                                       readonly="state != 'submitted' or not can_manager_approve"/>
+                                       readonly="state != 'submitted' or not can_manager_approve"
+                                       required="state == 'submitted'"/>
                                 <field name="overall_second_comments"
-                                       readonly="state != 'manager_review' or not can_second_approve"/>
+                                       readonly="state != 'manager_review' or not can_second_approve"
+                                       required="state == 'manager_review'"/>
                             </group>
                             <group string="Comments and Suggestions">
                                 <field name="general_comments" nolabel="1"/>

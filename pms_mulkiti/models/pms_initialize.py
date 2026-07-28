@@ -156,15 +156,22 @@ class PmsInitialize(models.Model):
                 no_attitude.append(employee.name)
                 continue
 
+            training = self.env["pms.training"].search([
+                ("financial_year_id", "=", self.financial_year_id.id),
+            ], limit=1)
+
             appraisal = self.env["pms.appraisal"].create({
                 "employee_id": employee.id,
                 "initialize_id": self.id,
                 "financial_year_id": self.financial_year_id.id,
                 "kra_id": kra.id,
                 "attitude_id": attitude.id,
+                "training_id": training.id if training else False,
             })
             appraisal._populate_kra_lines()
             appraisal._populate_attitude_lines()
+            if training:
+                appraisal._populate_training_lines()
             created += 1
 
             if appraisal.employee_user_id:

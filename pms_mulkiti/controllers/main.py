@@ -40,9 +40,9 @@ class PmsAppraisalXlsxController(Controller):
             _("KRA Set"), _("Status"),
             _("Submitted On"), _("Manager Reviewed On"), _("Approved On"),
             _("KRA / Responsibility"), _("Key Deliverable / Target"),
-            _("Self Rating"), _("Self Rating Description"), _("Self Comments"),
-            _("Manager Rating"), _("Manager Rating Description"), _("Manager Comments"),
-            _("2nd Approver Rating"), _("2nd Approver Rating Description"), _("2nd Approver Comments"),
+            _("Self Rating"), _("Self Comments"),
+            _("Manager Rating"), _("Manager Comments"),
+            _("2nd Approver Rating"), _("2nd Approver Comments"),
             _("Overall Self Comments"), _("Overall Manager Comments"), _("Overall 2nd Approver Comments"),
         ]
         worksheet.write_row(0, 0, headers, header_fmt)
@@ -73,7 +73,7 @@ class PmsAppraisalXlsxController(Controller):
             ]
             lines = appraisal.line_ids
             if not lines:
-                values = header_values + [""] * 11 + overall_values
+                values = header_values + [""] * 8 + overall_values
                 worksheet.write_row(row, 0, [_clean(v) for v in values], cell_fmt)
                 row += 1
                 continue
@@ -82,13 +82,10 @@ class PmsAppraisalXlsxController(Controller):
                     line.job_responsibility,
                     line.deliverable,
                     line.self_rating_id.name,
-                    line.self_rating_description,
                     line.self_comments,
                     line.manager_rating_id.name,
-                    line.manager_rating_description,
                     line.manager_comments,
                     line.second_rating_id.name,
-                    line.second_rating_description,
                     line.second_comments,
                 ] + overall_values
                 worksheet.write_row(row, 0, [_clean(v) for v in values], cell_fmt)
