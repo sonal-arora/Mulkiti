@@ -78,9 +78,9 @@
                         <group>
                             <field name="manager_id" readonly="1"/>
                             <field name="second_manager_id" readonly="1"/>
-                            <field name="kra_id" readonly="1"/>
-                            <field name="attitude_id" readonly="1"/>
-                            <field name="training_id" readonly="1" invisible="not training_id"/>
+                            <field name="kra_id" readonly="1" invisible="1"/>
+                            <field name="attitude_id" readonly="1" invisible="1"/>
+                            <field name="training_id" readonly="1" invisible="1"/>
                             <field name="submit_date" readonly="1"
                                    invisible="not submit_date"/>
                             <field name="manager_review_date" readonly="1"
@@ -91,14 +91,15 @@
                     </group>
 
                     <!-- Rating Legend: reference for filling ratings below -->
-                    <group string="Rating Legend" name="rating_legend">
+                    <strong>Rating Legend</strong>
+                    <div class="pms_rating_legend_table" style="max-width: 650px;">
                         <field name="rating_legend_ids" nolabel="1" readonly="1">
-                            <list create="false" edit="false" delete="false">
-                                <field name="name"/>
-                                <field name="description"/>
+                            <list create="false" edit="false" delete="false" class="table-sm table-borderless">
+                                <field name="name" widget="char" class="text-truncate small" style="max-width: 150px;"/>
+                                <field name="description" widget="char" class="text-truncate small" style="max-width: 480px;"/>
                             </list>
                         </field>
-                    </group>
+                    </div>
 
                     <!-- KRA Lines -->
                     <notebook>

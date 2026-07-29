@@ -14,7 +14,7 @@
                         <field name="financial_year_id"/>
                     </group>
                     <notebook>
-                        <page string="Projects" name="training_lines">
+                        <page string="Training" name="training_lines">
                             <field name="line_ids">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>

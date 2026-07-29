@@ -1,0 +1,11 @@
+.pms_rating_legend_table {
+    .o_list_table,
+    .o_list_table > thead > tr > th,
+    .o_list_table > tbody > tr > td,
+    .o_list_table > tbody > tr {
+        border: none !important;
+    }
+    .o_data_row:nth-child(even) {
+        background-color: transparent !important;
+    }
+}

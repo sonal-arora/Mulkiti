@@ -7,6 +7,11 @@
     "depends": ["base", "hr", "mail", "dynamic_approval_workflow"],
     "installable": True,
     "application": True,
+    "assets": {
+        "web.assets_backend": [
+            "pms_mulkiti/static/src/scss/pms_rating_legend.scss",
+        ],
+    },
     "data": [
         "security/pms_security.xml",
         "security/ir.model.access.csv",
