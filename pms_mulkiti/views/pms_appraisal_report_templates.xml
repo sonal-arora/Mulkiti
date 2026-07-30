@@ -214,6 +214,7 @@
 <template id="report_pms_appraisal_document">
     <t t-call="web.html_container">
         <t t-foreach="docs" t-as="o">
+            <t t-set="o" t-value="o.sudo()"/>
             <t t-call="pms_mulkiti.report_pms_appraisal"/>
         </t>
     </t>

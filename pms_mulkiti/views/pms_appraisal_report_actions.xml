@@ -7,7 +7,5 @@
         <field name="report_name">pms_mulkiti.report_pms_appraisal_document</field>
         <field name="report_file">pms_mulkiti.report_pms_appraisal_document</field>
         <field name="print_report_name">'PMS Appraisal - %s' % (object.name)</field>
-        <field name="binding_model_id" ref="model_pms_appraisal"/>
-        <field name="binding_type">report</field>
     </record>
 </odoo>
