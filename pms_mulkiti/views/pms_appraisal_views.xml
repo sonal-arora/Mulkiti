@@ -58,6 +58,13 @@
                             class="btn-secondary"
                             invisible="state != 'approved'"/>
 
+                    <!-- Print PDF Report (only once approved) -->
+                    <button name="%(pms_mulkiti.action_report_pms_appraisal)d"
+                            string="Print PDF Report"
+                            type="action"
+                            class="btn-secondary"
+                            invisible="state != 'approved'"/>
+
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,submitted,manager_review,second_review,approved"/>
                 </header>
@@ -90,15 +97,28 @@
                         </group>
                     </group>
 
-                    <!-- Rating Legend: reference for filling ratings below -->
-                    <strong>Rating Legend</strong>
-                    <div class="pms_rating_legend_table" style="max-width: 650px;">
-                        <field name="rating_legend_ids" nolabel="1" readonly="1">
-                            <list create="false" edit="false" delete="false" class="table-sm table-borderless">
-                                <field name="name" widget="char" class="text-truncate small" style="max-width: 150px;"/>
-                                <field name="description" widget="char" class="text-truncate small" style="max-width: 480px;"/>
-                            </list>
-                        </field>
+                    <!-- Rating Legend (left) + Project & Team details (right) -->
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Rating Legend</strong>
+                            <div class="pms_rating_legend_table">
+                                <field name="rating_legend_ids" nolabel="1" readonly="1">
+                                    <list create="false" edit="false" delete="false" class="table-sm table-borderless">
+                                        <field name="name" widget="char" class="text-truncate small" style="max-width: 100px;"/>
+                                        <field name="description" widget="char" class="text-truncate small" style="max-width: 250px;"/>
+                                    </list>
+                                </field>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <!-- Project & Team details: employee fills, optional -->
+                            <group>
+                                <field name="project_list"
+                                       readonly="state != 'draft' or not is_own_record"/>
+                                <field name="team_list"
+                                       readonly="state != 'draft' or not is_own_record"/>
+                            </group>
+                        </div>
                     </div>
 
                     <!-- KRA Lines -->
@@ -223,14 +243,22 @@
                                        options="{'full_name': 'employee_id'}"
                                        string="Employee Signature"
                                        readonly="state != 'draft' or not is_own_record"/>
+                                <field name="employee_signature_date" readonly="1"
+                                       invisible="not employee_signature_date"/>
+
                                 <field name="manager_signature" widget="signature"
                                        options="{'full_name': 'manager_id'}"
                                        string="Manager's Signature"
                                        readonly="state != 'submitted' or not can_manager_approve"/>
+                                <field name="manager_signature_date" readonly="1"
+                                       invisible="not manager_signature_date"/>
+
                                 <field name="owner_signature" widget="signature"
                                        options="{'full_name': 'second_manager_id'}"
                                        string="Owner's Signature"
                                        readonly="state != 'manager_review' or not can_second_approve"/>
+                                <field name="owner_signature_date" readonly="1"
+                                       invisible="not owner_signature_date"/>
                             </group>
                         </page>
                     </notebook>
@@ -270,6 +298,10 @@
                     <button name="action_export_xlsx_report"
                             type="object"
                             string="Export Excel Report"
+                            class="btn-secondary"/>
+                    <button name="%(pms_mulkiti.action_report_pms_appraisal)d"
+                            type="action"
+                            string="Print PDF Report"
                             class="btn-secondary"/>
                 </header>
                 <field name="name"/>

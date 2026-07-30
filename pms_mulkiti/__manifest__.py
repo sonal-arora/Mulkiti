@@ -22,6 +22,8 @@
         "views/pms_attitude_views.xml",
         "views/pms_training_views.xml",
         "views/pms_initialize_views.xml",
+        "views/pms_appraisal_report_templates.xml",
+        "views/pms_appraisal_report_actions.xml",
         "views/pms_appraisal_views.xml",
         "views/pms_reject_wizard_views.xml",
         "views/pms_initialize_cancel_wizard_views.xml",

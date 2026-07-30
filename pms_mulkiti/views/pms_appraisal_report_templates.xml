@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<template id="report_pms_appraisal">
+    <t t-call="web.external_layout">
+        <div class="page">
+            <h2 class="text-center">
+                <span t-esc="o.name"/> — PMS Appraisal
+            </h2>
+            <h4 class="text-center text-muted">
+                <span t-esc="o.financial_year_name"/>
+            </h4>
+
+            <div id="infos_table" class="mt-4">
+                <table style="width:100%; border-collapse:collapse;">
+                    <tr>
+                        <td style="width:50%; vertical-align:top;">
+                            <table style="width:100%;">
+                                <tr><td><strong>Employee:</strong></td><td><span t-field="o.employee_id.name"/></td></tr>
+                                <tr><td><strong>Department:</strong></td><td><span t-field="o.department_id.name"/></td></tr>
+                                <tr><td><strong>Job Position:</strong></td><td><span t-field="o.job_id.name"/></td></tr>
+                                <tr><td><strong>1st Approver (Manager):</strong></td><td><span t-field="o.manager_id.name"/></td></tr>
+                                <tr><td><strong>2nd Approver:</strong></td><td><span t-field="o.second_manager_id.name"/></td></tr>
+                            </table>
+                        </td>
+                        <td style="width:50%; vertical-align:top;">
+                            <table style="width:100%;">
+                                <tr><td><strong>Status:</strong></td><td><span t-esc="dict(o._fields['state'].selection).get(o.state)"/></td></tr>
+                                <tr t-if="o.submit_date"><td><strong>Submitted On:</strong></td><td><span t-field="o.submit_date"/></td></tr>
+                                <tr t-if="o.manager_review_date"><td><strong>Manager Reviewed On:</strong></td><td><span t-field="o.manager_review_date"/></td></tr>
+                                <tr t-if="o.approval_date"><td><strong>Approved On:</strong></td><td><span t-field="o.approval_date"/></td></tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div t-if="o.project_list or o.team_list" class="mt-3">
+                <p t-if="o.project_list">
+                    <strong>List of Projects:</strong><br/>
+                    <span t-field="o.project_list"/>
+                </p>
+                <p t-if="o.team_list">
+                    <strong>List of Team:</strong><br/>
+                    <span t-field="o.team_list"/>
+                </p>
+            </div>
+
+            <!-- KRA & Self Assessment -->
+            <h4 class="mt-4">KRA &amp; Self Assessment</h4>
+            <table class="table table-sm table-bordered" t-if="o.line_ids">
+                <thead>
+                    <tr style="background-color:#f2f2f2;">
+                        <th>KRA / Responsibility</th>
+                        <th>Key Deliverable / Target</th>
+                        <th>Self Rating</th>
+                        <th>Self Comments</th>
+                        <th>Manager Rating</th>
+                        <th>Manager Comments</th>
+                        <th>2nd Approver Rating</th>
+                        <th>2nd Approver Comments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="o.line_ids" t-as="line">
+                        <td><span t-field="line.job_responsibility"/></td>
+                        <td><span t-field="line.deliverable"/></td>
+                        <td><span t-field="line.self_rating_id.name"/></td>
+                        <td><span t-field="line.self_comments"/></td>
+                        <td><span t-field="line.manager_rating_id.name"/></td>
+                        <td><span t-field="line.manager_comments"/></td>
+                        <td><span t-field="line.second_rating_id.name"/></td>
+                        <td><span t-field="line.second_comments"/></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Work Attitude & Behavior -->
+            <h4 class="mt-4">Work Attitude &amp; Behavior</h4>
+            <table class="table table-sm table-bordered" t-if="o.attitude_line_ids">
+                <thead>
+                    <tr style="background-color:#f2f2f2;">
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Self Rating</th>
+                        <th>Self Comments</th>
+                        <th>Manager Rating</th>
+                        <th>Manager Comments</th>
+                        <th>2nd Approver Rating</th>
+                        <th>2nd Approver Comments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="o.attitude_line_ids" t-as="line">
+                        <td><span t-field="line.name"/></td>
+                        <td><span t-field="line.description"/></td>
+                        <td><span t-field="line.self_rating_id.name"/></td>
+                        <td><span t-field="line.self_comments"/></td>
+                        <td><span t-field="line.manager_rating_id.name"/></td>
+                        <td><span t-field="line.manager_comments"/></td>
+                        <td><span t-field="line.second_rating_id.name"/></td>
+                        <td><span t-field="line.second_comments"/></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Mistakes, Complaints & Incidents -->
+            <div style="page-break-inside: avoid;">
+                <h4 class="mt-4">Mistakes, Complaints, and Incidents</h4>
+                <table class="table table-sm table-bordered" t-if="o.incident_line_ids">
+                    <thead>
+                        <tr style="background-color:#f2f2f2;">
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Impact</th>
+                            <th>Action Taken</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="o.incident_line_ids" t-as="line">
+                            <td><span t-field="line.date"/></td>
+                            <td><span t-field="line.description"/></td>
+                            <td><span t-field="line.impact"/></td>
+                            <td><span t-field="line.action_taken"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p t-if="o.additional_tasks_initiatives">
+                    <strong>Additional Tasks and Initiatives:</strong><br/>
+                    <span t-field="o.additional_tasks_initiatives"/>
+                </p>
+            </div>
+
+            <!-- Training -->
+            <div style="page-break-inside: avoid;">
+                <h4 class="mt-4">Training</h4>
+                <table class="table table-sm table-bordered" t-if="o.training_line_ids">
+                    <thead>
+                        <tr style="background-color:#f2f2f2;">
+                            <th>Training</th>
+                            <th>I want to learn</th>
+                            <th>I have complete Knowledge</th>
+                            <th>I want to become trainer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="o.training_line_ids" t-as="line">
+                            <td><span t-field="line.training"/></td>
+                            <td class="text-center"><span t-esc="'Yes' if line.want_to_learn else '-'"/></td>
+                            <td class="text-center"><span t-esc="'Yes' if line.have_complete_knowledge else '-'"/></td>
+                            <td class="text-center"><span t-esc="'Yes' if line.want_to_become_trainer else '-'"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p t-if="o.training_comments">
+                    <strong>Training Comments:</strong><br/>
+                    <span t-field="o.training_comments"/>
+                </p>
+            </div>
+
+            <!-- Overall Comments -->
+            <div style="page-break-inside: avoid;">
+                <h4 class="mt-4">Overall Comments</h4>
+                <p t-if="o.overall_self_comments">
+                    <strong>Overall Self Comments:</strong><br/>
+                    <span t-field="o.overall_self_comments"/>
+                </p>
+                <p t-if="o.overall_manager_comments">
+                    <strong>Overall Manager Comments:</strong><br/>
+                    <span t-field="o.overall_manager_comments"/>
+                </p>
+                <p t-if="o.overall_second_comments">
+                    <strong>Overall 2nd Approver Comments:</strong><br/>
+                    <span t-field="o.overall_second_comments"/>
+                </p>
+                <p t-if="o.general_comments">
+                    <strong>Comments and Suggestions:</strong><br/>
+                    <span t-field="o.general_comments"/>
+                </p>
+            </div>
+
+            <!-- Sign-off -->
+            <div style="page-break-inside: avoid;" class="mt-4">
+                <h4>Sign-off</h4>
+                <table style="width:100%;">
+                    <tr>
+                        <td style="width:33%; text-align:center;">
+                            <img t-if="o.employee_signature" t-att-src="image_data_uri(o.employee_signature)" style="max-height:80px;"/>
+                            <div>Employee Signature</div>
+                            <div t-if="o.employee_signature_date" class="text-muted">
+                                <span t-field="o.employee_signature_date"/>
+                            </div>
+                        </td>
+                        <td style="width:33%; text-align:center;">
+                            <img t-if="o.manager_signature" t-att-src="image_data_uri(o.manager_signature)" style="max-height:80px;"/>
+                            <div>Manager's Signature</div>
+                            <div t-if="o.manager_signature_date" class="text-muted">
+                                <span t-field="o.manager_signature_date"/>
+                            </div>
+                        </td>
+                        <td style="width:33%; text-align:center;">
+                            <img t-if="o.owner_signature" t-att-src="image_data_uri(o.owner_signature)" style="max-height:80px;"/>
+                            <div>Owner's Signature</div>
+                            <div t-if="o.owner_signature_date" class="text-muted">
+                                <span t-field="o.owner_signature_date"/>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </t>
+</template>
+
+<template id="report_pms_appraisal_document">
+    <t t-call="web.html_container">
+        <t t-foreach="docs" t-as="o">
+            <t t-call="pms_mulkiti.report_pms_appraisal"/>
+        </t>
+    </t>
+</template>
+</odoo>

@@ -145,6 +145,9 @@ class PmsAppraisal(models.Model):
         string="Training Lines",
     )
     training_comments = fields.Text(string="Training Comments")
+    # ── Project & Team details (employee fills, optional) ──────────────────
+    project_list = fields.Text(string="List of Projects")
+    team_list = fields.Text(string="List of Team")
     # ── Overall comments ─────────────────────────────────────────────────────
     overall_self_comments = fields.Text(string="Overall Self Comments")
     overall_manager_comments = fields.Text(string="Overall Manager Comments")
@@ -152,8 +155,11 @@ class PmsAppraisal(models.Model):
     general_comments = fields.Text(string="Comments and Suggestions")
     # ── Sign-off ──────────────────────────────────────────────────────────────
     employee_signature = fields.Binary(string="Employee Signature")
+    employee_signature_date = fields.Date(string="Signed On", readonly=True)
     manager_signature = fields.Binary(string="Manager's Signature")
+    manager_signature_date = fields.Date(string="Signed On", readonly=True)
     owner_signature = fields.Binary(string="Owner's Signature")
+    owner_signature_date = fields.Date(string="Signed On", readonly=True)
     # ── Dates ───────────────────────────────────────────────────────────────
     submit_date = fields.Date(string="Submitted On", readonly=True)
     manager_review_date = fields.Date(string="Manager Reviewed On", readonly=True)
@@ -177,13 +183,20 @@ class PmsAppraisal(models.Model):
         "employee_id",
         "employee_id.parent_id",
         "employee_id.parent_id.user_id",
+        "employee_id.x_leave_approver_1_id",
         "employee_id.x_leave_approver_2_id",
         "employee_id.leave_manager_id",
     )
     def _compute_approvers(self):
         for rec in self:
             emp = rec.employee_id.sudo()
-            rec.manager_id = emp.parent_id or False
+            # 1st level approver: same precedence as the Leave workflow —
+            # prefer the custom "Leave 1st Approver" set on the employee
+            # (x_leave_approver_1_id), fall back to the direct manager (parent_id).
+            first = False
+            if hasattr(emp, 'x_leave_approver_1_id') and emp.x_leave_approver_1_id:
+                first = emp.x_leave_approver_1_id.employee_id
+            rec.manager_id = first or emp.parent_id or False
             # Use custom 2nd approver if set (from dynamic_approval_workflow)
             second = emp.x_leave_approver_2_id.employee_id if hasattr(emp, 'x_leave_approver_2_id') and emp.x_leave_approver_2_id else False
             if not second:
@@ -214,6 +227,23 @@ class PmsAppraisal(models.Model):
             rec.can_reject = rec.state in ("submitted", "manager_review", "second_review") and (
                 is_rec_manager or is_rec_second or is_head
             )
+
+    # ── Signature dates: stamped the moment each signature is drawn ─────────
+
+    @api.onchange("employee_signature")
+    def _onchange_employee_signature(self):
+        if self.employee_signature and not self.employee_signature_date:
+            self.employee_signature_date = fields.Date.today()
+
+    @api.onchange("manager_signature")
+    def _onchange_manager_signature(self):
+        if self.manager_signature and not self.manager_signature_date:
+            self.manager_signature_date = fields.Date.today()
+
+    @api.onchange("owner_signature")
+    def _onchange_owner_signature(self):
+        if self.owner_signature and not self.owner_signature_date:
+            self.owner_signature_date = fields.Date.today()
 
     # ── Create ───────────────────────────────────────────────────────────────
 
@@ -317,7 +347,14 @@ class PmsAppraisal(models.Model):
         )
 
     def action_manager_approve(self):
-        """1st level manager approves → goes to 2nd review."""
+        """1st level manager approves.
+
+        If a 2nd approver is configured for the employee, goes to 2nd review
+        (same as the Leave workflow's validate1). If not, the 1st level
+        approval is enough and the PMS is fully approved directly (same as
+        the Leave workflow skipping straight to validate2 when there's no
+        2nd approver).
+        """
         self.ensure_one()
         if self.state != "submitted":
             raise UserError(_("PMS must be in 'Submitted' state for manager approval."))
@@ -329,6 +366,30 @@ class PmsAppraisal(models.Model):
             raise UserError(_("Please fill manager-rating for all Work Attitude and Behavior lines."))
         if not self.overall_manager_comments:
             raise UserError(_("Please fill Overall Manager Comments before approving."))
+
+        if not self.second_manager_id:
+            # No 2nd approver configured — 1st level approval is enough.
+            self.write({
+                "state": "approved",
+                "manager_review_date": fields.Date.today(),
+                "second_review_date": fields.Date.today(),
+                "approval_date": fields.Date.today(),
+            })
+            if self.employee_user_id:
+                self._send_pms_email(
+                    to_user=self.employee_user_id,
+                    subject=f"[PMS] Your Appraisal Approved — {self.financial_year_name}",
+                    body=self._email_body("approved"),
+                )
+            self.message_post(
+                body=Markup(
+                    "<b>Manager review completed</b> by <b>%(mgr)s</b>. "
+                    "No 2nd Approver is configured for this employee, so the "
+                    "PMS is <b>Fully Approved</b>."
+                ) % {"mgr": self.env.user.name},
+                subtype_xmlid="mail.mt_comment",
+            )
+            return
 
         self.write({
             "state": "manager_review",
@@ -355,6 +416,8 @@ class PmsAppraisal(models.Model):
         self.ensure_one()
         if self.state != "manager_review":
             raise UserError(_("PMS must be in 'Manager Review' state for 2nd approval."))
+        if not self.second_manager_id:
+            raise UserError(_("No 2nd Approver is configured for this employee."))
         if not self.overall_second_comments:
             raise UserError(_("Please fill Overall 2nd Approver Comments before approving."))
 

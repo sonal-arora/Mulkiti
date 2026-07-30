@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_pms_appraisal" model="ir.actions.report">
+        <field name="name">PMS Appraisal Report</field>
+        <field name="model">pms.appraisal</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">pms_mulkiti.report_pms_appraisal_document</field>
+        <field name="report_file">pms_mulkiti.report_pms_appraisal_document</field>
+        <field name="print_report_name">'PMS Appraisal - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_pms_appraisal"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>
