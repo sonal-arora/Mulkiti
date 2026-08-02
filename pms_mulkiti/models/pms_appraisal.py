@@ -218,6 +218,7 @@ class PmsAppraisal(models.Model):
             rec.can_submit = rec.state == "draft" and is_own
             rec.can_manager_approve = (
                 rec.state == "submitted"
+                and not is_own
                 and (is_rec_manager or is_manager or is_head)
             )
             rec.can_second_approve = (
