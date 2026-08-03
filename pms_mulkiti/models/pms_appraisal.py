@@ -185,7 +185,6 @@ class PmsAppraisal(models.Model):
         "employee_id.parent_id.user_id",
         "employee_id.x_leave_approver_1_id",
         "employee_id.x_leave_approver_2_id",
-        "employee_id.leave_manager_id",
     )
     def _compute_approvers(self):
         for rec in self:
@@ -197,10 +196,11 @@ class PmsAppraisal(models.Model):
             if hasattr(emp, 'x_leave_approver_1_id') and emp.x_leave_approver_1_id:
                 first = emp.x_leave_approver_1_id.employee_id
             rec.manager_id = first or emp.parent_id or False
-            # Use custom 2nd approver if set (from dynamic_approval_workflow)
+            # Use custom 2nd approver if set (from dynamic_approval_workflow).
+            # No fallback here: if it isn't configured, PMS has no 2nd approver
+            # and the appraisal must be fully approved right after 1st level
+            # (see action_manager_approve).
             second = emp.x_leave_approver_2_id.employee_id if hasattr(emp, 'x_leave_approver_2_id') and emp.x_leave_approver_2_id else False
-            if not second:
-                second = emp.leave_manager_id.employee_ids[:1] if emp.leave_manager_id else False
             rec.second_manager_id = second or False
 
     @api.depends_context("uid")

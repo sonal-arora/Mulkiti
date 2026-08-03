@@ -1,8 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+<!-- Same as web.external_layout_standard, but the header logo is always the
+     Mulkiti PMS logo bundled with this module, regardless of the company's
+     configured logo/layout. Scoped to the PMS report only. -->
+<template id="pms_external_layout_standard" inherit_id="web.external_layout_standard" primary="True">
+    <xpath expr="//img[hasclass('o_company_logo_small')]" position="replace">
+        <img class="o_company_logo_small" src="/pms_mulkiti/static/src/img/mulkiti_logo.jpg" alt="Mulkiti Logo"/>
+    </xpath>
+</template>
+
 <template id="report_pms_appraisal">
-    <t t-call="web.external_layout">
-        <div class="page">
+    <t t-if="not o" t-set="o" t-value="doc"/>
+    <t t-if="not company">
+        <t t-if="company_id">
+            <t t-set="company" t-value="company_id"/>
+        </t>
+        <t t-elif="o and 'company_id' in o and o.company_id.sudo()">
+            <t t-set="company" t-value="o.company_id.sudo()"/>
+        </t>
+        <t t-else="else">
+            <t t-set="company" t-value="res_company"/>
+        </t>
+    </t>
+    <t t-set="has_second_approver" t-value="bool(o.second_manager_id)"/>
+    <t t-call="pms_mulkiti.pms_external_layout_standard">
+        <div class="page o_pms_report">
+            <style>
+                /* Keep a table row intact across a page break, and repeat the
+                   column header row on every page the table spills onto. */
+                .o_pms_report table { page-break-inside: auto; }
+                .o_pms_report tr { page-break-inside: avoid; page-break-after: auto; }
+                .o_pms_report thead { display: table-header-group; }
+            </style>
             <h2 class="text-center">
                 <span t-esc="o.name"/> — PMS Appraisal
             </h2>
@@ -18,8 +47,8 @@
                                 <tr><td><strong>Employee:</strong></td><td><span t-field="o.employee_id.name"/></td></tr>
                                 <tr><td><strong>Department:</strong></td><td><span t-field="o.department_id.name"/></td></tr>
                                 <tr><td><strong>Job Position:</strong></td><td><span t-field="o.job_id.name"/></td></tr>
-                                <tr><td><strong>1st Approver (Manager):</strong></td><td><span t-field="o.manager_id.name"/></td></tr>
-                                <tr><td><strong>2nd Approver:</strong></td><td><span t-field="o.second_manager_id.name"/></td></tr>
+                                <tr><td><strong t-esc="'1st Approver (Manager):' if has_second_approver else 'Approver:'"/></td><td><span t-field="o.manager_id.name"/></td></tr>
+                                <tr t-if="has_second_approver"><td><strong>2nd Approver:</strong></td><td><span t-field="o.second_manager_id.name"/></td></tr>
                             </table>
                         </td>
                         <td style="width:50%; vertical-align:top;">
@@ -56,8 +85,8 @@
                         <th>Self Comments</th>
                         <th>Manager Rating</th>
                         <th>Manager Comments</th>
-                        <th>2nd Approver Rating</th>
-                        <th>2nd Approver Comments</th>
+                        <th t-if="has_second_approver">2nd Approver Rating</th>
+                        <th t-if="has_second_approver">2nd Approver Comments</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -68,8 +97,8 @@
                         <td><span t-field="line.self_comments"/></td>
                         <td><span t-field="line.manager_rating_id.name"/></td>
                         <td><span t-field="line.manager_comments"/></td>
-                        <td><span t-field="line.second_rating_id.name"/></td>
-                        <td><span t-field="line.second_comments"/></td>
+                        <td t-if="has_second_approver"><span t-field="line.second_rating_id.name"/></td>
+                        <td t-if="has_second_approver"><span t-field="line.second_comments"/></td>
                     </tr>
                 </tbody>
             </table>
@@ -85,8 +114,8 @@
                         <th>Self Comments</th>
                         <th>Manager Rating</th>
                         <th>Manager Comments</th>
-                        <th>2nd Approver Rating</th>
-                        <th>2nd Approver Comments</th>
+                        <th t-if="has_second_approver">2nd Approver Rating</th>
+                        <th t-if="has_second_approver">2nd Approver Comments</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -97,8 +126,8 @@
                         <td><span t-field="line.self_comments"/></td>
                         <td><span t-field="line.manager_rating_id.name"/></td>
                         <td><span t-field="line.manager_comments"/></td>
-                        <td><span t-field="line.second_rating_id.name"/></td>
-                        <td><span t-field="line.second_comments"/></td>
+                        <td t-if="has_second_approver"><span t-field="line.second_rating_id.name"/></td>
+                        <td t-if="has_second_approver"><span t-field="line.second_comments"/></td>
                     </tr>
                 </tbody>
             </table>
@@ -183,21 +212,21 @@
                 <h4>Sign-off</h4>
                 <table style="width:100%;">
                     <tr>
-                        <td style="width:33%; text-align:center;">
+                        <td t-attf-style="width:#{'33%' if has_second_approver else '50%'}; text-align:center;">
                             <img t-if="o.employee_signature" t-att-src="image_data_uri(o.employee_signature)" style="max-height:80px;"/>
                             <div>Employee Signature</div>
                             <div t-if="o.employee_signature_date" class="text-muted">
                                 <span t-field="o.employee_signature_date"/>
                             </div>
                         </td>
-                        <td style="width:33%; text-align:center;">
+                        <td t-attf-style="width:#{'33%' if has_second_approver else '50%'}; text-align:center;">
                             <img t-if="o.manager_signature" t-att-src="image_data_uri(o.manager_signature)" style="max-height:80px;"/>
                             <div>Manager's Signature</div>
                             <div t-if="o.manager_signature_date" class="text-muted">
                                 <span t-field="o.manager_signature_date"/>
                             </div>
                         </td>
-                        <td style="width:33%; text-align:center;">
+                        <td t-if="has_second_approver" style="width:33%; text-align:center;">
                             <img t-if="o.owner_signature" t-att-src="image_data_uri(o.owner_signature)" style="max-height:80px;"/>
                             <div>Owner's Signature</div>
                             <div t-if="o.owner_signature_date" class="text-muted">

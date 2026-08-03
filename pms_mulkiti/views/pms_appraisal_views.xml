@@ -236,7 +236,7 @@
                                        required="state == 'manager_review'"/>
                             </group>
                             <group string="Comments and Suggestions">
-                                <field name="general_comments" nolabel="1"/>
+                                <field name="general_comments" nolabel="1" colspan="2"/>
                             </group>
                             <group string="Sign-off">
                                 <field name="employee_signature" widget="signature"
