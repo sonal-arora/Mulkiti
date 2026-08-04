@@ -19,14 +19,12 @@
              A fixed-position element in the body repeats on every page
              without needing that JS step. -->
         <div t-if="company.logo" style="position: fixed; top: 0; left: 0; right: 0; text-align: center;">
-            <img t-att-src="image_data_uri(company.logo)" style="max-height:60px;"/>
+            <img t-att-src="image_data_uri(company.logo)" style="max-height:100px;"/>
         </div>
-        <div style="padding-top: 70px;">
-            <h2 class="text-center">
-                <span t-esc="o.name"/> — PMS Appraisal
-            </h2>
+        <div style="padding-top: 115px;">
+            <h2 class="text-center">Employee Performance Review</h2>
             <h4 class="text-center text-muted">
-                <span t-esc="o.financial_year_name"/>
+                <span t-esc="o.name"/> · <span t-esc="o.financial_year_name"/>
             </h4>
 
             <div id="infos_table" class="mt-4">

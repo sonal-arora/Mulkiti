@@ -18,4 +18,9 @@ class IrActionsReport(models.Model):
         # report, which deliberately skips the HTML/JS footer because it
         # breaks on wkhtmltopdf builds without patched Qt.
         command_args += ["--footer-right", "Page [page] of [topage]", "--footer-font-size", "8"]
+        # Unpatched-Qt wkhtmltopdf builds (e.g. 0.12.6) sometimes misread the
+        # UTF-8 HTML as Latin-1, turning curly quotes/dashes into "â€™"-style
+        # garbage. Forcing the encoding explicitly avoids that regardless of
+        # what the binary would otherwise guess.
+        command_args += ["--encoding", "utf-8"]
         return command_args
