@@ -2,7 +2,7 @@
 <odoo>
 <template id="report_pms_appraisal">
     <t t-set="has_second_approver" t-value="bool(o.second_manager_id)"/>
-    <t t-set="company" t-value="o.company_id.sudo() if o.company_id else res_company"/>
+    <t t-set="company" t-value="res_company"/>
     <div class="page o_pms_report">
         <style>
             /* Keep a table row intact across a page break, and repeat the
