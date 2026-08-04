@@ -1,3 +1,4 @@
+from . import ir_actions_report
 from . import pms_financial_year
 from . import pms_rating
 from . import pms_kra

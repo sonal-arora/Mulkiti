@@ -2,15 +2,26 @@
 <odoo>
 <template id="report_pms_appraisal">
     <t t-set="has_second_approver" t-value="bool(o.second_manager_id)"/>
-    <t t-call="web.external_layout">
-        <div class="page o_pms_report">
-            <style>
-                /* Keep a table row intact across a page break, and repeat the
-                   column header row on every page the table spills onto. */
-                .o_pms_report table { page-break-inside: auto; }
-                .o_pms_report tr { page-break-inside: avoid; page-break-after: auto; }
-                .o_pms_report thead { display: table-header-group; }
-            </style>
+    <t t-set="company" t-value="o.company_id.sudo() if o.company_id else res_company"/>
+    <div class="page o_pms_report">
+        <style>
+            /* Keep a table row intact across a page break, and repeat the
+               column header row on every page the table spills onto. */
+            .o_pms_report table { page-break-inside: auto; }
+            .o_pms_report tr { page-break-inside: avoid; page-break-after: auto; }
+            .o_pms_report thead { display: table-header-group; }
+        </style>
+        <!-- Company logo, pinned to the top of every printed page. Rendered
+             as part of the normal page content (not via web.external_layout,
+             which needs wkhtmltopdf to run JS for its header/footer, and
+             that's broken on unpatched-Qt builds such as 0.12.6, which is
+             what's installed on the live server and can't be changed there).
+             A fixed-position element in the body repeats on every page
+             without needing that JS step. -->
+        <div t-if="company.logo" style="position: fixed; top: 0; left: 0; right: 0; text-align: center;">
+            <img t-att-src="image_data_uri(company.logo)" style="max-height:60px;"/>
+        </div>
+        <div style="padding-top: 70px;">
             <h2 class="text-center">
                 <span t-esc="o.name"/> — PMS Appraisal
             </h2>
@@ -55,34 +66,32 @@
 
             <!-- KRA & Self Assessment -->
             <h4 class="mt-4">KRA &amp; Self Assessment</h4>
-            <t t-foreach="o.line_ids" t-as="line">
-                <div class="border rounded p-2 mb-2" style="page-break-inside: avoid;">
-                    <div class="mb-1"><strong>KRA / Responsibility:</strong> <span t-field="line.job_responsibility"/></div>
-                    <div class="mb-2"><strong>Key Deliverable / Target:</strong> <span t-field="line.deliverable"/></div>
-                    <table class="table table-sm table-bordered mb-0">
-                        <thead>
-                            <tr style="background-color:#f2f2f2;">
-                                <th>Self Rating</th>
-                                <th>Self Comments</th>
-                                <th>Manager Rating</th>
-                                <th>Manager Comments</th>
-                                <th t-if="has_second_approver">2nd Approver Rating</th>
-                                <th t-if="has_second_approver">2nd Approver Comments</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span t-field="line.self_rating_id.name"/></td>
-                                <td><span t-field="line.self_comments"/></td>
-                                <td><span t-field="line.manager_rating_id.name"/></td>
-                                <td><span t-field="line.manager_comments"/></td>
-                                <td t-if="has_second_approver"><span t-field="line.second_rating_id.name"/></td>
-                                <td t-if="has_second_approver"><span t-field="line.second_comments"/></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </t>
+            <table class="table table-sm table-bordered" t-if="o.line_ids">
+                <thead>
+                    <tr style="background-color:#f2f2f2;">
+                        <th>KRA / Responsibility</th>
+                        <th>Key Deliverable / Target</th>
+                        <th>Self Rating</th>
+                        <th>Self Comments</th>
+                        <th>Manager Rating</th>
+                        <th>Manager Comments</th>
+                        <th t-if="has_second_approver">2nd Approver Rating</th>
+                        <th t-if="has_second_approver">2nd Approver Comments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="o.line_ids" t-as="line">
+                        <td><span t-field="line.job_responsibility"/></td>
+                        <td><span t-field="line.deliverable"/></td>
+                        <td><span t-field="line.self_rating_id.name"/></td>
+                        <td><span t-field="line.self_comments"/></td>
+                        <td><span t-field="line.manager_rating_id.name"/></td>
+                        <td><span t-field="line.manager_comments"/></td>
+                        <td t-if="has_second_approver"><span t-field="line.second_rating_id.name"/></td>
+                        <td t-if="has_second_approver"><span t-field="line.second_comments"/></td>
+                    </tr>
+                </tbody>
+            </table>
 
             <!-- Work Attitude & Behavior -->
             <h4 class="mt-4">Work Attitude &amp; Behavior</h4>
@@ -218,7 +227,7 @@
                 </table>
             </div>
         </div>
-    </t>
+    </div>
 </template>
 
 <template id="report_pms_appraisal_document">
