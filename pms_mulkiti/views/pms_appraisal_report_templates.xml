@@ -5,11 +5,11 @@
     <t t-set="company" t-value="res_company"/>
     <div class="page o_pms_report">
         <style>
-            /* Keep a table row intact across a page break, and repeat the
-               column header row on every page the table spills onto. */
-            .o_pms_report table { page-break-inside: auto; }
-            .o_pms_report tr { page-break-inside: avoid; page-break-after: auto; }
-            .o_pms_report thead { display: table-header-group; }
+            /* NOTE: do not add a page-break-inside:avoid rule on table rows
+               here. On the server's unpatched-Qt wkhtmltopdf build it causes
+               rows near a page boundary to render twice in full (once cut
+               off, once duplicated on the next page) instead of just moving
+               cleanly to the next page. Left as default pagination instead. */
 
             /* Classic full-grid business-document look, matching the office
                Word template: solid black borders on every cell, a gold band
