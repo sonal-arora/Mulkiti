@@ -168,6 +168,12 @@ class HrLeave(models.Model):
         """Approve button: 1st approver sees it when state = confirm."""
         custom = self.filtered(lambda h: h._use_custom_flow())
         for h in custom:
+            # An employee can never approve their own leave, even via
+            # generic Officer/Manager rights — only a genuinely different
+            # approver can.
+            if h.employee_id in self.env.user.employee_ids:
+                h.can_approve = False
+                continue
             is_officer = self.env.user.has_group('hr_holidays.group_hr_holidays_user')
             h.can_approve = h.state == 'confirm' and (h._is_first_approver() or is_officer)
         others = self - custom
@@ -184,6 +190,11 @@ class HrLeave(models.Model):
         """Second Approve button: 2nd approver sees it when state = validate1."""
         for h in self:
             if not h._use_custom_flow() or not h._has_second_level():
+                h.can_validate2 = False
+                continue
+            # An employee can never give the 2nd approval on their own
+            # leave, even via generic Officer/Manager rights.
+            if h.employee_id in self.env.user.employee_ids:
                 h.can_validate2 = False
                 continue
             is_officer = self.env.user.has_group('hr_holidays.group_hr_holidays_user')
@@ -203,6 +214,11 @@ class HrLeave(models.Model):
         """
         custom = self.filtered(lambda h: h._use_custom_flow())
         for h in custom:
+            # An employee can never give the final approval on their own
+            # leave, even via generic Officer/Manager rights.
+            if h.employee_id in self.env.user.employee_ids:
+                h.can_validate = False
+                continue
             is_officer = self.env.user.has_group('hr_holidays.group_hr_holidays_user')
             is_time_off_mgr = h._is_time_off_manager()
             h.can_validate = h.state == 'validate2' and (is_time_off_mgr or is_officer)
@@ -217,9 +233,15 @@ class HrLeave(models.Model):
         'employee_id.x_leave_approver_2_id',
     )
     def _compute_can_refuse(self):
-        pending = ('confirm', 'validate1', 'validate2')
+        pending = ('confirm', 'validate1', 'validate2', 'validate')
         custom = self.filtered(lambda h: h._use_custom_flow() and h.state in pending)
         for h in custom:
+            # An employee can never refuse/cancel their own leave once
+            # submitted, regardless of Officer/Manager rights — enforced
+            # at write-time in _check_approval_update too.
+            if h.employee_id in self.env.user.employee_ids:
+                h.can_refuse = False
+                continue
             is_officer = self.env.user.has_group('hr_holidays.group_hr_holidays_user')
             h.can_refuse = (
                 h._is_first_approver()
@@ -239,6 +261,18 @@ class HrLeave(models.Model):
         self.ensure_one()
         result = super()._get_next_states_by_state()
 
+        # Once an employee has submitted their own leave (state != draft),
+        # they can never act on it themselves from here on — not cancel,
+        # refuse, approve at any level, or send it back to approval — only
+        # their approver(s) can. This wipes out every transition stock Odoo
+        # (or the custom flow below) would otherwise expose via blanket
+        # Officer/Manager group checks. Applied regardless of custom-flow
+        # status so it also covers plain-flow leaves.
+        is_own = self.employee_id in self.env.user.employee_ids
+        if is_own and self.state != 'draft':
+            for transitions in result.values():
+                transitions.clear()
+
         if not self._use_custom_flow():
             return result
 
@@ -247,10 +281,15 @@ class HrLeave(models.Model):
         is_second = self._is_second_approver()
         is_time_off_mgr = self._is_time_off_manager()
         has_second = self._has_second_level()
-        is_own = self.employee_id in self.env.user.employee_ids
 
         # Always initialise validate2 key so the graph is complete
         result.setdefault('validate2', set())
+
+        # An employee can never approve their own leave at any level, even
+        # via generic Officer/Manager rights — only a genuinely different
+        # approver can.
+        if is_own:
+            return result
 
         # ── 1st approver (confirm → validate1) ───────────────────────────
         if is_first or is_officer:
@@ -267,11 +306,6 @@ class HrLeave(models.Model):
         if is_time_off_mgr or is_officer:
             result.setdefault('validate2', set()).add('validate')
 
-        # ── Employee can always cancel a pending leave ─────────────────────
-        if is_own:
-            result.setdefault('validate1', set()).add('cancel')
-            result.setdefault('validate2', set()).add('cancel')
-
         return result
 
     # ─────────────────────────────────────────────────────────────────────
@@ -286,6 +320,34 @@ class HrLeave(models.Model):
         remaining = self.env['hr.leave']
 
         for holiday in self:
+            # An employee can never act on their own leave once submitted —
+            # neither cancel/refuse it, nor approve it at any level — no
+            # matter what Officer/Manager rights they hold on other
+            # records. Only a genuinely different approver can. Checked
+            # ahead of the custom-flow branch below so it applies to every
+            # leave regardless of whether it uses the custom approval flow.
+            if (
+                state in ('cancel', 'refuse', 'validate1', 'validate2', 'validate', 'confirm')
+                and holiday.state != 'draft'
+                and holiday.employee_id in self.env.user.employee_ids
+            ):
+                # Note: 'confirm' here is the target of "Back to Approval"
+                # (validate → confirm), not the initial submit (draft →
+                # confirm) — this only fires when the CURRENT state isn't
+                # draft, so submitting a fresh leave is unaffected.
+                if raise_if_not_possible:
+                    if state in ('cancel', 'refuse'):
+                        raise UserError(_(
+                            "You can't cancel or refuse your own leave once "
+                            "it has been submitted. Only your approver can "
+                            "do this."
+                        ))
+                    raise UserError(_(
+                        "You can't change your own leave's approval status. "
+                        "Only your approver can do this."
+                    ))
+                return False
+
             if not holiday._use_custom_flow():
                 remaining += holiday
                 continue
