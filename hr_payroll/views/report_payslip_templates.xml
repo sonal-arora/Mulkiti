@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <odoo>
 <template id="report_payslip">
-    <t t-call="web.external_layout">
-         <div style="text-align:left; margin-bottom:10px;">
+    <t t-call="web.basic_layout">
+        <div style="text-align:left; margin-bottom:10px;">
             <img t-if="o.company_id.logo"
                  t-att-src="image_data_uri(o.company_id.logo)"
-                 style="max-height:200px;"/>
+                 style="max-height:80px;"/>
         </div>
         <div class="page">
            <h3 id="payslip_name" class="text-center">
