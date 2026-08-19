@@ -575,6 +575,31 @@ class HrLeave(models.Model):
     # Action buttons
     # ─────────────────────────────────────────────────────────────────────
 
+    # ─────────────────────────────────────────────────────────────────────
+    # Delete guard — overrides hr_holidays' own ondelete check by name.
+    # Stock Odoo lets Officers delete Confirmed/Cancelled leaves and lets
+    # HR Managers delete a leave in ANY state, no matter how far along the
+    # approval workflow is. We want a single, simple, no-exceptions rule
+    # instead: deletable only before any approval step has started.
+    # ─────────────────────────────────────────────────────────────────────
+
+    @api.ondelete(at_uninstall=False)
+    def _unlink_if_correct_states(self):
+        """A Time Off request can only be deleted while still 'To Approve'
+        (state == 'confirm') — i.e. before any approval step has started.
+        Once it has moved into 1st/2nd/Final Approval, been Refused, or
+        Cancelled, nobody can delete it anymore — not Officers, not HR
+        Managers, not Admins — so the approval trail is never lost. Use
+        Refuse/Cancel instead, which keeps the record (and its history)."""
+        not_deletable = self.filtered(lambda h: h.state != 'confirm')
+        if not_deletable:
+            state_labels = dict(self._fields['state']._description_selection(self.env))
+            raise UserError(_(
+                "Only Time Off requests still 'To Approve' can be deleted. "
+                "'%(state)s' requests must be Refused or Cancelled instead — "
+                "this keeps the approval history intact."
+            ) % {"state": state_labels.get(not_deletable[0].state)})
+
     @api.constrains('holiday_status_id', 'date_from', 'employee_id')
     def _check_probation_period(self):
         """Block Annual Leave if employee is still in probation period.
