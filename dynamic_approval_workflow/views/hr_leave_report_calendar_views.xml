@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         OVERVIEW / "ALL TIME OFF" CALENDAR POPUP — scoped Leave Type
+         Core Odoo hides holiday_status_id from this popup entirely for
+         anyone who isn't a Time Off Officer (field-level groups=). We drop
+         that restriction on the field itself (see models/hr_leave_report_calendar.py)
+         and instead show it only when can_see_leave_type is True — own
+         leave, direct/leave manager, custom 1st/2nd approver, or an
+         Officer. Everyone else still sees just the dates, no type.
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="hr_leave_report_calendar_view_form_scoped_type" model="ir.ui.view">
+        <field name="name">hr.leave.report.calendar.view.form.scoped.type</field>
+        <field name="model">hr.leave.report.calendar</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_report_calendar_view_form"/>
+        <field name="arch" type="xml">
+            <field name="holiday_status_id" position="attributes">
+                <attribute name="invisible">not can_see_leave_type</attribute>
+            </field>
+            <field name="holiday_status_id" position="after">
+                <field name="can_see_leave_type" invisible="1"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>
