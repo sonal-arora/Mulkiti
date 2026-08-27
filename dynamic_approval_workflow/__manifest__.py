@@ -27,6 +27,7 @@ States: Draft → Confirm → 1st Approved (validate1) → 2nd Approved (validat
         'views/hr_leave_views.xml',
         'views/hr_leave_approver_menu.xml',
         'views/hr_leave_summary_views.xml',
+        'views/hr_leave_report_calendar_views.xml',
     ],
     'assets': {
         'web.assets_backend': [
