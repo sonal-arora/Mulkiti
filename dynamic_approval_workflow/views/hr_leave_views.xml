@@ -173,4 +173,15 @@
         </field>
     </record>
 
+    <!-- ══════════════════════════════════════════════════════════════════
+         "ALL TIME OFF" OVERVIEW CALENDAR — never show Refused leaves.
+         A refused leave means the employee is NOT off, so it shouldn't
+         appear here as if they were away. This is a permanent domain
+         exclusion (not just a default search filter that can be toggled
+         off) so it can't come back by someone clearing/changing filters.
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="hr_holidays.action_hr_holidays_dashboard" model="ir.actions.act_window">
+        <field name="domain">[('employee_id.active','=',True), ('state', '!=', 'refuse')]</field>
+    </record>
+
 </odoo>
