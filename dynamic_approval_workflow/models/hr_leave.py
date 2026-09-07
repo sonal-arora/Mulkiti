@@ -10,6 +10,22 @@ from odoo.tools.misc import clean_context
 
 _logger = logging.getLogger(__name__)
 
+# HR should be CC'd on every leave notification email — submission, every
+# approval-stage request, and every employee status update (approved at
+# any level, fully approved, refused) — so she stays in the loop on
+# everything, same as before this module's custom approver routing.
+HR_CC_EMAIL = 'nusra@mulkiti.com'
+
+
+def _hr_cc_value(primary_email):
+    """CC value to use for a notification email: HR_CC_EMAIL, unless the
+    primary recipient (e.g. the 2nd/HR approver) already IS HR — in which
+    case skip the CC so she doesn't get the same email twice."""
+    primary = (primary_email or '').strip().lower()
+    if HR_CC_EMAIL.lower() in primary:
+        return False
+    return HR_CC_EMAIL
+
 
 class HrLeave(models.Model):
     _inherit = 'hr.leave'
@@ -569,6 +585,13 @@ class HrLeave(models.Model):
         for leave in leaves:
             if leave.state == 'confirm' and leave.employee_id:
                 leave._send_employee_submission_email()
+        # Subscribe HR as a follower on every leave so she keeps getting
+        # ALL notifications going forward — submit, every approval stage,
+        # refuse, cancel — including ones (like core's own action_cancel)
+        # that this module doesn't send a custom email for itself.
+        hr_partner = self.env['res.partner'].sudo().search([('email', '=', HR_CC_EMAIL)], limit=1)
+        if hr_partner:
+            leaves.message_subscribe(partner_ids=hr_partner.ids)
         return leaves
 
     # ─────────────────────────────────────────────────────────────────────
@@ -962,6 +985,7 @@ class HrLeave(models.Model):
                 'subject': subject,
                 'body_html': body_html,
                 'email_to': approver.email_formatted,
+                'email_cc': _hr_cc_value(approver.email_formatted),
                 'author_id': self.env.company.partner_id.id,
                 'reply_to': False,
                 'auto_delete': True,
@@ -1069,6 +1093,7 @@ class HrLeave(models.Model):
                 'subject': subject,
                 'body_html': body_html,
                 'email_to': email,
+                'email_cc': _hr_cc_value(email),
                 'email_from': (
                     f"{self.env.company.name} <{self.env.company.email}>"
                     if self.env.company.email else self.env.company.name
@@ -1203,6 +1228,7 @@ class HrLeave(models.Model):
                 'subject': subject,
                 'body_html': body_html,
                 'email_to': email,
+                'email_cc': _hr_cc_value(email),
                 'email_from': from_email,
                 'author_id': company.partner_id.id,
                 'reply_to': False,
