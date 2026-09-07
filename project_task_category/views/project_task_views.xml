@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_task_form2_tat" model="ir.ui.view">
+        <field name="name">project.task.form.tat</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <field name="task_properties" position="before">
+                <group string="Ticket Classification &amp; TAT">
+                    <group>
+                        <field name="main_category_id"/>
+                        <field name="sub_category_id" domain="[('main_category_id', '=', main_category_id)]"/>
+                        <field name="priority_id"/>
+                        <field name="tag_id"/>
+                        <field name="working_hours"/>
+                    </group>
+                    <group>
+                        <field name="resource_calendar_id"/>
+                        <field name="ageing_start_date"/>
+                        <field name="ageing_end_date"/>
+                        <field name="ageing_duration" widget="float_time"/>
+                        <field name="is_overdue" widget="boolean_toggle" readonly="1"/>
+                    </group>
+                </group>
+                <group string="SLA (shift-hours aware)">
+                    <group>
+                        <field name="sla_start_date"/>
+                        <field name="sla_duration" widget="float_time"/>
+                    </group>
+                    <group>
+                        <field name="sla_status_id" readonly="1"/>
+                    </group>
+                </group>
+            </field>
+        </field>
+    </record>
+
+</odoo>

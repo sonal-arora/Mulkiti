@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- noupdate: users can freely rename/recolor these without an
+         upgrade reverting their changes. The `code` (technical key) is
+         what matters for the system, not the `name` shown here. -->
+    <data noupdate="1">
+
+        <record id="project_task_sla_status_not_started" model="project.task.sla.status">
+            <field name="name">Not Started</field>
+            <field name="code">not_started</field>
+            <field name="sequence">10</field>
+            <field name="color">0</field>
+        </record>
+
+        <record id="project_task_sla_status_running" model="project.task.sla.status">
+            <field name="name">Running</field>
+            <field name="code">running</field>
+            <field name="sequence">20</field>
+            <field name="color">4</field>
+        </record>
+
+        <record id="project_task_sla_status_breached" model="project.task.sla.status">
+            <field name="name">Breached</field>
+            <field name="code">breached</field>
+            <field name="sequence">30</field>
+            <field name="color">1</field>
+        </record>
+
+        <record id="project_task_sla_status_done" model="project.task.sla.status">
+            <field name="name">Completed</field>
+            <field name="code">done</field>
+            <field name="sequence">40</field>
+            <field name="color">10</field>
+        </record>
+
+    </data>
+</odoo>

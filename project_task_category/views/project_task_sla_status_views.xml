@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_project_task_sla_status_list" model="ir.ui.view">
+        <field name="name">project.task.sla.status.list</field>
+        <field name="model">project.task.sla.status</field>
+        <field name="arch" type="xml">
+            <list string="SLA Statuses">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="color" widget="color_picker"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_project_task_sla_status_form" model="ir.ui.view">
+        <field name="name">project.task.sla.status.form</field>
+        <field name="model">project.task.sla.status</field>
+        <field name="arch" type="xml">
+            <form string="SLA Status">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="sequence"/>
+                        <field name="color" widget="color_picker"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_project_task_sla_status" model="ir.actions.act_window">
+        <field name="name">SLA Statuses</field>
+        <field name="res_model">project.task.sla.status</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'active_test': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Define the SLA status labels used on tickets (Not Started,
+                Running, Breached, Completed). You can rename and recolor
+                these — the technical Code is what the system uses to
+                assign them automatically.
+            </p>
+        </field>
+    </record>
+
+</odoo>

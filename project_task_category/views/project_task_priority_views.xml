@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_project_task_priority_list" model="ir.ui.view">
+        <field name="name">project.task.priority.list</field>
+        <field name="model">project.task.priority</field>
+        <field name="arch" type="xml">
+            <list string="Priorities" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="deadline_type"/>
+                <field name="deadline_hours"/>
+                <field name="sub_category_count" string="Sub Cat"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_project_task_priority_form" model="ir.ui.view">
+        <field name="name">project.task.priority.form</field>
+        <field name="model">project.task.priority</field>
+        <field name="arch" type="xml">
+            <form string="Priority">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="%(action_project_task_sub_category)d" type="action"
+                                class="oe_stat_button" icon="fa-list"
+                                context="{'search_default_default_priority_id': id}">
+                            <field name="sub_category_count" widget="statinfo" string="Sub Categories"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="deadline_type"/>
+                            <field name="deadline_hours" invisible="deadline_type != 'fixed'"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_project_task_priority" model="ir.actions.act_window">
+        <field name="name">Priorities</field>
+        <field name="res_model">project.task.priority</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'active_test': False}</field>
+    </record>
+
+</odoo>

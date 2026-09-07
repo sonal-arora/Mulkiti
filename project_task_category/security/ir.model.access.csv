@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_project_task_priority_manager,project.task.priority.manager,model_project_task_priority,project.group_project_manager,1,1,1,1
+access_project_task_priority_user,project.task.priority.user,model_project_task_priority,project.group_project_user,1,0,0,0
+access_project_task_main_category_manager,project.task.main.category.manager,model_project_task_main_category,project.group_project_manager,1,1,1,1
+access_project_task_main_category_user,project.task.main.category.user,model_project_task_main_category,project.group_project_user,1,0,0,0
+access_project_task_sub_category_manager,project.task.sub.category.manager,model_project_task_sub_category,project.group_project_manager,1,1,1,1
+access_project_task_sub_category_user,project.task.sub.category.user,model_project_task_sub_category,project.group_project_user,1,0,0,0
+access_project_task_sla_status_manager,project.task.sla.status.manager,model_project_task_sla_status,project.group_project_manager,1,1,1,1
+access_project_task_sla_status_user,project.task.sla.status.user,model_project_task_sla_status,project.group_project_user,1,0,0,0
