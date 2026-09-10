@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Remove the "Amount" text label under the days-allocated figure on the
+         Allocations kanban card (Time Off > Management > Allocations). -->
+    <record id="hr_leave_allocation_view_kanban_no_amount_label" model="ir.ui.view">
+        <field name="name">hr.leave.allocation.view.kanban.no.amount.label</field>
+        <field name="model">hr.leave.allocation</field>
+        <field name="inherit_id" ref="hr_holidays.hr_leave_allocation_view_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='duration_display']/parent::div/parent::div" position="replace">
+                <div class="col-2 o_hr_holidays_card">
+                    <div class="fw-bold d-flex me-1">
+                        <field name="duration_display"/>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -4,7 +4,9 @@
     'category': 'Human Resources/Time Off',
     'summary': 'Future-dated leaves reduce the dropdown balance for accrual allocations too',
     'depends': ['hr_holidays'],
-    'data': [],
+    'data': [
+        'views/hr_leave_allocation_views.xml',
+    ],
     'license': 'LGPL-3',
     'installable': True,
     'auto_install': False,
