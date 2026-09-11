@@ -127,8 +127,12 @@
                             <field name="line_ids" nolabel="1">
                                 <list editable="bottom" create="false" delete="false">
                                     <field name="sequence" widget="handle"/>
-                                    <field name="job_responsibility" readonly="1" string="KRA / Responsibility" class="text-wrap"/>
-                                    <field name="deliverable" readonly="1" class="text-wrap"/>
+                                    <field name="job_responsibility"
+                                           readonly="not parent.can_edit_master_data or parent.state != 'manager_review'"
+                                           string="KRA / Responsibility" class="text-wrap"/>
+                                    <field name="deliverable"
+                                           readonly="not parent.can_edit_master_data or parent.state != 'manager_review'"
+                                           class="text-wrap"/>
 
                                     <!-- Employee fills self rating/comments (only in draft) -->
                                     <field name="self_rating_id"
@@ -160,8 +164,12 @@
                             <field name="attitude_line_ids" nolabel="1">
                                 <list editable="bottom" create="false" delete="false">
                                     <field name="sequence" widget="handle"/>
-                                    <field name="name" readonly="1" class="text-wrap"/>
-                                    <field name="description" readonly="1" class="text-wrap"/>
+                                    <field name="name"
+                                           readonly="not parent.can_edit_master_data or parent.state != 'manager_review'"
+                                           class="text-wrap"/>
+                                    <field name="description"
+                                           readonly="not parent.can_edit_master_data or parent.state != 'manager_review'"
+                                           class="text-wrap"/>
 
                                     <!-- Employee fills self rating/comments (only in draft) -->
                                     <field name="self_rating_id"

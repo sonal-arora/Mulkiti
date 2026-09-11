@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="pms_review_cycle_view_form" model="ir.ui.view">
+        <field name="name">pms.review.cycle.form</field>
+        <field name="model">pms.review.cycle</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button"
+                                name="action_view_appraisals"
+                                type="object"
+                                icon="fa-users"
+                                invisible="appraisal_count == 0">
+                            <field name="appraisal_count" widget="statinfo" string="PMS Records"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Q1 2025-26"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="financial_year_id"/>
+                            <field name="period_type"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="parent_cycle_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="Sub-Periods (roll up into this cycle)"
+                           invisible="not child_cycle_ids">
+                        <field name="child_cycle_ids" nolabel="1">
+                            <list create="false" delete="false">
+                                <field name="name"/>
+                                <field name="period_type"/>
+                                <field name="date_start"/>
+                                <field name="date_end"/>
+                                <field name="appraisal_count" string="PMS Records"/>
+                            </list>
+                        </field>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="pms_review_cycle_view_list" model="ir.ui.view">
+        <field name="name">pms.review.cycle.list</field>
+        <field name="model">pms.review.cycle</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="financial_year_id"/>
+                <field name="period_type"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="parent_cycle_id"/>
+                <field name="appraisal_count" string="PMS Records"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_pms_review_cycle" model="ir.actions.act_window">
+        <field name="name">Review Cycles</field>
+        <field name="res_model">pms.review.cycle</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a Review Cycle (Quarterly, Half-Yearly or Annual) to initialize PMS against.
+            </p>
+            <p>
+                Link a Quarterly/Half-Yearly cycle to its parent via "Rolls Up Into" —
+                the parent cannot be initialized for an employee until every one of
+                its sub-periods is Approved for them.
+            </p>
+        </field>
+    </record>
+</odoo>

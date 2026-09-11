@@ -171,6 +171,12 @@ class PmsAppraisal(models.Model):
     can_second_approve = fields.Boolean(compute="_compute_visibility")
     can_reject = fields.Boolean(compute="_compute_visibility")
     is_own_record = fields.Boolean(compute="_compute_visibility")
+    # True only for users holding the standalone
+    # "pms_mulkiti.group_pms_master_data_editor" right (which itself can only
+    # be granted to a PMS Manager/Head, since it implies group_pms_manager).
+    # Lets them correct the KRA/Attitude description text that gets copied
+    # onto the appraisal lines from the master records.
+    can_edit_master_data = fields.Boolean(compute="_compute_visibility")
 
     def _compute_rating_legend(self):
         ratings = self.env["pms.rating"].search([])
@@ -209,12 +215,14 @@ class PmsAppraisal(models.Model):
         user = self.env.user
         is_head = user.has_group("pms_mulkiti.group_pms_head")
         is_manager = user.has_group("pms_mulkiti.group_pms_manager")
+        can_edit_master_data = user.has_group("pms_mulkiti.group_pms_master_data_editor")
         for rec in self:
             is_own = rec.employee_user_id == user
             is_rec_manager = rec.manager_user_id == user
             is_rec_second = rec.second_manager_user_id == user
 
             rec.is_own_record = is_own
+            rec.can_edit_master_data = can_edit_master_data
             rec.can_submit = rec.state == "draft" and is_own
             rec.can_manager_approve = (
                 rec.state == "submitted"
@@ -656,12 +664,11 @@ class PmsAppraisalLine(models.Model):
     kra_line_id = fields.Many2one("pms.kra.line", string="KRA Line")
     sequence = fields.Integer(related="kra_line_id.sequence", store=True)
 
-    # ── Readonly fields from KRA ──────────────────────────────────────────
-    job_responsibility = fields.Char(
-        string="Job Responsibility / KRA",
-        readonly=True,
-    )
-    deliverable = fields.Text(string="Key Deliverable / Target", readonly=True)
+    # ── Fields copied from KRA master; editable only with the
+    #    group_pms_master_data_editor right
+    #    (see pms.appraisal.can_edit_master_data / the view's readonly attrs) ──
+    job_responsibility = fields.Char(string="Job Responsibility / KRA")
+    deliverable = fields.Text(string="Key Deliverable / Target")
 
     # ── Employee self-assessment ──────────────────────────────────────────
     self_rating_id = fields.Many2one("pms.rating", string="Self Rating")
@@ -701,9 +708,11 @@ class PmsAppraisalAttitudeLine(models.Model):
     attitude_line_id = fields.Many2one("pms.attitude.line", string="Attitude Line")
     sequence = fields.Integer(related="attitude_line_id.sequence", store=True)
 
-    # ── Readonly fields from Work Attitude and Behavior Master ─────────────
-    name = fields.Char(string="Name", readonly=True)
-    description = fields.Text(string="Description", readonly=True)
+    # ── Fields copied from Work Attitude and Behavior master; editable only
+    #    with the group_pms_master_data_editor right
+    #    (see pms.appraisal.can_edit_master_data / view readonly) ──
+    name = fields.Char(string="Name")
+    description = fields.Text(string="Description")
 
     # ── Employee self-assessment ──────────────────────────────────────────
     self_rating_id = fields.Many2one("pms.rating", string="Self Rating")

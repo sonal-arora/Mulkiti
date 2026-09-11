@@ -1,9 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- ── Privilege (replaces category_id in Odoo 19) ────────── -->
+    <!-- ── Privileges (replaces category_id in Odoo 19) ─────────
+         Two separate privileges on purpose: groups inside the SAME
+         privilege are mutually exclusive (radio-button) on the user form.
+         User/Manager/Head must stay exclusive → privilege_pms.
+         The master-data-edit right must be an independent on/off switch
+         that can be combined with ANY of User/Manager/Head → its own
+         privilege, privilege_pms_extra, with its own header. ────────── -->
     <record model="res.groups.privilege" id="privilege_pms">
         <field name="name">Performance Management</field>
         <field name="sequence">20</field>
+        <field name="category_id" ref="base.module_category_human_resources"/>
+    </record>
+
+    <record model="res.groups.privilege" id="privilege_pms_extra">
+        <field name="name">Performance Management: Extra Rights</field>
+        <field name="sequence">21</field>
         <field name="category_id" ref="base.module_category_human_resources"/>
     </record>
 
@@ -31,6 +43,27 @@
         <field name="implied_ids" eval="[(4, ref('pms_mulkiti.group_pms_manager'))]"/>
         <field name="user_ids" eval="[(4, ref('base.user_admin'))]"/>
         <field name="comment">PMS Head: full access — configure, initialize, and approve all PMS records.</field>
+    </record>
+
+    <!-- Standalone right, own header (privilege_pms_extra) so it shows as an
+         independent checkbox next to the User/Manager/Head selector — it can
+         be ticked on top of Manager OR Head, not instead of them.
+         It only unlocks editing of the KRA/Attitude description text that
+         gets copied onto the appraisal's "KRA & Self Assessment" and
+         "Work Attitude & Behavior" tabs (normally readonly there).
+         NOTE: deliberately no implied_ids here — we do NOT want ticking this
+         to silently auto-upgrade a plain PMS User to Manager. Instead,
+         models/res_users.py blocks (ValidationError) saving this group onto
+         a user who isn't already PMS Manager/Head.
+         The explicit eval="[(5,)]" below force-clears any implied_ids left
+         over in the database from an earlier version of this record — just
+         omitting the field on update does NOT clear an existing value. -->
+    <record id="group_pms_master_data_editor" model="res.groups">
+        <field name="name">Edit Master Data (KRA/Attitude Description)</field>
+        <field name="implied_ids" eval="[(5,)]"/>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="privilege_pms_extra"/>
+        <field name="comment">Can be granted only to a user who is already a PMS Manager or PMS Head — enforced by a validation error, not by auto-upgrading them. Lets them edit the KRA/Attitude description copied onto appraisal lines from master data.</field>
     </record>
 
     <!-- ── Record Rules ──────────────────────────────────────────
