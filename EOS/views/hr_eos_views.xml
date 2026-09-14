@@ -129,7 +129,17 @@
                         <group>
                             <field name="total_leave_allocated" readonly="1" string="Total Annual Leave Allocated (Days)"/>
                             <field name="leave_availed" readonly="1" string="Annual Leave Availed (Days)"/>
-                            <field name="leave_balance" readonly="1" string="Annual Leave Balance (Days)" class="fw-bold"/>
+                            <field name="leave_balance_month_start" readonly="1"
+                                   string="Leave Balance as of Month Start (A)"/>
+                            <field name="leave_accrual_rate" readonly="1"
+                                   string="Monthly Leave Accrual Rate"/>
+                            <field name="working_days_resignation_month" readonly="1"
+                                   string="Working Days in Resignation Month"/>
+                            <field name="pro_rated_leave_accrual" readonly="1"
+                                   string="Pro-rated Leave Accrual (B)"/>
+                            <field name="leave_balance"
+                                   readonly="state in ('done',)"
+                                   string="Annual Leave Balance (Days) [ A + B ]" class="fw-bold"/>
                         </group>
                         <group>
                             <field name="leave_pay" readonly="1" widget="monetary"

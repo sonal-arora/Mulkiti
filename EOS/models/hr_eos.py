@@ -1,10 +1,17 @@
 import calendar
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 
 from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
+
+# UAE annual-leave accrual: 30 calendar days / 12 months of the leave year,
+# expressed as "days per standard 22 working-day month".
+LEAVE_ACCRUAL_RATE_STANDARD = 1.84
+# Reduced rate used while the employee has completed less than 1 year of service.
+LEAVE_ACCRUAL_RATE_UNDER_ONE_YEAR = 1.47
+STANDARD_MONTH_WORKING_DAYS = 22.0
 
 
 class HrEos(models.Model):
@@ -79,8 +86,40 @@ class HrEos(models.Model):
         string='Total Annual Leave Allocated', compute='_compute_leave_details', store=True)
     leave_availed = fields.Float(
         string='Annual Leave Availed', compute='_compute_leave_details', store=True)
+
+    # Leave balance as of the 1st day of the resignation/LWD month (A) — NOT
+    # today's system date. See _get_leave_balance_as_of().
+    leave_balance_month_start = fields.Float(
+        string='Leave Balance as of Month Start', compute='_compute_leave_details',
+        store=True, digits=(16, 2),
+        help='Annual leave balance as of the first day of the Last Working '
+             'Date\'s month, based on allocations/leaves dated on or before '
+             'that day (not on today\'s date).')
+    leave_accrual_rate = fields.Float(
+        string='Monthly Leave Accrual Rate', compute='_compute_leave_details',
+        store=True, digits=(16, 2),
+        help='1.84 days/month once the employee has completed 1 year of '
+             'service, otherwise 1.47 days/month.')
+    working_days_resignation_month = fields.Integer(
+        string='Working Days (Resignation Month)', compute='_compute_leave_details',
+        store=True,
+        help='Working days from the 1st of the resignation month up to and '
+             'including the Last Working Date, per the employee\'s working '
+             'schedule.')
+    pro_rated_leave_accrual = fields.Float(
+        string='Pro-rated Leave Accrual (B)', compute='_compute_leave_details',
+        store=True, digits=(16, 2),
+        help='(Monthly Leave Accrual Rate ÷ 22) × Working Days in the '
+             'resignation month up to the Last Working Date.')
+
+    # Total Leave Balance for EOS = A + B. Auto-computed but left editable
+    # (readonly=False) so authorized users can adjust it when required.
     leave_balance = fields.Float(
-        string='Annual Leave Balance', compute='_compute_leave_details', store=True)
+        string='Annual Leave Balance', compute='_compute_leave_details',
+        store=True, readonly=False, digits=(16, 2), tracking=True,
+        help='Total Leave Balance for EOS = Leave Balance as of Month Start '
+             '(A) + Pro-rated Leave Accrual up to the Last Working Date (B). '
+             'Auto-populated, but can be manually adjusted if required.')
     leave_pay = fields.Monetary(
         string='Leave Pay', compute='_compute_leave_pay', store=True)
 
@@ -201,7 +240,7 @@ class HrEos(models.Model):
                 rec.months_of_service = 0
                 rec.days_of_service = 0
 
-    @api.depends('employee_id')
+    @api.depends('employee_id', 'last_working_date', 'joining_date', 'years_of_service')
     def _compute_leave_details(self):
         # Collect all employee IDs needing computation
         emp_ids = self.filtered('employee_id').mapped('employee_id.id')
@@ -210,7 +249,7 @@ class HrEos(models.Model):
             for rec in self:
                 rec.total_leave_allocated = 0.0
                 rec.leave_availed = 0.0
-                rec.leave_balance = 0.0
+                rec._reset_leave_balance_fields()
             return
 
         # Find annual leave type(s) once — not per record
@@ -226,12 +265,14 @@ class HrEos(models.Model):
             for rec in self:
                 rec.total_leave_allocated = 0.0
                 rec.leave_availed = 0.0
-                rec.leave_balance = 0.0
+                rec._reset_leave_balance_fields()
             return
 
         annual_type_ids = annual_types.ids
 
         # Single aggregated query for allocations across all employees
+        # (lifetime totals — informational only, NOT used for the EOS
+        # leave-balance formula below, which must be anchored to the LWD).
         alloc_rows = self.env['hr.leave.allocation'].read_group(
             domain=[
                 ('employee_id', 'in', emp_ids),
@@ -262,17 +303,94 @@ class HrEos(models.Model):
         }
 
         for rec in self:
-            if not rec.employee_id:
+            emp = rec.employee_id
+            if not emp:
                 rec.total_leave_allocated = 0.0
                 rec.leave_availed = 0.0
-                rec.leave_balance = 0.0
+                rec._reset_leave_balance_fields()
+                continue
+
+            rec.total_leave_allocated = allocated_by_emp.get(emp.id, 0.0)
+            rec.leave_availed = taken_by_emp.get(emp.id, 0.0)
+
+            lwd = rec.last_working_date
+            if not lwd:
+                rec._reset_leave_balance_fields()
+                continue
+
+            month_start = lwd.replace(day=1)
+
+            # (A) Leave balance as of the first day of the resignation month
+            # — based on the LWD, not on today's system date.
+            rec.leave_balance_month_start = rec._get_leave_balance_as_of(
+                emp, annual_type_ids, month_start)
+
+            # Accrual rate depends on completed service as of the LWD.
+            jd = rec.joining_date
+            completed_years = relativedelta(lwd, jd).years if jd else 0
+            rec.leave_accrual_rate = (
+                LEAVE_ACCRUAL_RATE_UNDER_ONE_YEAR if completed_years < 1
+                else LEAVE_ACCRUAL_RATE_STANDARD
+            )
+
+            # (B) Pro-rated accrual for the resignation month, up to the LWD.
+            rec.working_days_resignation_month = rec._count_working_days(
+                emp, month_start, lwd)
+            rec.pro_rated_leave_accrual = (
+                rec.leave_accrual_rate / STANDARD_MONTH_WORKING_DAYS
+            ) * rec.working_days_resignation_month
+
+            # Total Leave Balance for EOS = A + B
+            rec.leave_balance = rec.leave_balance_month_start + rec.pro_rated_leave_accrual
+
+    def _reset_leave_balance_fields(self):
+        self.leave_balance_month_start = 0.0
+        self.leave_accrual_rate = 0.0
+        self.working_days_resignation_month = 0
+        self.pro_rated_leave_accrual = 0.0
+        self.leave_balance = 0.0
+
+    def _get_leave_balance_as_of(self, employee, annual_type_ids, as_of_date):
+        """Annual leave balance for `employee`, counting only allocations and
+        leaves effective on or before `as_of_date` — used so the EOS leave
+        balance reflects the Last Working Date's month, not today's date."""
+        allocated = sum(self.env['hr.leave.allocation'].search([
+            ('employee_id', '=', employee.id),
+            ('holiday_status_id', 'in', annual_type_ids),
+            ('state', '=', 'validate'),
+            ('date_from', '<=', as_of_date),
+        ]).mapped('number_of_days'))
+
+        as_of_dt = datetime.combine(as_of_date, time.max)
+        taken = sum(self.env['hr.leave'].search([
+            ('employee_id', '=', employee.id),
+            ('holiday_status_id', 'in', annual_type_ids),
+            ('state', '=', 'validate'),
+            ('date_from', '<=', as_of_dt),
+        ]).mapped('number_of_days'))
+
+        return allocated - taken
+
+    def _count_working_days(self, employee, date_from, date_to):
+        """Count working days (inclusive) between two dates, per the
+        employee's working schedule (falls back to the company calendar,
+        then a plain Mon-Fri week)."""
+        if not date_from or not date_to or date_to < date_from:
+            return 0
+
+        calendar_id = employee.resource_calendar_id or employee.company_id.resource_calendar_id
+
+        count = 0
+        current = date_from
+        while current <= date_to:
+            if calendar_id:
+                works = calendar_id._works_on_date(current)
             else:
-                emp_id = rec.employee_id.id
-                allocated = allocated_by_emp.get(emp_id, 0.0)
-                taken = taken_by_emp.get(emp_id, 0.0)
-                rec.total_leave_allocated = allocated
-                rec.leave_availed = taken
-                rec.leave_balance = allocated - taken
+                works = current.weekday() < 5  # Mon-Fri fallback
+            if works:
+                count += 1
+            current += timedelta(days=1)
+        return count
 
     @api.depends('basic_salary', 'leave_balance')
     def _compute_leave_pay(self):
