@@ -17,10 +17,9 @@
                         string="Confirm as Regular"
                         class="btn-primary"
                         groups="hr.group_hr_user"
-                        invisible="employment_status == 'confirmed'"
+                        invisible="employment_status != 'probation'"
                         confirm="Confirm this employee as Regular? This will end their probation period."/>
-                <field name="employment_status" widget="statusbar"
-                       statusbar_visible="probation,confirmed"/>
+                <field name="employment_status" widget="statusbar"/>
             </xpath>
 
             <!-- Warning banner once probation has ended but is not yet confirmed -->

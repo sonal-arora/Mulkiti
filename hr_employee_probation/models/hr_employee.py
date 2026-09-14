@@ -45,7 +45,9 @@ class HrEmployee(models.Model):
         """Confirm the employee as Regular, ending their probation period."""
         today = fields.Date.context_today(self)
         for employee in self:
-            if employee.employment_status == 'confirmed':
+            if employee.employment_status != 'probation':
+                # Already confirmed, or past the probation stage entirely
+                # (e.g. Under Notice Period / End of Service) — nothing to do.
                 continue
             employee.write({
                 'employment_status': 'confirmed',
