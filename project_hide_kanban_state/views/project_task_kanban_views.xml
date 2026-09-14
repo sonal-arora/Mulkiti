@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Hide the standalone "State" dot from the task Kanban card footer,
+         and show the task's own Stage in its place instead. Stage is the
+         single indicator now, already shown consistently on both the
+         Kanban board (columns) and the task Form view (statusbar). -->
+    <record id="view_task_kanban_hide_state" model="ir.ui.view">
+        <field name="name">project.task.kanban.hide.state</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='state'][@widget='project_task_state_selection']"
+                   position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='state'][@widget='project_task_state_selection']"
+                   position="after">
+                <field name="stage_id" nolabel="1" widget="project_stage_kanban_selection"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

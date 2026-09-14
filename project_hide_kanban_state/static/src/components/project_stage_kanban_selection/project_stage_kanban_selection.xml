@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="project_hide_kanban_state.ProjectStageKanbanSelection">
+        <Dropdown menuClass="'project_stage_kanban_selection_menu'">
+            <button class="btn btn-link d-flex align-items-center p-0" t-att-title="currentStage ? currentStage.display_name : ''">
+                <span t-if="currentStage"
+                      t-attf-class="o_tag badge rounded-pill ms-1 {{ currentStageColorClass }}"
+                      t-esc="currentStage.display_name"/>
+            </button>
+            <t t-set-slot="content">
+                <t t-foreach="state.stages" t-as="stage" t-key="stage.id">
+                    <CheckboxItem
+                        class="`d-flex align-items-center ${isCurrentStage(stage) ? 'active' : ''}`"
+                        onSelected="() => this.selectStage(stage)"
+                        checked="isCurrentStage(stage)">
+                        <span t-attf-class="o_tag rounded-circle me-2 {{ colorClass(stage.color) }}"
+                              style="width: 10px; height: 10px; display: inline-block;"/>
+                        <span t-esc="stage.name"/>
+                    </CheckboxItem>
+                </t>
+            </t>
+        </Dropdown>
+    </t>
+
+</templates>
