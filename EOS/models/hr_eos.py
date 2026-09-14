@@ -481,6 +481,10 @@ class HrEos(models.Model):
             # Recompute leave balance after cancellation
             rec._compute_leave_details()
             rec._compute_leave_pay()
+            # Employee enters the notice period as soon as the resignation
+            # is formally submitted for approval.
+            if rec.employee_id:
+                rec.employee_id.sudo().employment_status = 'notice_period'
 
     def _cancel_future_leaves(self):
         """
@@ -554,6 +558,29 @@ class HrEos(models.Model):
             rec.approved_by = self.env.user
             rec.state = 'done'
             rec._create_fnf_payslip()
+            rec._close_employee_service()
+
+    def _close_employee_service(self):
+        """On final EOS approval: move the employee to 'End of Service',
+        archive the employee record, and deactivate their user login."""
+        self.ensure_one()
+        emp = self.employee_id
+        if not emp:
+            return
+
+        emp_sudo = emp.sudo()
+        emp_sudo.employment_status = 'end_of_service'
+        emp_sudo.active = False
+        if emp_sudo.user_id:
+            emp_sudo.user_id.sudo().active = False
+
+        self.message_post(
+            body=_(
+                'End of Service completed for <strong>%(emp)s</strong>: employee '
+                'archived and user login deactivated.',
+                emp=emp.name,
+            )
+        )
 
     def action_reset_draft(self):
         if not self.env.user.has_group('EOS.group_hr_eos_head'):
@@ -562,6 +589,10 @@ class HrEos(models.Model):
             if rec.state not in ('waiting_approval',):
                 raise UserError(_('Only EOS records waiting for approval can be reset to Draft.'))
             rec.state = 'draft'
+            # Resignation is no longer in process — take the employee back
+            # out of the notice period.
+            if rec.employee_id and rec.employee_id.employment_status == 'notice_period':
+                rec.employee_id.sudo().employment_status = 'confirmed'
 
     def action_view_payslip(self):
         self.ensure_one()

@@ -52,6 +52,14 @@ class CompanyDocumentSignature(models.Model):
         copy=False,
         readonly=True,
     )
+    signer_emirates_id = fields.Char(
+        string='Emirates ID (at signing)',
+        copy=False,
+        readonly=True,
+        help='Snapshot of the employee\'s Emirates ID (Identification No.) '
+             'captured automatically at the moment they signed, so it stays '
+             'accurate even if their profile is updated later.',
+    )
     decline_reason = fields.Text(
         string='Decline Reason',
         copy=False,
@@ -100,14 +108,40 @@ class CompanyDocumentSignature(models.Model):
         )
 
     def action_mark_signed(self, signature_data):
-        """Mark as signed with signature image."""
+        """Mark as signed with signature image, capturing the employee's
+        Emirates ID and the signing date/time as of this moment."""
         self.write({
             'state': 'signed',
             'signature': signature_data,
             'signed_date': fields.Datetime.now(),
+            'signer_emirates_id': self.employee_id.identification_id or False,
         })
-        # Notify manager
+        # Confirmation email to the signer (shows the captured Emirates ID
+        # and signing date as a receipt) + in-app notification to managers.
+        self._send_signing_confirmation()
         self._notify_manager_signed()
+
+    def _send_signing_confirmation(self):
+        """Email the signer a receipt confirming their signature, showing
+        the Emirates ID and signing date captured at the moment of signing."""
+        self.ensure_one()
+        template = self.env.ref(
+            'company_documents.email_template_signature_confirmation',
+            raise_if_not_found=False,
+        )
+        if not template:
+            return
+
+        email = (self.employee_id.work_email or
+                 (self.user_id and self.user_id.email))
+        if not email:
+            return
+
+        template.send_mail(
+            self.id,
+            force_send=True,
+            email_values={'email_to': email},
+        )
 
     def _notify_manager_signed(self):
         """Send notification to document manager when employee signs."""

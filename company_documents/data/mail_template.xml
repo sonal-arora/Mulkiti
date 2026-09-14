@@ -91,4 +91,50 @@
         <field name="auto_delete" eval="True"/>
     </record>
 
+    <!-- Signature Confirmation Email (sent to the employee right after they sign) -->
+    <record id="email_template_signature_confirmation" model="mail.template">
+        <field name="name">Company Document: Signature Confirmation</field>
+        <field name="model_id" ref="model_company_document_signature"/>
+        <field name="subject">Signature Confirmed: "{{ object.document_id.name }}"</field>
+        <field name="email_from">{{ '%s &lt;%s&gt;' % (object.document_id.company_id.name, object.document_id.company_id.email or user.email) }}</field>
+        <field name="body_html"><![CDATA[
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+    <div style="background:#28a745;padding:25px;text-align:center;border-radius:8px 8px 0 0;">
+        <h2 style="color:white;margin:0;">Signature Confirmed</h2>
+        <p style="color:#e6f4ea;margin:8px 0 0 0;"><t t-out="object.document_id.company_id.name"/></p>
+    </div>
+    <div style="padding:30px;background:#fff;border:1px solid #e0e0e0;">
+        <p style="color:#333;font-size:16px;">Dear <strong><t t-out="object.employee_id.name"/></strong>,</p>
+        <p style="color:#555;">This confirms you have successfully signed the following document:</p>
+        <div style="background:#f0f9f1;border-left:4px solid #28a745;padding:15px;margin:20px 0;border-radius:4px;">
+            <h3 style="margin:0;color:#28a745;"><t t-out="object.document_id.name"/></h3>
+            <t t-if="object.document_id.category_id">
+                <p style="margin:5px 0 0 0;color:#666;"><t t-out="object.document_id.category_id.name"/></p>
+            </t>
+        </div>
+        <table style="width:100%;border-collapse:collapse;margin:20px 0;">
+            <tr>
+                <td style="padding:8px;color:#666;width:40%;"><strong>Signed On:</strong></td>
+                <td style="padding:8px;color:#333;"><t t-out="object.signed_date"/></td>
+            </tr>
+            <tr style="background:#f9f9f9;">
+                <td style="padding:8px;color:#666;"><strong>Emirates ID on File:</strong></td>
+                <td style="padding:8px;color:#333;">
+                    <t t-if="object.signer_emirates_id"><t t-out="object.signer_emirates_id"/></t>
+                    <t t-else="">Not on file</t>
+                </td>
+            </tr>
+        </table>
+        <p style="color:#999;font-size:12px;">
+            This is a confirmation receipt of your electronic signature. Please retain it for your records.
+        </p>
+    </div>
+    <div style="padding:15px;text-align:center;color:#aaa;font-size:12px;background:#f9f9f9;border-radius:0 0 8px 8px;">
+        This is an automated message from <t t-out="object.document_id.company_id.name"/>.
+    </div>
+</div>
+        ]]></field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+
 </odoo>

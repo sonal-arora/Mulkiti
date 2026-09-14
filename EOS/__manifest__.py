@@ -11,6 +11,7 @@
         'hr_holidays',
         'ohrms_loan',
         'mail',
+        'hr_employee_probation',
     ],
     'data': [
         'security/hr_eos_security.xml',

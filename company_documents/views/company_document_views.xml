@@ -103,6 +103,7 @@
                                     <field name="employee_id"/>
                                     <field name="sent_date" string="Sent On"/>
                                     <field name="signed_date" string="Signed On"/>
+                                    <field name="signer_emirates_id" string="Emirates ID"/>
                                     <field name="state" widget="badge"
                                            decoration-success="state == 'signed'"
                                            decoration-warning="state == 'pending'"
