@@ -54,6 +54,33 @@
         </field>
     </record>
 
+    <!-- Kanban card: Customer isn't used on internal tickets — show Created
+         By in its place instead. Defined before view_task_kanban_task_code
+         below: core's project_task_templates_kanban (Task Templates page)
+         re-validates against this same base Kanban view as soon as ANY
+         sibling extension view is written, so this fix (which keeps the
+         partner_id node instead of deleting it) must land first — otherwise
+         that revalidation still sees this record's previous "replace"
+         version still on disk and core's own xpath expects to find
+         partner_id there and fails. -->
+    <record id="view_task_kanban_created_by_instead_of_customer" model="ir.ui.view">
+        <field name="name">project.task.kanban.created.by.instead.of.customer</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_kanban"/>
+        <field name="arch" type="xml">
+            <!-- Hide (not remove) partner_id: deleting the node with
+                 position="replace" breaks any other inherited view that
+                 xpath-matches field[@name='partner_id'] on this same base
+                 Kanban view. Same safe pattern as the state field above. -->
+            <xpath expr="//field[@name='partner_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="create_uid" string="Created By" invisible="context.get('template_project')"/>
+            </xpath>
+        </field>
+    </record>
+
     <!-- Kanban card: show Task ID and Open Date as small muted lines under
          the task name -->
     <record id="view_task_kanban_task_code" model="ir.ui.view">
@@ -69,19 +96,6 @@
                     <span>Open Date: </span><field name="create_date"/>
                 </div>
             </field>
-        </field>
-    </record>
-
-    <!-- Kanban card: Customer isn't used on internal tickets — show Created
-         By in its place instead. -->
-    <record id="view_task_kanban_created_by_instead_of_customer" model="ir.ui.view">
-        <field name="name">project.task.kanban.created.by.instead.of.customer</field>
-        <field name="model">project.task</field>
-        <field name="inherit_id" ref="project.view_task_kanban"/>
-        <field name="arch" type="xml">
-            <xpath expr="//field[@name='partner_id']" position="replace">
-                <field name="create_uid" string="Created By" invisible="context.get('template_project')"/>
-            </xpath>
         </field>
     </record>
 
