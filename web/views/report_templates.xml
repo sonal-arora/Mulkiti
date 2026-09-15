@@ -417,8 +417,19 @@
 
         <div t-attf-class="footer o_company_#{company.id}_layout {{report_type != 'pdf' and 'mt-auto'}}">
             <div class="o_footer_content" t-attf-class="{{'d-flex' if is_html_empty(company.report_header) else 'row' }} o_footer_content border-top pt-2">
-                <div t-attf-class="{{'flex-grow-1' if is_html_empty(company.report_header) else 'col-8'}} {{'me-2' if is_html_empty(company.report_header) and report_type == 'pdf' else ''}}">
-                    <span t-field="company.report_footer"/>
+                <div t-attf-class="{{'flex-grow-1' if is_html_empty(company.report_header) else 'col-8'}} {{'me-2' if is_html_empty(company.report_header) and report_type == 'pdf' else ''}}"
+                     style="font-size:8px; color:#999999;">
+                    <div>Company Tax Registration No:
+                        <span t-field="company.vat"/>
+                        Registered Office:
+                        <span t-out="', '.join([x for x in [company.street, company.street2, company.city, company.zip, company.country_id.name] if x])"/>
+                        .
+                    </div>
+                    <div t-if="company.phone or company.email" style="margin-top:2px;">
+                        <span t-if="company.phone" t-field="company.phone"/>
+                        <span t-if="company.phone and company.email"> | </span>
+                        <span>financeteam@mulkiti.com</span>
+                    </div>
                 </div>
                 <div t-attf-class="{{'' if is_html_empty(company.report_header) else 'col-4'}} text-end">
                     <strong t-if="not is_html_empty(company.report_header)" t-field="company.report_header" class="o_company_tagline">Company tagline</strong>

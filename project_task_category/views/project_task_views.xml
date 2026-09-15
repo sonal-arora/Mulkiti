@@ -6,13 +6,27 @@
         <field name="model">project.task</field>
         <field name="inherit_id" ref="project.view_task_form2"/>
         <field name="arch" type="xml">
+            <!-- "Task Detail" section, left column — Task ID, Created By,
+                 Open Date — with a matching blank spacer on the right so
+                 the two columns' rows stay aligned. -->
+            <field name="project_id" position="before">
+                <separator string="Task Detail" colspan="2"/>
+                <field name="task_code" string="Task ID" readonly="1"/>
+                <field name="create_uid" string="Created By" readonly="1"/>
+                <field name="create_date" string="Open Date" readonly="1"/>
+            </field>
+            <xpath expr="//field[@name='tag_ids'][@context=&quot;{'project_id': project_id}&quot;]"
+                   position="before">
+                <separator string="" colspan="2"/>
+            </xpath>
+
             <field name="task_properties" position="before">
                 <group string="Ticket Classification &amp; TAT">
                     <group>
                         <field name="main_category_id"/>
                         <field name="sub_category_id" domain="[('main_category_id', '=', main_category_id)]"/>
                         <field name="priority_id"/>
-                        <field name="tag_id"/>
+                        <field name="tag_id" invisible="1"/>
                         <field name="working_hours"/>
                     </group>
                     <group>
@@ -29,9 +43,23 @@
                         <field name="sla_duration" widget="float_time"/>
                     </group>
                     <group>
-                        <field name="sla_status_id" readonly="1"/>
+                        <field name="sla_status_id" readonly="1" options="{'no_open': True}"/>
                     </group>
                 </group>
+            </field>
+        </field>
+    </record>
+
+    <!-- Kanban card: show Task ID as a small muted line under the task name -->
+    <record id="view_task_kanban_task_code" model="ir.ui.view">
+        <field name="name">project.task.kanban.task.code</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_kanban"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <div class="text-muted small" invisible="not task_code">
+                    <field name="task_code"/>
+                </div>
             </field>
         </field>
     </record>

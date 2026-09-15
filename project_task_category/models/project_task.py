@@ -64,6 +64,15 @@ class ProjectTask(models.Model):
              "drive any calculation (see Working Hours Calendar above for "
              "the field that actually does).",
     )
+    
+    task_code = fields.Char(
+        string='Task ID',
+        readonly=True,
+        copy=False,
+        index=True,
+        help="Unique task reference, e.g. MTSK/09/2026/000169. "
+             "The numeric part resets to 000001 every calendar year.",
+    )
 
     task_code = fields.Char(
         string='Task ID',
