@@ -54,7 +54,8 @@
         </field>
     </record>
 
-    <!-- Kanban card: show Task ID as a small muted line under the task name -->
+    <!-- Kanban card: show Task ID and Open Date as small muted lines under
+         the task name -->
     <record id="view_task_kanban_task_code" model="ir.ui.view">
         <field name="name">project.task.kanban.task.code</field>
         <field name="model">project.task</field>
@@ -64,7 +65,23 @@
                 <div class="text-muted small" invisible="not task_code">
                     <field name="task_code"/>
                 </div>
+                <div class="text-muted small">
+                    <span>Open Date: </span><field name="create_date"/>
+                </div>
             </field>
+        </field>
+    </record>
+
+    <!-- Kanban card: Customer isn't used on internal tickets — show Created
+         By in its place instead. -->
+    <record id="view_task_kanban_created_by_instead_of_customer" model="ir.ui.view">
+        <field name="name">project.task.kanban.created.by.instead.of.customer</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="replace">
+                <field name="create_uid" string="Created By" invisible="context.get('template_project')"/>
+            </xpath>
         </field>
     </record>
 

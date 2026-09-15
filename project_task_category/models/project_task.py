@@ -28,11 +28,6 @@ def _tat_normalize_stage_name(name):
 class ProjectTask(models.Model):
     _inherit = 'project.task'
 
-    # Core only defaults Assignees to the current user for personal tasks
-    # (no project). Override so every ticket defaults its Assignee to
-    # whoever is creating it — still editable/clearable before saving.
-    user_ids = fields.Many2many(default=lambda self: self.env.user.ids)
-
     # ── Classification (reuses project_task_category's masters) ───────────
     main_category_id = fields.Many2one(
         'project.task.main.category', string='Main Category',
