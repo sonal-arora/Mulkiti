@@ -64,8 +64,7 @@ class ProjectTask(models.Model):
              "drive any calculation (see Working Hours Calendar above for "
              "the field that actually does).",
     )
-
-    # ── Task ID ──────────────────────────────────────────────────────────
+    
     task_code = fields.Char(
         string='Task ID',
         readonly=True,
