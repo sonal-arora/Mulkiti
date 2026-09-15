@@ -65,6 +65,16 @@ class ProjectTask(models.Model):
              "the field that actually does).",
     )
 
+    # ── Task ID ──────────────────────────────────────────────────────────
+    task_code = fields.Char(
+        string='Task ID',
+        readonly=True,
+        copy=False,
+        index=True,
+        help="Unique task reference, e.g. MTSK/09/2026/000169. "
+             "The numeric part resets to 000001 every calendar year.",
+    )
+
     # ── Ageing ────────────────────────────────────────────────────────
     ageing_start_date = fields.Datetime(
         string='Ageing Start', readonly=True, copy=False,
@@ -391,11 +401,14 @@ class ProjectTask(models.Model):
             current = boundary
         return elapsed.total_seconds() / 3600.0
 
-    # ── Ageing start / restart ──────────────────────────────────────────
+    # ── Ageing start / restart, Task ID assignment ───────────────────────
     @api.model_create_multi
     def create(self, vals_list):
+        seq = self.env['ir.sequence']
         for vals in vals_list:
             vals.setdefault('ageing_start_date', fields.Datetime.now())
+            if not vals.get('task_code'):
+                vals['task_code'] = seq.next_by_code('project.task.code.seq') or ''
         return super().create(vals_list)
 
     def write(self, vals):

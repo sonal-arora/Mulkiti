@@ -39,6 +39,7 @@ Ticket Ageing / TAT / SLA on Project Tasks:
         'views/project_task_priority_views.xml',
         'views/project_task_sla_status_views.xml',
         'data/project_task_sla_status_data.xml',
+        'data/project_task_code_sequence.xml',
         'views/project_task_views.xml',
         'views/menu_views.xml',
         'data/ir_cron_data.xml',

@@ -21,4 +21,18 @@
         </field>
     </record>
 
+    <!-- Kanban card: show only 1 star (Normal <-> High toggle) instead of
+         the full Low/Medium/High/Urgent star rating. The priority field
+         itself is untouched everywhere else (Form, List, filters). -->
+    <record id="view_task_kanban_single_priority" model="ir.ui.view">
+        <field name="name">project.task.kanban.single.priority</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='priority'][@widget='priority']" position="attributes">
+                <attribute name="widget">project_kanban_single_priority</attribute>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>
