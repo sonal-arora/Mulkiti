@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Same treatment as the Kanban card: hide the standalone "State" pill
+         (In Progress / Changes Requested / Approved / Done / Cancelled) from
+         the Form view header too. Stage is already the single indicator,
+         shown via the Form's own statusbar — this pill was a redundant
+         second indicator sitting next to the priority stars. -->
+    <record id="view_task_form_hide_state" model="ir.ui.view">
+        <field name="name">project.task.form.hide.state</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="(//field[@name='state'][@widget='project_task_state_selection'])[1]"
+                   position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="(//field[@name='state'][@widget='project_task_state_selection'])[2]"
+                   position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Same treatment as the Kanban card: show only 1 star (Normal <-> High
+         toggle) on the Form header too, instead of the full Low/Medium/High/
+         Urgent star rating. The priority field itself is untouched
+         everywhere else (List, filters, etc). -->
+    <record id="view_task_form_single_priority" model="ir.ui.view">
+        <field name="name">project.task.form.single.priority</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <!-- [2] first: changing [1]'s widget attribute would make it stop
+                 matching this predicate, shifting what "[2]" refers to. -->
+            <xpath expr="(//field[@name='priority'][@widget='priority_switch'])[2]"
+                   position="attributes">
+                <attribute name="widget">project_form_single_priority</attribute>
+            </xpath>
+            <xpath expr="(//field[@name='priority'][@widget='priority_switch'])[1]"
+                   position="attributes">
+                <attribute name="widget">project_form_single_priority</attribute>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

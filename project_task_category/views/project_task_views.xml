@@ -20,6 +20,10 @@
                 <separator string="" colspan="2"/>
             </xpath>
 
+            <field name="partner_id" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </field>
+
             <field name="task_properties" position="before">
                 <group string="Ticket Classification &amp; TAT">
                     <group>
@@ -30,7 +34,7 @@
                         <field name="working_hours"/>
                     </group>
                     <group>
-                        <field name="resource_calendar_id"/>
+                        <field name="resource_calendar_id" invisible="1"/>
                         <field name="ageing_start_date"/>
                         <field name="ageing_end_date"/>
                         <field name="ageing_duration" widget="float_time"/>
