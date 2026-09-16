@@ -83,18 +83,28 @@ class HrEos(models.Model):
 
     # ── Annual Leave ──────────────────────────────────────────────────────────
     total_leave_allocated = fields.Float(
-        string='Total Annual Leave Allocated', compute='_compute_leave_details', store=True)
+        string='Total Annual Leave Allocated', compute='_compute_leave_details', store=True,
+        digits=(16, 2),
+        help='Theoretical leave entitlement for the whole tenure, by formula: '
+             'full months worked (before the resignation month) × the '
+             'applicable Monthly Leave Accrual Rate, plus the resignation '
+             'month\'s own Pro-rated Leave Accrual (B). Not the raw sum of '
+             'hr.leave.allocation records, which can include manual/one-off '
+             'allocations unrelated to the accrual formula.')
     leave_availed = fields.Float(
         string='Annual Leave Availed', compute='_compute_leave_details', store=True)
 
     # Leave balance as of the 1st day of the resignation/LWD month (A) — NOT
-    # today's system date. See _get_leave_balance_as_of().
+    # today's system date. See _get_leave_taken_before().
     leave_balance_month_start = fields.Float(
         string='Leave Balance as of Month Start', compute='_compute_leave_details',
         store=True, digits=(16, 2),
-        help='Annual leave balance as of the first day of the Last Working '
-             'Date\'s month, based on allocations/leaves dated on or before '
-             'that day (not on today\'s date).')
+        help='Formula-based leave entitlement as of the first day of the '
+             'Last Working Date\'s month: full months worked before that '
+             'month × the Monthly Leave Accrual Rate, minus annual leave '
+             'already taken on or before that day. Not based on raw '
+             'hr.leave.allocation records (which can include manual/one-off '
+             'allocations unrelated to the accrual formula).')
     leave_accrual_rate = fields.Float(
         string='Monthly Leave Accrual Rate', compute='_compute_leave_details',
         store=True, digits=(16, 2),
@@ -112,14 +122,6 @@ class HrEos(models.Model):
         help='(Monthly Leave Accrual Rate ÷ 22) × Working Days in the '
              'resignation month up to the Last Working Date.')
 
-    # Total Leave Balance for EOS = A + B. Auto-computed but left editable
-    # (readonly=False) so authorized users can adjust it when required.
-    leave_balance = fields.Float(
-        string='Annual Leave Balance', compute='_compute_leave_details',
-        store=True, readonly=False, digits=(16, 2), tracking=True,
-        help='Total Leave Balance for EOS = Leave Balance as of Month Start '
-             '(A) + Pro-rated Leave Accrual up to the Last Working Date (B). '
-             'Auto-populated, but can be manually adjusted if required.')
     leave_pay = fields.Monetary(
         string='Leave Pay', compute='_compute_leave_pay', store=True)
 
@@ -247,7 +249,6 @@ class HrEos(models.Model):
 
         if not emp_ids:
             for rec in self:
-                rec.total_leave_allocated = 0.0
                 rec.leave_availed = 0.0
                 rec._reset_leave_balance_fields()
             return
@@ -263,29 +264,11 @@ class HrEos(models.Model):
 
         if not annual_types:
             for rec in self:
-                rec.total_leave_allocated = 0.0
                 rec.leave_availed = 0.0
                 rec._reset_leave_balance_fields()
             return
 
         annual_type_ids = annual_types.ids
-
-        # Single aggregated query for allocations across all employees
-        # (lifetime totals — informational only, NOT used for the EOS
-        # leave-balance formula below, which must be anchored to the LWD).
-        alloc_rows = self.env['hr.leave.allocation'].read_group(
-            domain=[
-                ('employee_id', 'in', emp_ids),
-                ('holiday_status_id', 'in', annual_type_ids),
-                ('state', '=', 'validate'),
-            ],
-            fields=['employee_id', 'number_of_days:sum'],
-            groupby=['employee_id'],
-        )
-        allocated_by_emp = {
-            row['employee_id'][0]: row['number_of_days']
-            for row in alloc_rows
-        }
 
         # Single aggregated query for taken leaves across all employees
         leave_rows = self.env['hr.leave'].read_group(
@@ -305,32 +288,45 @@ class HrEos(models.Model):
         for rec in self:
             emp = rec.employee_id
             if not emp:
-                rec.total_leave_allocated = 0.0
                 rec.leave_availed = 0.0
                 rec._reset_leave_balance_fields()
                 continue
 
-            rec.total_leave_allocated = allocated_by_emp.get(emp.id, 0.0)
             rec.leave_availed = taken_by_emp.get(emp.id, 0.0)
 
             lwd = rec.last_working_date
-            if not lwd:
+            jd = rec.joining_date
+            if not lwd or not jd:
                 rec._reset_leave_balance_fields()
                 continue
 
             month_start = lwd.replace(day=1)
 
-            # (A) Leave balance as of the first day of the resignation month
-            # — based on the LWD, not on today's system date.
-            rec.leave_balance_month_start = rec._get_leave_balance_as_of(
-                emp, annual_type_ids, month_start)
-
-            # Accrual rate depends on completed service as of the LWD.
-            jd = rec.joining_date
-            completed_years = relativedelta(lwd, jd).years if jd else 0
+            # Accrual rate depends on completed service as of the LWD — one
+            # flat rate for the whole tenure (not blended even if the
+            # employee crossed the 1-year mark partway through).
+            completed_years = relativedelta(lwd, jd).years
             rec.leave_accrual_rate = (
                 LEAVE_ACCRUAL_RATE_UNDER_ONE_YEAR if completed_years < 1
                 else LEAVE_ACCRUAL_RATE_STANDARD
+            )
+
+            # Full months worked strictly before the resignation month.
+            full_months = max(0, (
+                relativedelta(month_start, jd).years * 12
+                + relativedelta(month_start, jd).months
+            ))
+
+            # (A) Formula-based entitlement for those full months (full_months
+            # × rate), minus leave already taken before the resignation month
+            # — NOT the raw hr.leave.allocation sum, which can include
+            # manual/one-off/test allocations unrelated to the accrual
+            # formula and would make the balance inconsistent with Total
+            # Annual Leave Allocated below.
+            taken_before_month_start = rec._get_leave_taken_before(
+                emp, annual_type_ids, month_start)
+            rec.leave_balance_month_start = (
+                full_months * rec.leave_accrual_rate - taken_before_month_start
             )
 
             # (B) Pro-rated accrual for the resignation month, up to the LWD.
@@ -340,36 +336,34 @@ class HrEos(models.Model):
                 rec.leave_accrual_rate / STANDARD_MONTH_WORKING_DAYS
             ) * rec.working_days_resignation_month
 
-            # Total Leave Balance for EOS = A + B
-            rec.leave_balance = rec.leave_balance_month_start + rec.pro_rated_leave_accrual
+            # Total Annual Leave Allocated = theoretical entitlement over the
+            # whole tenure = full months × rate + this month's pro-rated
+            # accrual (B).
+            rec.total_leave_allocated = (
+                full_months * rec.leave_accrual_rate + rec.pro_rated_leave_accrual
+            )
 
     def _reset_leave_balance_fields(self):
+        self.total_leave_allocated = 0.0
         self.leave_balance_month_start = 0.0
         self.leave_accrual_rate = 0.0
         self.working_days_resignation_month = 0
         self.pro_rated_leave_accrual = 0.0
-        self.leave_balance = 0.0
 
-    def _get_leave_balance_as_of(self, employee, annual_type_ids, as_of_date):
-        """Annual leave balance for `employee`, counting only allocations and
-        leaves effective on or before `as_of_date` — used so the EOS leave
-        balance reflects the Last Working Date's month, not today's date."""
-        allocated = sum(self.env['hr.leave.allocation'].search([
-            ('employee_id', '=', employee.id),
-            ('holiday_status_id', 'in', annual_type_ids),
-            ('state', '=', 'validate'),
-            ('date_from', '<=', as_of_date),
-        ]).mapped('number_of_days'))
-
+    def _get_leave_taken_before(self, employee, annual_type_ids, as_of_date):
+        """Validated annual leave days taken by `employee` on or before
+        `as_of_date` (the resignation month's 1st day) — used so the EOS
+        leave balance reflects the Last Working Date's month, not today's
+        date. Anything taken on as_of_date itself counts as "before" since
+        pro_rated_leave_accrual (B) doesn't separately net against leave
+        taken during its own window (month_start..LWD)."""
         as_of_dt = datetime.combine(as_of_date, time.max)
-        taken = sum(self.env['hr.leave'].search([
+        return sum(self.env['hr.leave'].search([
             ('employee_id', '=', employee.id),
             ('holiday_status_id', 'in', annual_type_ids),
             ('state', '=', 'validate'),
             ('date_from', '<=', as_of_dt),
         ]).mapped('number_of_days'))
-
-        return allocated - taken
 
     def _count_working_days(self, employee, date_from, date_to):
         """Count working days (inclusive) between two dates, per the
@@ -392,10 +386,13 @@ class HrEos(models.Model):
             current += timedelta(days=1)
         return count
 
-    @api.depends('basic_salary', 'leave_balance')
+    @api.depends('basic_salary', 'leave_balance_month_start')
     def _compute_leave_pay(self):
         for rec in self:
-            rec.leave_pay = (rec.basic_salary / 22.0) * rec.leave_balance if rec.basic_salary else 0.0
+            rec.leave_pay = (
+                (rec.basic_salary / 22.0) * rec.leave_balance_month_start
+                if rec.basic_salary else 0.0
+            )
 
     @api.depends('joining_date', 'last_working_date', 'total_calendar_days', 'basic_salary')
     def _compute_gratuity(self):
@@ -586,8 +583,8 @@ class HrEos(models.Model):
         if not self.env.user.has_group('EOS.group_hr_eos_head'):
             raise UserError(_('Only EOS Head can reset End of Service records to Draft.'))
         for rec in self:
-            if rec.state not in ('waiting_approval',):
-                raise UserError(_('Only EOS records waiting for approval can be reset to Draft.'))
+            # if rec.state not in ('waiting_approval',):
+            #     raise UserError(_('Only EOS records waiting for approval can be reset to Draft.'))
             rec.state = 'draft'
             # Resignation is no longer in process — take the employee back
             # out of the notice period.
