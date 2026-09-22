@@ -48,6 +48,7 @@ class ProjectTask(models.Model):
         help="Employees carrying this tag are notified about this ticket's "
              "status changes, the pre-expiry reminder, and the overdue alert.",
     )
+    quantity = fields.Char(string='Quantity')
     resource_calendar_id = fields.Many2one(
         'resource.calendar', string='Working Hours Calendar',
         default=lambda self: self.env.company.resource_calendar_id,

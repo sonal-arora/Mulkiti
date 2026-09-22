@@ -19,6 +19,10 @@
                    position="before">
                 <separator string="" colspan="2"/>
             </xpath>
+            <xpath expr="//field[@name='tag_ids'][@context=&quot;{'project_id': project_id}&quot;]"
+                   position="after">
+                <field name="quantity"/>
+            </xpath>
 
             <field name="partner_id" position="attributes">
                 <attribute name="invisible">1</attribute>
