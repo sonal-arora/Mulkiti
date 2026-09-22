@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_project_error_log"
+        name="Error Log"
+        parent="project.menu_main_pm"
+        action="action_project_error_log"
+        groups="project.group_project_user"
+        sequence="5"/>
+
+    <menuitem
+        id="menu_project_error_type"
+        name="Error Types"
+        parent="project.menu_project_config"
+        action="action_project_error_type"
+        groups="project.group_project_manager"
+        sequence="44"/>
+</odoo>

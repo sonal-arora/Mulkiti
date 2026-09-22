@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_project_error_log_list" model="ir.ui.view">
+        <field name="name">project.error.log.list</field>
+        <field name="model">project.error.log</field>
+        <field name="arch" type="xml">
+            <list string="Error Log">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="reported_by_id"/>
+                <field name="made_by_id"/>
+                <field name="error_type_id"/>
+                <field name="project_id"/>
+                <field name="unit_no"/>
+                <field name="repeat_status" widget="badge" decoration-warning="repeat_status == 'repeated'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_project_error_log_form" model="ir.ui.view">
+        <field name="name">project.error.log.form</field>
+        <field name="model">project.error.log</field>
+        <field name="arch" type="xml">
+            <form string="Error Log">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="date"/>
+                            <field name="reported_by_id"/>
+                            <field name="made_by_id"/>
+                            <field name="error_type_id"/>
+                        </group>
+                        <group>
+                            <field name="project_id"/>
+                            <field name="unit_no"/>
+                            <field name="repeat_status"/>
+                        </group>
+                    </group>
+                    <separator string="Error Description"/>
+                    <field name="description" nolabel="1"/>
+
+                    <separator string="Error Screenshots"/>
+                    <field name="screenshot_ids" widget="many2many_binary" nolabel="1"/>
+
+                    <separator string="Additional Remarks"/>
+                    <field name="remarks" nolabel="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_project_error_log_search" model="ir.ui.view">
+        <field name="name">project.error.log.search</field>
+        <field name="model">project.error.log</field>
+        <field name="arch" type="xml">
+            <search string="Error Log">
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="unit_no"/>
+                <field name="reported_by_id"/>
+                <field name="made_by_id"/>
+                <field name="error_type_id"/>
+                <filter string="Repeated Errors" name="filter_repeated" domain="[('repeat_status', '=', 'repeated')]"/>
+                <filter string="New Errors" name="filter_new" domain="[('repeat_status', '=', 'new')]"/>
+                <separator/>
+                <filter string="Date" name="filter_date" date="date"/>
+                <group>
+                    <filter string="Project" name="group_by_project" context="{'group_by': 'project_id'}"/>
+                    <filter string="Error Type" name="group_by_error_type" context="{'group_by': 'error_type_id'}"/>
+                    <filter string="Error Made By" name="group_by_made_by" context="{'group_by': 'made_by_id'}"/>
+                    <filter string="Repeated / New" name="group_by_repeat_status" context="{'group_by': 'repeat_status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_project_error_log" model="ir.actions.act_window">
+        <field name="name">Error Log</field>
+        <field name="res_model">project.error.log</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_project_error_log_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Log a new error
+            </p>
+        </field>
+    </record>
+</odoo>
