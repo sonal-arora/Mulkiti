@@ -10,17 +10,19 @@ class HrEmployee(models.Model):
     probation_end_date = fields.Date(
         string='Probation End Date',
         tracking=True,
+        prefetch=False,
         help="Date on which the employee's probation period is due to end. "
              "Drives the Employment Status and the daily HR reminders.",
     )
     employment_status = fields.Selection([
         ('probation', 'Probation'),
         ('confirmed', 'Confirmed'),
-    ], string='Employment Status', default='probation', tracking=True, copy=False)
+    ], string='Employment Status', default='probation', tracking=True, copy=False, prefetch=False)
     confirmation_date = fields.Date(
         string='Confirmation Date',
         readonly=True,
         copy=False,
+        prefetch=False,
         help="Date on which the employee was confirmed as Regular.",
     )
     probation_completed = fields.Boolean(
