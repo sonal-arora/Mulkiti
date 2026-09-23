@@ -1,12 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Entry point 1: inside the Project app, for regular Project Users. -->
     <menuitem
-        id="menu_project_error_log"
+        id="menu_project_error_log_in_project"
         name="Error Log"
         parent="project.menu_main_pm"
         action="action_project_error_log"
         groups="project.group_project_user"
         sequence="5"/>
+
+    <!--
+        Entry point 2: a standalone top-level app, for the view-only
+        Supervisor group. This group has no other Project rights at all,
+        so it must NOT go through project.menu_main_pm - Project's
+        "Projects"/"Tasks" menu items have no group restriction of their
+        own (Odoo relies on model-level access rights instead), so once
+        that app is reachable to them they would also see those.
+    -->
+    <menuitem
+        id="menu_project_error_log_root"
+        name="Error Log"
+        groups="group_project_error_log_viewer"
+        sequence="95"/>
+
+    <menuitem
+        id="menu_project_error_log"
+        name="Error Log"
+        parent="menu_project_error_log_root"
+        action="action_project_error_log"
+        groups="group_project_error_log_viewer"
+        sequence="1"/>
 
     <menuitem
         id="menu_project_error_type"

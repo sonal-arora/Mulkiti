@@ -11,8 +11,9 @@ against a project/unit: who reported it, who made it, the type of error,
 description, screenshots, and whether it is a repeated or new error.
 """,
     'author': 'Mulkiti',
-    'depends': ['project', 'hr'],
+    'depends': ['project'],
     'data': [
+        'security/project_error_log_groups.xml',
         'security/ir.model.access.csv',
         'data/project_error_log_sequence.xml',
         'views/project_error_type_views.xml',

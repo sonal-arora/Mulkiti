@@ -1,4 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_project_error_log_project_user,project.error.log.project.user,model_project_error_log,project.group_project_user,1,1,1,1
+access_project_error_log_viewer,project.error.log.viewer,model_project_error_log,group_project_error_log_viewer,1,0,0,0
 access_project_error_type_project_user,project.error.type.project.user,model_project_error_type,project.group_project_user,1,0,0,0
 access_project_error_type_project_manager,project.error.type.project.manager,model_project_error_type,project.group_project_manager,1,1,1,1
+access_project_error_type_viewer,project.error.type.viewer,model_project_error_type,group_project_error_log_viewer,1,0,0,0

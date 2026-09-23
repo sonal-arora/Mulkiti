@@ -29,12 +29,12 @@
                     <group>
                         <group>
                             <field name="date"/>
-                            <field name="reported_by_id"/>
-                            <field name="made_by_id"/>
-                            <field name="error_type_id"/>
+                            <field name="reported_by_id" options="{'no_open': True}"/>
+                            <field name="made_by_id" options="{'no_open': True}"/>
+                            <field name="error_type_id" options="{'no_open': True}"/>
                         </group>
                         <group>
-                            <field name="project_id"/>
+                            <field name="project_id" options="{'no_open': True}"/>
                             <field name="unit_no"/>
                             <field name="repeat_status"/>
                         </group>
