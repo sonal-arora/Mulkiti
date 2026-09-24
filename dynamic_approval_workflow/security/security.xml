@@ -88,20 +88,6 @@
         <field name="groups" eval="[(4, ref('base.group_user'))]"/>
     </record>
 
-    <!-- Indirect manager can see indirect reports in org chart (hr.employee.public) -->
-    <record id="hr_employee_public_indirect_manager_rule" model="ir.rule">
-        <field name="name">Employee Public: Indirect Manager — Read</field>
-        <field name="model_id" ref="hr.model_hr_employee_public"/>
-        <field name="domain_force">
-            [('parent_id.parent_id.user_id', '=', user.id)]
-        </field>
-        <field name="perm_read"   eval="True"/>
-        <field name="perm_write"  eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
-        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-    </record>
-
     <!-- ─── Leave Summary record rules ───────────────────────────────────────
          base.group_user (approvers) see ONLY employees they approve for.
          Officers/Managers already have full access via ir.model.access so
@@ -139,5 +125,29 @@
         <field name="groups" eval="[(4, ref('hr_holidays.group_hr_holidays_user'))]"/>
     </record>
 
+</data>
+
+<!--
+    noupdate="0": this record must keep re-applying its domain_force on every
+    module upgrade, since it was previously shipped with a hardcoded 2-level
+    depth cap that needs to be corrected on databases that already installed
+    the older version.
+-->
+<data noupdate="0">
+    <!-- Manager can see ALL reports under them in the org chart (hr.employee.public),
+         at any depth - not just direct/indirect (2 levels). child_of walks the
+         full parent_id chain downward regardless of how deep it goes. -->
+    <record id="hr_employee_public_indirect_manager_rule" model="ir.rule">
+        <field name="name">Employee Public: Indirect Manager — Read</field>
+        <field name="model_id" ref="hr.model_hr_employee_public"/>
+        <field name="domain_force">
+            [('id', 'child_of', user.employee_id.id)]
+        </field>
+        <field name="perm_read"   eval="True"/>
+        <field name="perm_write"  eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record>
 </data>
 </odoo>
