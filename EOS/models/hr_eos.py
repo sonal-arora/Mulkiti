@@ -571,11 +571,26 @@ class HrEos(models.Model):
         if emp_sudo.user_id:
             emp_sudo.user_id.sudo().active = False
 
+        leaves = self.env['hr.leave'].sudo().search([('employee_id', '=', emp.id)])
+        leaves.write({'active': False})
+
+        doc_signatures_count = 0
+        if 'company.document.signature' in self.env:
+            doc_signatures = self.env['company.document.signature'].sudo().search([
+                ('employee_id', '=', emp.id),
+            ])
+            doc_signatures.write({'active': False})
+            doc_signatures_count = len(doc_signatures)
+
         self.message_post(
             body=_(
                 'End of Service completed for <strong>%(emp)s</strong>: employee '
-                'archived and user login deactivated.',
+                'archived, user login deactivated, %(count)d time off '
+                'record(s) archived, and %(doc_count)d document signature '
+                'request(s) archived.',
                 emp=emp.name,
+                count=len(leaves),
+                doc_count=doc_signatures_count,
             )
         )
 

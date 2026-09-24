@@ -38,7 +38,7 @@ class HrEmployee(models.Model):
         string='Leave 1st Approver',
         tracking=True,
         groups='hr_holidays.group_hr_holidays_user',
-        domain="[('share', '=', False), ('company_ids', 'in', company_id)]",
+        domain="[('share', '=', False), ('company_ids', 'in', allowed_company_ids)]",
         help=(
             "Custom first-level approver for this employee's leave requests. "
             "The employee's direct manager can also approve at this level."
@@ -53,7 +53,7 @@ class HrEmployee(models.Model):
         string='Leave 2nd Approver',
         tracking=True,
         groups='hr_holidays.group_hr_holidays_user',
-        domain="[('share', '=', False), ('company_ids', 'in', company_id)]",
+        domain="[('share', '=', False), ('company_ids', 'in', allowed_company_ids)]",
         help=(
             "Second-level approver for this employee's leave requests. "
             "If not set, the 2nd approval step is skipped and the request "
@@ -75,7 +75,7 @@ class EmployeePublic(models.Model):
         string='Leave 1st Approver',
         tracking=True,
         groups='hr_holidays.group_hr_holidays_user',
-        domain="[('share', '=', False), ('company_ids', 'in', company_id)]",
+        domain="[('share', '=', False), ('company_ids', 'in', allowed_company_ids)]",
         help=(
             "Custom first-level approver for this employee's leave requests. "
             "The employee's direct manager can also approve at this level."
@@ -90,7 +90,7 @@ class EmployeePublic(models.Model):
         string='Leave 2nd Approver',
         tracking=True,
         groups='hr_holidays.group_hr_holidays_user',
-        domain="[('share', '=', False), ('company_ids', 'in', company_id)]",
+        domain="[('share', '=', False), ('company_ids', 'in', allowed_company_ids)]",
         help=(
             "Second-level approver for this employee's leave requests. "
             "If not set, the 2nd approval step is skipped and the request "
