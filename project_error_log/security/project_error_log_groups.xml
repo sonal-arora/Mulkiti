@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="group_project_error_log_viewer" model="res.groups">
-        <field name="name">Error Log - View Only</field>
-        <field name="comment">Can open the Error Log menu and view entries, but cannot create, edit, or delete them. For supervisors who only need to review the log.</field>
+        <field name="name">Supervisor - View Only</field>
+        <field name="comment">Read-only oversight access: Error Log, and company-wide Time Off requests and allocations. Cannot create, edit, or delete anything.</field>
     </record>
 </odoo>
