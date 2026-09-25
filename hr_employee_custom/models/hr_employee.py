@@ -51,6 +51,16 @@ class HrEmployee(models.Model):
             'context': {'default_employee_id': self.id},
         }
 
+    def write(self, vals):
+        res = super().write(vals)
+        if 'active' in vals:
+            self.env['employee.document'].sudo().with_context(
+                active_test=False
+            ).search([
+                ('employee_id', 'in', self.ids),
+            ]).write({'active': vals['active']})
+        return res
+
 class EmployeePublic(models.Model):
     _inherit = 'hr.employee.public'
 

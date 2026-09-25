@@ -6,13 +6,37 @@
         <field name="name">employee.document.tree</field>
         <field name="model">employee.document</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-muted="not active">
                 <field name="name"/>
                 <field name="employee_id"/>
                 <field name="document_type"/>
                 <field name="expiry_date"/>
                 <field name="state"/>
+                <field name="active" column_invisible="1"/>
             </list>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_employee_document_search" model="ir.ui.view">
+        <field name="name">employee.document.search</field>
+        <field name="model">employee.document</field>
+        <field name="arch" type="xml">
+            <search string="Employee Documents">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="document_type"/>
+                <filter string="Valid" name="filter_valid" domain="[('state', '=', 'valid')]"/>
+                <filter string="Expire Soon" name="filter_expire_soon" domain="[('state', '=', 'expire_soon')]"/>
+                <filter string="Expired" name="filter_expired" domain="[('state', '=', 'expired')]"/>
+                <separator/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter string="Employee" name="group_by_employee" context="{'group_by': 'employee_id'}"/>
+                    <filter string="Document Type" name="group_by_document_type" context="{'group_by': 'document_type'}"/>
+                    <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
         </field>
     </record>
 
@@ -58,6 +82,7 @@
         <field name="name">Employee Documents</field>
         <field name="res_model">employee.document</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_employee_document_search"/>
     </record>
 
     <!-- Menu -->

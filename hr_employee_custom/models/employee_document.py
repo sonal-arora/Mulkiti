@@ -10,6 +10,7 @@ class EmployeeDocument(models.Model):
 
     name = fields.Char("Document Number")
     employee_id = fields.Many2one('hr.employee', required=True)
+    active = fields.Boolean(default=True)
 
     document_type = fields.Selection([
         ('passport', 'Passport'),

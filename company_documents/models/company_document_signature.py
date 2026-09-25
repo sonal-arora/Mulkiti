@@ -73,7 +73,6 @@ class CompanyDocumentSignature(models.Model):
         string='Signature URL',
         compute='_compute_sign_url',
     )
-    active = fields.Boolean(default=True)
 
     _unique_doc_employee = Constraint(
         'UNIQUE(document_id, employee_id)',
@@ -87,16 +86,8 @@ class CompanyDocumentSignature(models.Model):
             rec.sign_url = '%s/document/sign/%s/%s' % (base_url, rec.document_id.id, rec.token)
 
     def action_send_email(self):
-        """Send signature request email to employee.
-
-        Returns False without sending (no exception) if the employee is no
-        longer active, so this never interrupts a caller looping over
-        several employees or running unattended (e.g. a scheduled action).
-        """
+        """Send signature request email to employee."""
         self.ensure_one()
-        if not self.employee_id.active:
-            return False
-
         template = self.env.ref(
             'company_documents.email_template_signature_request',
             raise_if_not_found=False,
