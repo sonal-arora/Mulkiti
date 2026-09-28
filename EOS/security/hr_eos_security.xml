@@ -39,23 +39,29 @@
 
     <!-- ── Record Rules ───────────────────────────────────────────────── -->
 
-    <!-- User: sees only records they created, within their company -->
-    <record id="hr_eos_rule_user" model="ir.rule">
-        <field name="name">EOS: User sees own records only</field>
-        <field name="model_id" ref="model_hr_eos"/>
-        <field name="domain_force">[('create_uid', '=', user.id), ('company_id', 'in', user.company_ids.ids)]</field>
-        <field name="groups" eval="[(4, ref('EOS.group_hr_eos_user'))]"/>
-    </record>
-
 </data>
 
 <!--
-    noupdate="0": hr_eos_rule_manager/head were previously shipped fully open
-    across every company ([(1,'=',1)]) - they must keep re-applying their
-    corrected domain_force on every module upgrade, for databases that
-    already installed the older version.
+    noupdate="0": all three rules below were previously shipped with
+    multi-company bugs and must keep re-applying their corrected
+    domain_force on every module upgrade, for databases that already
+    installed the older versions:
+      - hr_eos_rule_user used user.company_ids.ids (the user's FULL
+        allowed-companies list) instead of company_ids (the session's
+        currently active company/companies) - it ignored the company
+        switcher and always showed every allowed company's records.
+      - hr_eos_rule_manager/head were fully open across every company
+        ([(1,'=',1)]).
 -->
 <data noupdate="0">
+    <!-- User: sees only records they created, within their current company -->
+    <record id="hr_eos_rule_user" model="ir.rule">
+        <field name="name">EOS: User sees own records only</field>
+        <field name="model_id" ref="model_hr_eos"/>
+        <field name="domain_force">[('create_uid', '=', user.id), ('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('EOS.group_hr_eos_user'))]"/>
+    </record>
+
     <!-- Manager: sees all records, but only in their own (logged-in) company -->
     <record id="hr_eos_rule_manager" model="ir.rule">
         <field name="name">EOS: Manager sees all records (own company)</field>
