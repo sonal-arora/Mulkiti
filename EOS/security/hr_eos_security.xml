@@ -47,21 +47,29 @@
         <field name="groups" eval="[(4, ref('EOS.group_hr_eos_user'))]"/>
     </record>
 
-    <!-- Manager: sees all records (overrides user rule) -->
+</data>
+
+<!--
+    noupdate="0": hr_eos_rule_manager/head were previously shipped fully open
+    across every company ([(1,'=',1)]) - they must keep re-applying their
+    corrected domain_force on every module upgrade, for databases that
+    already installed the older version.
+-->
+<data noupdate="0">
+    <!-- Manager: sees all records, but only in their own (logged-in) company -->
     <record id="hr_eos_rule_manager" model="ir.rule">
-        <field name="name">EOS: Manager sees all records</field>
+        <field name="name">EOS: Manager sees all records (own company)</field>
         <field name="model_id" ref="model_hr_eos"/>
-        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
         <field name="groups" eval="[(4, ref('EOS.group_hr_eos_manager'))]"/>
     </record>
 
-    <!-- Head: sees all records (overrides user rule) -->
+    <!-- Head: sees all records, but only in their own (logged-in) company -->
     <record id="hr_eos_rule_head" model="ir.rule">
-        <field name="name">EOS: Head sees all records</field>
+        <field name="name">EOS: Head sees all records (own company)</field>
         <field name="model_id" ref="model_hr_eos"/>
-        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
         <field name="groups" eval="[(4, ref('EOS.group_hr_eos_head'))]"/>
     </record>
-
 </data>
 </odoo>

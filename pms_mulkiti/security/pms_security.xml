@@ -123,5 +123,21 @@
             <field name="domain_force">[('employee_id.company_id', 'in', company_ids)]</field>
             <field name="groups" eval="[(4, ref('pms_mulkiti.group_pms_head'))]"/>
         </record>
+
+        <!-- PMS Initialize (financial-year setup) had no multi-company
+             scoping at all - a Head could see/manage every company's
+             initialize records. Global rule (no groups) since only
+             group_pms_head has any access to this model at all today. -->
+        <record id="pms_initialize_rule_company" model="ir.rule">
+            <field name="name">PMS Initialize: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_initialize"/>
+            <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="pms_initialize_preview_rule_company" model="ir.rule">
+            <field name="name">PMS Initialize Preview: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_initialize_preview"/>
+            <field name="domain_force">[('initialize_id.company_id', 'in', company_ids)]</field>
+        </record>
     </data>
 </odoo>
