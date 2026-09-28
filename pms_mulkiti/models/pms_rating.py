@@ -9,7 +9,13 @@ class PmsRating(models.Model):
     name = fields.Char(string="Rating", required=True)
     description = fields.Text(string="Description")
     active = fields.Boolean(default=True)
+    company_id = fields.Many2one(
+        "res.company",
+        string="Company",
+        default=lambda self: self.env.company,
+    )
 
-    _sql_constraints = [
-        ("name_uniq", "unique(name)", "Rating name must be unique."),
-    ]
+    _name_uniq = models.Constraint(
+        "unique(name, company_id)",
+        "Rating name must be unique per company.",
+    )

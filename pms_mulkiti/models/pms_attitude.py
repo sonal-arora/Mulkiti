@@ -18,6 +18,11 @@ class PmsAttitude(models.Model):
         string="Attitude & Behavior Criteria",
     )
     active = fields.Boolean(default=True)
+    company_id = fields.Many2one(
+        "res.company",
+        string="Company",
+        default=lambda self: self.env.company,
+    )
 
 
 class PmsAttitudeLine(models.Model):

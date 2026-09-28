@@ -18,14 +18,16 @@ class PmsTraining(models.Model):
         string="Projects",
     )
     active = fields.Boolean(default=True)
+    company_id = fields.Many2one(
+        "res.company",
+        string="Company",
+        default=lambda self: self.env.company,
+    )
 
-    _sql_constraints = [
-        (
-            "financial_year_uniq",
-            "unique(financial_year_id)",
-            "A Training already exists for this Financial Year.",
-        ),
-    ]
+    _financial_year_uniq = models.Constraint(
+        "unique(financial_year_id, company_id)",
+        "A Training already exists for this Financial Year and Company.",
+    )
 
 
 class PmsTrainingLine(models.Model):

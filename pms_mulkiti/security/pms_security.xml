@@ -139,5 +139,57 @@
             <field name="model_id" ref="pms_mulkiti.model_pms_initialize_preview"/>
             <field name="domain_force">[('initialize_id.company_id', 'in', company_ids)]</field>
         </record>
+
+        <!-- Rest of PMS Configuration: none of these had any multi-company
+             scoping - each now carries its own company_id (added alongside
+             these rules) and is filtered accordingly. Global rules (no
+             groups) so they apply regardless of PMS role. -->
+        <record id="pms_financial_year_rule_company" model="ir.rule">
+            <field name="name">PMS Financial Year: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_financial_year"/>
+            <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="pms_rating_rule_company" model="ir.rule">
+            <field name="name">PMS Rating: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_rating"/>
+            <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="pms_kra_rule_company" model="ir.rule">
+            <field name="name">PMS KRA: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_kra"/>
+            <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="pms_kra_line_rule_company" model="ir.rule">
+            <field name="name">PMS KRA Line: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_kra_line"/>
+            <field name="domain_force">[('kra_id.company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="pms_attitude_rule_company" model="ir.rule">
+            <field name="name">PMS Attitude: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_attitude"/>
+            <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="pms_attitude_line_rule_company" model="ir.rule">
+            <field name="name">PMS Attitude Line: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_attitude_line"/>
+            <field name="domain_force">[('attitude_id.company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="pms_training_rule_company" model="ir.rule">
+            <field name="name">PMS Training: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_training"/>
+            <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="pms_training_line_rule_company" model="ir.rule">
+            <field name="name">PMS Training Line: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_training_line"/>
+            <field name="domain_force">[('training_id.company_id', 'in', company_ids)]</field>
+        </record>
     </data>
 </odoo>

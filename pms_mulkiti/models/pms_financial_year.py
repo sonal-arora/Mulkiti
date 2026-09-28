@@ -10,7 +10,13 @@ class PmsFinancialYear(models.Model):
     date_start = fields.Date(string="Start Date", required=True)
     date_end = fields.Date(string="End Date", required=True)
     active = fields.Boolean(default=True)
+    company_id = fields.Many2one(
+        "res.company",
+        string="Company",
+        default=lambda self: self.env.company,
+    )
 
-    _sql_constraints = [
-        ("name_uniq", "unique(name)", "Financial Year name must be unique."),
-    ]
+    _name_uniq = models.Constraint(
+        "unique(name, company_id)",
+        "Financial Year name must be unique per company.",
+    )

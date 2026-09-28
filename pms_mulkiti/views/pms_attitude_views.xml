@@ -12,6 +12,7 @@
                     </div>
                     <group>
                         <field name="financial_year_id"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
                     </group>
                     <notebook>
                         <page string="Attitude &amp; Behavior Criteria" name="attitude_lines">
@@ -36,6 +37,7 @@
             <list>
                 <field name="name"/>
                 <field name="financial_year_id"/>
+                <field name="company_id" groups="base.group_multi_company" optional="show"/>
                 <field name="active" invisible="1"/>
             </list>
         </field>
