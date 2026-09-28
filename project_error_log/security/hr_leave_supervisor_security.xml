@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!--
+        Independent from Error Log access - this is its own group
+        (group_hr_leave_summary_viewer), so it can be granted to someone
+        without also giving them Error Log rights, and vice versa.
+
         Reuses the existing "Team Leave Summary" menu/screen
         (dynamic_approval_workflow, model hr.leave.summary) instead of
-        separate menus - that menu is already visible to any base.group_user,
-        which the Supervisor viewer group already is. By default
-        base.group_user only sees their own reportees there
+        separate menus - that menu is already visible to any base.group_user.
+        By default base.group_user only sees their own reportees there
         (hr_leave_summary_rule_approver); this rule grants this specific
         group the same "see everyone [in their allowed companies]" access
         Time Off Officers already have, combined via OR with the existing
@@ -18,14 +21,14 @@
         records just because they hold this group.
     -->
     <record id="hr_leave_summary_rule_supervisor_viewer" model="ir.rule">
-        <field name="name">Leave Summary: Supervisor viewer sees all (own company)</field>
+        <field name="name">Leave Summary: Leave summary viewer sees all (own company)</field>
         <field name="model_id" ref="dynamic_approval_workflow.model_hr_leave_summary"/>
         <field name="domain_force">[('employee_id.company_id', 'in', company_ids)]</field>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
-        <field name="groups" eval="[(4, ref('group_project_error_log_viewer'))]"/>
+        <field name="groups" eval="[(4, ref('group_hr_leave_summary_viewer'))]"/>
     </record>
 
     <!--
@@ -35,13 +38,13 @@
         Same company scoping as above.
     -->
     <record id="hr_employee_public_rule_supervisor_viewer" model="ir.rule">
-        <field name="name">Employee Public: Supervisor viewer sees all (own company)</field>
+        <field name="name">Employee Public: Leave summary viewer sees all (own company)</field>
         <field name="model_id" ref="hr.model_hr_employee_public"/>
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
-        <field name="groups" eval="[(4, ref('group_project_error_log_viewer'))]"/>
+        <field name="groups" eval="[(4, ref('group_hr_leave_summary_viewer'))]"/>
     </record>
 </odoo>

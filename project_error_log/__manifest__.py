@@ -10,9 +10,11 @@ Adds an "Error Log" menu under the Project app to record errors reported
 against a project/unit: who reported it, who made it, the type of error,
 description, screenshots, and whether it is a repeated or new error.
 
-Also defines a "Supervisor - View Only" group with read-only oversight
-access to the Error Log plus the company-wide "Team Leave Summary" (Time
-Off allocated/used/pending/balance per employee).
+Also defines two independent read-only groups:
+- "Error Log - View Only": view the Error Log only.
+- "Leave Summary - View Only": view the company-wide "Team Leave Summary"
+  (Time Off allocated/used/pending/balance per employee) only.
+Each can be granted on its own, without implying the other.
 """,
     'author': 'Mulkiti',
     'depends': ['project', 'dynamic_approval_workflow'],
