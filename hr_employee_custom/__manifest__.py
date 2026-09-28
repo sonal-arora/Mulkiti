@@ -19,6 +19,7 @@
     },
     'data': [
         # 'security/security.xml',
+        'security/employee_document_security.xml',
         'security/ir.model.access.csv',
         'data/ir_cron.xml',
         'views/hr_employee_views.xml',

@@ -85,15 +85,28 @@
             <field name="perm_unlink" eval="False"/>
         </record>
 
-        <!-- Manager: own + team -->
+    </data>
+
+    <!--
+        noupdate="0": pms_appraisal_rule_manager/head were previously shipped
+        without company scoping (fully open across every company) - they must
+        keep re-applying their corrected domain_force on every module
+        upgrade, for databases that already installed the older version.
+    -->
+    <data noupdate="0">
+        <!-- Manager: own + team (AND company_ids, defensively - a
+             cross-company manager assignment must not leak the other
+             company's appraisals). -->
         <record id="pms_appraisal_rule_manager" model="ir.rule">
-            <field name="name">PMS Appraisal - Manager sees team</field>
+            <field name="name">PMS Appraisal - Manager sees team (own company)</field>
             <field name="model_id" ref="pms_mulkiti.model_pms_appraisal"/>
-            <field name="domain_force">['|','|','|',
-                ('employee_user_id', '=', user.id),
-                ('manager_user_id', '=', user.id),
-                ('second_manager_user_id', '=', user.id),
-                ('employee_id.parent_id.user_id', '=', user.id)
+            <field name="domain_force">['&amp;',
+                ('employee_id.company_id', 'in', company_ids),
+                '|','|','|',
+                    ('employee_user_id', '=', user.id),
+                    ('manager_user_id', '=', user.id),
+                    ('second_manager_user_id', '=', user.id),
+                    ('employee_id.parent_id.user_id', '=', user.id)
             ]</field>
             <field name="groups" eval="[(4, ref('pms_mulkiti.group_pms_manager'))]"/>
             <field name="perm_read" eval="True"/>
@@ -102,11 +115,12 @@
             <field name="perm_unlink" eval="False"/>
         </record>
 
-        <!-- Head: full access -->
+        <!-- Head: full access, but scoped to their own (logged-in) company -
+             this was previously fully open across every company. -->
         <record id="pms_appraisal_rule_head" model="ir.rule">
-            <field name="name">PMS Appraisal - Head sees all</field>
+            <field name="name">PMS Appraisal - Head sees all (own company)</field>
             <field name="model_id" ref="pms_mulkiti.model_pms_appraisal"/>
-            <field name="domain_force">[(1, '=', 1)]</field>
+            <field name="domain_force">[('employee_id.company_id', 'in', company_ids)]</field>
             <field name="groups" eval="[(4, ref('pms_mulkiti.group_pms_head'))]"/>
         </record>
     </data>

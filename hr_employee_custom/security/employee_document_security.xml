@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Employee Document (Labour Card/Visa/EID/etc.) had no multi-company
+        scoping at all - any HR user could see every company's documents,
+        not just the one(s) they are logged into. Global rule (no groups)
+        so it applies to hr.group_hr_user and hr.group_hr_manager alike,
+        ANDed on top of whatever else they see.
+    -->
+    <record id="employee_document_rule_company" model="ir.rule">
+        <field name="name">Employee Document: multi-company</field>
+        <field name="model_id" ref="model_employee_document"/>
+        <field name="domain_force">[('employee_id.company_id', 'in', company_ids)]</field>
+    </record>
+</odoo>

@@ -94,37 +94,6 @@
          no separate "see all" rule needed for them.
     ──────────────────────────────────────────────────────────────────────── -->
 
-    <!-- 1st/2nd approver, direct manager & indirect manager: see their reportees -->
-    <record id="hr_leave_summary_rule_approver" model="ir.rule">
-        <field name="name">Leave Summary: Approver sees own reportees only</field>
-        <field name="model_id" ref="model_hr_leave_summary"/>
-        <field name="domain_force">
-            ['|', '|', '|',
-                ('employee_id.x_leave_approver_1_id',          '=', user.id),
-                ('employee_id.x_leave_approver_2_id',          '=', user.id),
-                ('employee_id.parent_id.user_id',              '=', user.id),
-                ('employee_id.parent_id.parent_id.user_id',    '=', user.id),
-            ]
-        </field>
-        <field name="perm_read"   eval="True"/>
-        <field name="perm_write"  eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
-        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-    </record>
-
-    <!-- Time Off Officers see ALL employees in leave summary -->
-    <record id="hr_leave_summary_rule_officer" model="ir.rule">
-        <field name="name">Leave Summary: Officer sees all</field>
-        <field name="model_id" ref="model_hr_leave_summary"/>
-        <field name="domain_force">[(1, '=', 1)]</field>
-        <field name="perm_read"   eval="True"/>
-        <field name="perm_write"  eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
-        <field name="groups" eval="[(4, ref('hr_holidays.group_hr_holidays_user'))]"/>
-    </record>
-
 </data>
 
 <!--
@@ -148,6 +117,46 @@
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
         <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- 1st/2nd approver, direct manager & indirect manager: see their reportees
+         (AND company_ids, defensively - a cross-company manager assignment
+         must not leak the other company's leave summary rows).
+         noupdate="0": previously shipped without company scoping, must
+         re-apply on upgrade for databases that already installed that
+         version. -->
+    <record id="hr_leave_summary_rule_approver" model="ir.rule">
+        <field name="name">Leave Summary: Approver sees own reportees only</field>
+        <field name="model_id" ref="model_hr_leave_summary"/>
+        <field name="domain_force">
+            ['&amp;',
+                ('employee_id.company_id', 'in', company_ids),
+                '|', '|', '|',
+                    ('employee_id.x_leave_approver_1_id',          '=', user.id),
+                    ('employee_id.x_leave_approver_2_id',          '=', user.id),
+                    ('employee_id.parent_id.user_id',              '=', user.id),
+                    ('employee_id.parent_id.parent_id.user_id',    '=', user.id),
+            ]
+        </field>
+        <field name="perm_read"   eval="True"/>
+        <field name="perm_write"  eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- Time Off Officers see ALL employees in leave summary, but only in
+         their own (logged-in) company - this was previously fully open
+         across every company in the database. -->
+    <record id="hr_leave_summary_rule_officer" model="ir.rule">
+        <field name="name">Leave Summary: Officer sees all (own company)</field>
+        <field name="model_id" ref="model_hr_leave_summary"/>
+        <field name="domain_force">[('employee_id.company_id', 'in', company_ids)]</field>
+        <field name="perm_read"   eval="True"/>
+        <field name="perm_write"  eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="groups" eval="[(4, ref('hr_holidays.group_hr_holidays_user'))]"/>
     </record>
 </data>
 </odoo>
