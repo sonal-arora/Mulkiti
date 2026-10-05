@@ -35,6 +35,14 @@
         groups="company_documents.group_company_document_manager"/>
 
     <menuitem
+        id="menu_document_folders"
+        name="Folders"
+        parent="menu_company_documents_manage"
+        action="action_company_document_folder"
+        sequence="15"
+        groups="company_documents.group_company_document_manager"/>
+
+    <menuitem
         id="menu_document_categories"
         name="Categories"
         parent="menu_company_documents_manage"

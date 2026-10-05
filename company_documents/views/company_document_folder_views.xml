@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══ FOLDER LIST ═════════════════════════════════════════════════════ -->
+    <record id="view_company_document_folder_list" model="ir.ui.view">
+        <field name="name">company.document.folder.list</field>
+        <field name="model">company.document.folder</field>
+        <field name="arch" type="xml">
+            <list string="Document Folders">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="access_type" widget="badge"
+                       decoration-success="access_type == 'all'"
+                       decoration-info="access_type == 'specific'"/>
+                <field name="user_ids" widget="many2many_tags"
+                       invisible="access_type == 'all'"/>
+                <field name="document_count"/>
+                <field name="view_count" optional="show"/>
+                <field name="download_count" optional="show"/>
+                <field name="notify_on_update" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ══ FOLDER FORM ═════════════════════════════════════════════════════ -->
+    <record id="view_company_document_folder_form" model="ir.ui.view">
+        <field name="name">company.document.folder.form</field>
+        <field name="model">company.document.folder</field>
+        <field name="arch" type="xml">
+            <form string="Document Folder">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object"
+                                name="action_view_documents" icon="fa-file-text-o">
+                            <field name="document_count" widget="statinfo" string="Documents"/>
+                        </button>
+                        <button class="oe_stat_button" type="object"
+                                name="action_view_history" icon="fa-eye">
+                            <field name="view_count" widget="statinfo" string="Views"/>
+                        </button>
+                        <button class="oe_stat_button" type="object"
+                                name="action_view_history" icon="fa-download">
+                            <field name="download_count" widget="statinfo" string="Downloads"/>
+                        </button>
+                        <div class="oe_stat_button" name="users_stat">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value"><field name="user_count"/></span>
+                                <span class="o_stat_text">Users</span>
+                            </div>
+                        </div>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Phase 1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="access_type" widget="radio"/>
+                        </group>
+                        <group>
+                            <field name="notify_on_update"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="users" string="Allowed Users"
+                              invisible="access_type == 'all'">
+                            <field name="user_ids" options="{'no_create': True}">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="login"/>
+                                    <field name="company_id" groups="base.group_multi_company"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="description" string="Description">
+                            <field name="description" placeholder="What is this folder for?"/>
+                        </page>
+                    </notebook>
+                    <div class="alert alert-info mb-0" role="status"
+                         invisible="access_type != 'all'">
+                        Every employee of this company can see this folder and its published documents.
+                    </div>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ══ FOLDER SEARCH ═══════════════════════════════════════════════════ -->
+    <record id="view_company_document_folder_search" model="ir.ui.view">
+        <field name="name">company.document.folder.search</field>
+        <field name="model">company.document.folder</field>
+        <field name="arch" type="xml">
+            <search string="Search Folders">
+                <field name="name"/>
+                <field name="user_ids" string="User"/>
+                <filter string="All Employees" name="access_all" domain="[('access_type', '=', 'all')]"/>
+                <filter string="Specific Users" name="access_specific" domain="[('access_type', '=', 'specific')]"/>
+                <separator/>
+                <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter string="Company" name="group_company" context="{'group_by': 'company_id'}"
+                        groups="base.group_multi_company"/>
+                <filter string="Access" name="group_access" context="{'group_by': 'access_type'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_company_document_folder" model="ir.actions.act_window">
+        <field name="name">Folders</field>
+        <field name="res_model">company.document.folder</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_company_document_folder_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create your first folder</p>
+            <p>e.g. Phase 1, Phase 2. Choose who can see each folder.</p>
+        </field>
+    </record>
+
+    <!-- ══ EMPLOYEE FORM: folders the employee can access ══════════════════ -->
+    <record id="view_employee_form_document_folders" model="ir.ui.view">
+        <field name="name">hr.employee.form.document.folders</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page name="document_folders" string="Document Folders"
+                      groups="company_documents.group_company_document_manager"
+                      invisible="not user_id">
+                    <p class="text-muted">
+                        Folders with "Specific Users" access this employee can see.
+                        Folders with "All Employees" access are visible to everyone.
+                    </p>
+                    <field name="document_folder_ids" options="{'no_create': True}"
+                           domain="[('access_type', '=', 'specific'), ('company_id', '=', company_id)]">
+                        <list>
+                            <field name="name"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="document_count"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

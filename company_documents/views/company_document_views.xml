@@ -21,20 +21,38 @@
         <field name="arch" type="xml">
             <form string="Company Document">
                 <header>
+                    <button name="action_publish"
+                            string="Publish"
+                            type="object"
+                            class="btn-primary"
+                            invisible="visibility == 'public'"
+                            groups="company_documents.group_company_document_manager"
+                            confirm="Publishing makes this document visible to the folder's users (and notifies them if the folder has Notify on Update). Continue?"/>
+                    <button name="action_set_draft"
+                            string="Set to Draft"
+                            type="object"
+                            invisible="visibility == 'private'"
+                            groups="company_documents.group_company_document_manager"/>
                     <button name="%(company_documents.action_send_signature_wizard)d"
                             string="✍️ Send for Signature"
                             type="action"
                             class="btn-primary"
                             groups="company_documents.group_company_document_manager"/>
+                    <button name="action_log_download"
+                            string="Download"
+                            type="object"
+                            icon="fa-download"
+                            class="btn-secondary"
+                            invisible="not document_file"/>
                     <button name="action_send_notification"
-                            string="📢 Notify All Employees"
+                            string="📢 Notify Users"
                             type="object"
                             class="btn-secondary"
                             invisible="visibility != 'public'"
                             groups="company_documents.group_company_document_manager"
-                            confirm="This will send an email to all employees. Continue?"/>
+                            confirm="This will send an email and Odoo notification to every user who can access this document's folder. Continue?"/>
                     <field name="visibility" widget="statusbar"
-                           statusbar_visible="public,private"/>
+                           statusbar_visible="private,public"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
@@ -61,20 +79,28 @@
                                    string="Notified"/>
                         </button>
                     </div>
+                    <div class="alert alert-info" role="status"
+                         invisible="visibility != 'public'"
+                         groups="company_documents.group_company_document_manager">
+                        This document is Published and locked. Click <strong>Set to Draft</strong> to edit it,
+                        then Publish again (the folder's users will be notified of the update).
+                    </div>
                     <div class="oe_title">
                         <label for="name"/>
                         <h1>
-                            <field name="name" placeholder="Document Title..."/>
+                            <field name="name" placeholder="Document Title..." readonly="visibility == 'public'"/>
                         </h1>
                     </div>
                     <group>
                         <group>
-                            <field name="category_id"/>
-                            <field name="published_date"/>
-                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="folder_id" required="1" readonly="visibility == 'public'"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="category_id" options="{'no_open': True}" readonly="visibility == 'public'"/>
+                            <field name="published_date" readonly="visibility == 'public'"/>
+                            <field name="company_id" groups="base.group_multi_company"
+                                   options="{'no_open': True}" readonly="visibility == 'public'"/>
                         </group>
                         <group>
-                            <field name="visibility" widget="radio"/>
                             <field name="notification_sent" readonly="1"
                                    groups="company_documents.group_company_document_manager"/>
                             <field name="active" invisible="1"/>
@@ -83,15 +109,21 @@
                     <notebook>
                         <page name="document" string="Document">
                             <group string="Upload File">
-                                <field name="document_file" filename="document_filename" widget="binary"/>
-                                <field name="document_filename" invisible="1"/>
+                                <field name="document_file" filename="document_filename" widget="binary" readonly="visibility == 'public'"
+                                       groups="company_documents.group_company_document_manager"/>
+                                <field name="document_filename" invisible="1"
+                                       groups="company_documents.group_company_document_manager"/>
+                                <field name="document_filename" string="File"
+                                       groups="!company_documents.group_company_document_manager"/>
+                                <field name="document_file" invisible="1"
+                                       groups="!company_documents.group_company_document_manager"/>
                             </group>
                             <group string="Or External Link">
-                                <field name="document_url" placeholder="https://..."/>
+                                <field name="document_url" placeholder="https://..." readonly="visibility == 'public'"/>
                             </group>
                         </page>
                         <page name="description" string="Description / Notes">
-                            <field name="description" placeholder="Add description or summary of this document..."/>
+                            <field name="description" placeholder="Add description or summary of this document..." readonly="visibility == 'public'"/>
                         </page>
                         <page name="signatures" string="Signatures"
                               groups="company_documents.group_company_document_manager">
@@ -143,13 +175,18 @@
             <list string="Company Documents" decoration-muted="visibility == 'private'">
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
+                <field name="folder_id"/>
                 <field name="category_id"/>
                 <field name="published_date"/>
                 <field name="visibility" widget="badge"
                        decoration-success="visibility == 'public'"
                        decoration-warning="visibility == 'private'"/>
                 <field name="document_file" widget="binary" string="Download"
-                       optional="show"/>
+                       optional="show" groups="company_documents.group_company_document_manager"/>
+                <field name="view_count" optional="hide"
+                       groups="company_documents.group_company_document_manager"/>
+                <field name="download_count" optional="hide"
+                       groups="company_documents.group_company_document_manager"/>
                 <field name="document_url" optional="hide"/>
                 <field name="company_id" groups="base.group_multi_company" optional="hide"/>
             </list>
@@ -164,6 +201,7 @@
             <kanban class="o_kanban_mobile" default_group_by="category_id">
                 <field name="name"/>
                 <field name="category_id"/>
+                <field name="folder_id"/>
                 <field name="visibility"/>
                 <field name="document_file"/>
                 <field name="document_filename"/>
@@ -179,11 +217,14 @@
                                     </strong>
                                 </div>
                                 <span t-if="record.visibility.raw_value == 'public'"
-                                      class="badge text-bg-success ms-2">Public</span>
+                                      class="badge text-bg-success ms-2">Published</span>
                                 <span t-else=""
-                                      class="badge text-bg-warning ms-2">Private</span>
+                                      class="badge text-bg-warning ms-2">Draft</span>
                             </div>
                             <div class="text-muted small mb-2">
+                                <i class="fa fa-folder-o me-1" title="Folder" t-if="record.folder_id.raw_value"/>
+                                <field name="folder_id"/>
+                                <span t-if="record.folder_id.raw_value" class="mx-1">·</span>
                                 <field name="published_date"/>
                             </div>
                             <div t-if="record.document_file.raw_value" class="mt-2">
@@ -212,14 +253,19 @@
         <field name="arch" type="xml">
             <search string="Search Documents">
                 <field name="name" string="Document"/>
+                <field name="folder_id"/>
                 <field name="category_id"/>
-                <filter string="Public" name="public" domain="[('visibility','=','public')]"/>
-                <filter string="Private" name="private" domain="[('visibility','=','private')]"/>
+                <filter string="Published" name="public" domain="[('visibility','=','public')]"/>
+                <filter string="Draft" name="private" domain="[('visibility','=','private')]"/>
                 <separator/>
                 <filter string="Archived" name="archived" domain="[('active','=',False)]"/>
                 <separator/>
                 <filter string="Category" name="group_category" context="{'group_by': 'category_id'}"/>
-                <filter string="Visibility" name="group_visibility" context="{'group_by': 'visibility'}"/>
+                <filter string="Status" name="group_visibility" context="{'group_by': 'visibility'}"/>
+                <filter string="Folder" name="group_folder" context="{'group_by': 'folder_id'}"/>
+                <searchpanel>
+                    <field name="folder_id" icon="fa-folder" enable_counters="1"/>
+                </searchpanel>
             </search>
         </field>
     </record>
@@ -227,6 +273,7 @@
     <!-- ══ ACTIONS ═════════════════════════════════════════════════════════ -->
     <record id="action_company_document" model="ir.actions.act_window">
         <field name="name">Company Documents</field>
+        <field name="path">company-documents</field>
         <field name="res_model">company.document</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="view_company_document_search"/>

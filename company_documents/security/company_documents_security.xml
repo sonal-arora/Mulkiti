@@ -18,9 +18,50 @@
         <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
     </record>
 
-    <!-- ── Record Rules ───────────────────────────────────────────────────── -->
+</data>
 
-    <!-- Managers see ALL documents -->
+<!-- Record rules are NOT noupdate so that access changes reach existing
+     databases on module upgrade. -->
+<data noupdate="0">
+
+    <!-- ── Multi-company (global: applies to everyone, managers included) ─── -->
+    <!-- Mulkiti, BrickWork etc. each only see their own folders/documents,
+         following the company switcher. -->
+    <record id="rule_folder_multi_company" model="ir.rule">
+        <field name="name">Document Folder: multi-company</field>
+        <field name="model_id" ref="model_company_document_folder"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <record id="rule_document_multi_company" model="ir.rule">
+        <field name="name">Company Document: multi-company</field>
+        <field name="model_id" ref="model_company_document"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <!-- ── Folders ────────────────────────────────────────────────────────── -->
+    <record id="rule_folder_manager_all" model="ir.rule">
+        <field name="name">Document Folder: Manager sees all</field>
+        <field name="model_id" ref="model_company_document_folder"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('company_documents.group_company_document_manager'))]"/>
+    </record>
+
+    <!-- Employees see "All Employees" folders + folders they are added to -->
+    <record id="rule_folder_employee_allowed" model="ir.rule">
+        <field name="name">Document Folder: Employee sees allowed folders</field>
+        <field name="model_id" ref="model_company_document_folder"/>
+        <field name="domain_force">[
+            '|', ('access_type', '=', 'all'), ('user_ids', 'in', [user.id]),
+        ]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- ── Documents ──────────────────────────────────────────────────────── -->
     <record id="rule_document_manager_all" model="ir.rule">
         <field name="name">Company Document: Manager sees all</field>
         <field name="model_id" ref="model_company_document"/>
@@ -28,13 +69,16 @@
         <field name="groups" eval="[(4, ref('company_documents.group_company_document_manager'))]"/>
     </record>
 
-    <!-- Regular employees see only PUBLIC documents of their company -->
+    <!-- Employees see PUBLIC documents of folders they can access.
+         Documents without a folder behave like an "All Employees" folder. -->
     <record id="rule_document_employee_public" model="ir.rule">
-        <field name="name">Company Document: Employee sees public only</field>
+        <field name="name">Company Document: Employee sees public docs of allowed folders</field>
         <field name="model_id" ref="model_company_document"/>
         <field name="domain_force">[
             ('visibility', '=', 'public'),
-            ('company_id', 'in', company_ids),
+            '|', ('folder_id', '=', False),
+            '|', ('folder_id.access_type', '=', 'all'),
+                 ('folder_id.user_ids', 'in', [user.id]),
         ]</field>
         <field name="groups" eval="[(4, ref('base.group_user'))]"/>
         <field name="perm_read" eval="True"/>

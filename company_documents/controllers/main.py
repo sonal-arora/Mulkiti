@@ -11,6 +11,8 @@ class CompanyDocumentController(http.Controller):
         doc = request.env['company.document'].browse(document_id)
         if not doc.exists():
             return request.not_found()
+        # Folder access: a user outside the folder must not download (or be logged)
+        doc.check_access('read')
 
         request.env['company.document.log'].sudo().create({
             'document_id': doc.id,
@@ -28,6 +30,7 @@ class CompanyDocumentController(http.Controller):
         doc = request.env['company.document'].browse(document_id)
         if not doc.exists():
             return {'success': False}
+        doc.check_access('read')
 
         existing = request.env['company.document.log'].sudo().search([
             ('document_id', '=', doc.id),

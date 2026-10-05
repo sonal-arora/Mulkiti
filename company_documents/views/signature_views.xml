@@ -12,7 +12,7 @@
                     Selected employees will receive an email with a link to review and sign the document.
                 </div>
                 <group>
-                    <field name="document_id" readonly="1"/>
+                    <field name="document_id" readonly="1" options="{'no_open': True}"/>
                     <field name="employee_ids" widget="many2many_tags"
                            placeholder="Select employees..."
                            options="{'no_create': True}"/>

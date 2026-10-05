@@ -1,5 +1,13 @@
+from markupsafe import Markup
+
 from odoo import api, fields, models, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
+
+# Content of a Published document is locked: set it back to Draft to edit.
+LOCKED_FIELDS = {
+    'name', 'folder_id', 'category_id', 'tag_ids', 'description', 'document_file',
+    'document_filename', 'document_url', 'company_id', 'published_date',
+}
 
 
 class CompanyDocument(models.Model):
@@ -7,6 +15,15 @@ class CompanyDocument(models.Model):
     _description = 'Company Document'
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'sequence, name'
+
+    folder_id = fields.Many2one(
+        comodel_name='company.document.folder',
+        string='Folder',
+        index=True,
+        tracking=True,
+        domain="[('company_id', '=', company_id)]",
+        ondelete='restrict',
+    )
 
     name = fields.Char(
         string='Document Title',
@@ -23,15 +40,20 @@ class CompanyDocument(models.Model):
         string='Description',
         sanitize=True,
     )
+    # Document status. Kept under the technical name "visibility" (values
+    # public/private) so existing data and record rules stay unchanged.
+    # Who sees a published document is decided by its folder.
     visibility = fields.Selection(
         selection=[
-            ('public', 'Public (All Employees)'),
-            ('private', 'Private (HR / Admin Only)'),
+            ('private', 'Draft'),
+            ('public', 'Published'),
         ],
-        string='Visibility',
+        string='Status',
         required=True,
-        default='public',
+        default='private',
         tracking=True,
+        help='Draft: only HR / Document Managers can see it.\n'
+             'Published: visible to the users of its folder.',
     )
     document_file = fields.Binary(
         string='Document File',
@@ -80,6 +102,22 @@ class CompanyDocument(models.Model):
         compute='_compute_signature_count',
     )
 
+    @api.constrains('folder_id', 'company_id')
+    def _check_folder_company(self):
+        for doc in self:
+            if doc.folder_id and doc.folder_id.company_id != doc.company_id:
+                raise ValidationError(_(
+                    'Document "%(doc)s" belongs to %(doc_company)s but folder '
+                    '"%(folder)s" belongs to %(folder_company)s.',
+                    doc=doc.name, doc_company=doc.company_id.name,
+                    folder=doc.folder_id.name, folder_company=doc.folder_id.company_id.name,
+                ))
+
+    @api.onchange('folder_id')
+    def _onchange_folder_id(self):
+        if self.folder_id:
+            self.company_id = self.folder_id.company_id
+
     @api.depends('signature_ids', 'signature_ids.state')
     def _compute_signature_count(self):
         for doc in self:
@@ -113,6 +151,18 @@ class CompanyDocument(models.Model):
             doc.view_count = len(doc.log_ids.filtered(lambda l: l.action == 'viewed'))
             doc.download_count = len(doc.log_ids.filtered(lambda l: l.action == 'downloaded'))
 
+    def web_read(self, specification):
+        # The form view loads a single record through web_read, so this is
+        # where an employee "opening" a document is recorded. Document
+        # managers are skipped: they open documents to edit them, which
+        # would inflate the employee view count.
+        result = super().web_read(specification)
+        if (len(self) == 1
+                and not self.env.context.get('skip_document_view_log')
+                and not self.env.user.has_group('company_documents.group_company_document_manager')):
+            self.action_log_view()
+        return result
+
     def action_log_view(self):
         """Called when employee opens/reads the document."""
         self.ensure_one()
@@ -132,19 +182,13 @@ class CompanyDocument(models.Model):
         return True
 
     def action_log_download(self):
-        """Called when employee downloads the document."""
+        """Download through the tracking controller, which writes the log."""
         self.ensure_one()
-        self.env['company.document.log'].sudo().create({
-            'document_id': self.id,
-            'user_id': self.env.user.id,
-            'action': 'downloaded',
-        })
-        # Return the actual file download
+        if not self.document_file:
+            raise UserError(_('This document has no file to download.'))
         return {
             'type': 'ir.actions.act_url',
-            'url': '/web/content/company.document/%d/document_file/%s?download=true' % (
-                self.id, self.document_filename or 'document'
-            ),
+            'url': '/company-documents/download/%d' % self.id,
             'target': 'self',
         }
 
@@ -178,111 +222,149 @@ class CompanyDocument(models.Model):
             },
         }
 
+    def action_publish(self):
+        # Draft -> Published notifies the folder's users through write()
+        self.write({'visibility': 'public', 'published_date': fields.Date.today()})
+
+    def action_set_draft(self):
+        self.write({'visibility': 'private'})
+
     def action_send_notification(self):
-        """Send email notification to all active employees about this document."""
+        """Manually notify the users who can access this document."""
         self.ensure_one()
         if self.visibility != 'public':
-            raise UserError(_('You can only send notifications for Public documents.'))
+            raise UserError(_('You can only send notifications for Published documents.'))
 
-        # Get all active employees with linked users (company email)
-        employees = self.env['hr.employee'].sudo().search([
-            ('company_id', '=', self.company_id.id),
-            ('active', '=', True),
-        ])
-
-        template = self.env.ref(
-            'company_documents.email_template_document_notification',
-            raise_if_not_found=False,
-        )
-
-        email_list = []
-        for emp in employees:
-            email = emp.work_email or (emp.user_id and emp.user_id.email)
-            if not email:
-                continue
-            email_list.append(email)
-            if template:
-                template.with_context(
-                    recipient_name=emp.name,
-                    recipient_email=email,
-                ).send_mail(
-                    self.id,
-                    force_send=True,
-                    email_values={'email_to': email},
-                )
-
-        if not email_list:
-            raise UserError(_('No employee email addresses found to send notification.'))
-
-        if not template:
-            self._send_simple_email(email_list)
-
-        self.write({
-            'notification_sent': True,
-            'notification_count': len(set(email_list)),
-        })
+        count = self._notify_document_update('manual', manual=True)
+        if not count:
+            raise UserError(_('No users have access to this document, nobody to notify.'))
 
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
                 'title': _('Notification Sent'),
-                'message': _('Email sent to %d employees successfully!') % len(set(email_list)),
+                'message': _('Notification sent to %d user(s).') % count,
                 'type': 'success',
                 'sticky': False,
             },
         }
 
-    def _send_simple_email(self, email_list):
-        """Fallback simple email sender."""
-        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
-        doc_url = '%s/odoo/company-documents' % base_url
+    # ─────────────────────────────────────────────────────────────────────────
+    # Automatic notification on add / update
+    # ─────────────────────────────────────────────────────────────────────────
 
-        body = """
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background-color: #875A7B; padding: 20px; text-align: center;">
-                <h2 style="color: white; margin: 0;">New Document Published</h2>
-            </div>
-            <div style="padding: 30px; background-color: #f9f9f9;">
-                <h3 style="color: #333;">%s</h3>
-                %s
-                <p style="color: #666;">
-                    <strong>Category:</strong> %s<br/>
-                    <strong>Published:</strong> %s
-                </p>
-                <div style="text-align: center; margin-top: 30px;">
-                    <a href="%s"
-                       style="background-color: #875A7B; color: white; padding: 12px 30px;
-                              text-decoration: none; border-radius: 5px; font-weight: bold;">
-                        View Document
-                    </a>
-                </div>
-            </div>
-            <div style="padding: 15px; text-align: center; color: #999; font-size: 12px;">
-                This is an automated notification from %s.
-            </div>
-        </div>
-        """ % (
-            self.name,
-            self.description or '',
-            self.category_id.name if self.category_id else 'General',
-            self.published_date or '',
-            doc_url,
-            self.company_id.name,
+    @api.model_create_multi
+    def create(self, vals_list):
+        docs = super().create(vals_list)
+        if not self.env.context.get('skip_document_notification'):
+            docs._notify_document_update('added')
+        return docs
+
+    def write(self, vals):
+        if (LOCKED_FIELDS & vals.keys()
+                and vals.get('visibility') != 'private'
+                and not self.env.context.get('document_allow_published_edit')):
+            published = self.filtered(lambda d: d.visibility == 'public')
+            if published:
+                raise UserError(_(
+                    'Document "%s" is Published and cannot be edited. '
+                    'Click "Set to Draft" first, make your changes, then Publish again.',
+                    published[0].name,
+                ))
+
+        # Editing is only possible in Draft, so the folder's users are notified
+        # when a document is (re)published.
+        newly_published = self.browse()
+        if vals.get('visibility') == 'public' and not self.env.context.get('skip_document_notification'):
+            newly_published = self.filtered(lambda d: d.visibility != 'public')
+        announced_before = {doc.id: doc.notification_sent for doc in newly_published}
+        res = super().write(vals)
+        for doc in newly_published:
+            doc._notify_document_update('updated' if announced_before[doc.id] else 'added')
+        return res
+
+    def _get_notification_users(self):
+        """Users who can see this document, minus the person making the change."""
+        self.ensure_one()
+        if self.folder_id:
+            users = self.folder_id._get_recipient_users()
+        else:
+            employees = self.env['hr.employee'].sudo().search([
+                ('company_id', '=', self.company_id.id),
+                ('user_id', '!=', False),
+            ])
+            users = employees.user_id.filtered(lambda u: u.active and not u.share)
+        return users - self.env.user
+
+    def _notify_document_update(self, change, manual=False):
+        """Email + Odoo inbox notification to the users of the document folder.
+
+        Automatic notifications only go out for public, active documents in a
+        folder with "Notify on Update" enabled. Returns the number of users
+        notified (for a single document).
+        """
+        count = 0
+        for doc in self:
+            if doc.visibility != 'public' or not doc.active:
+                continue
+            if not manual and not (doc.folder_id and doc.folder_id.notify_on_update):
+                continue
+            users = doc._get_notification_users()
+            if not users:
+                continue
+            doc._send_update_notification(users, change)
+            doc.with_context(skip_document_notification=True).write({
+                'notification_sent': True,
+                'notification_count': len(users),
+            })
+            count = len(users)
+        return count
+
+    def _send_update_notification(self, users, change):
+        self.ensure_one()
+        titles = {
+            'added': _('New Document Added'),
+            'updated': _('Document Updated'),
+            'manual': _('Please Review This Document'),
+        }
+        messages = {
+            'added': _('A new document has been added to %s.'),
+            'updated': _('This document has been updated in %s.'),
+            'manual': _('Please review this document in %s.'),
+        }
+        folder_name = self.folder_id.name or _('Company Documents')
+        title = titles[change]
+        message = messages[change] % folder_name
+        doc_url = '%s/odoo/company-documents/%d' % (self.get_base_url(), self.id)
+
+        # Odoo inbox: message_post routes each user by their own preference —
+        # "Handle in Odoo" users get an inbox notification, "Handle by Emails"
+        # users get it as an email instead.
+        self.message_post(
+            body=Markup('<p><strong>%s</strong><br/>%s</p><p><a href="%s">%s</a></p>') % (
+                title, message, doc_url, _('View Document')),
+            subject='%s: %s' % (title, self.name),
+            partner_ids=users.partner_id.ids,
+            message_type='notification',
+            subtype_xmlid='mail.mt_note',
         )
 
-        mail_values = {
-            'subject': _('New Document Published: %s') % self.name,
-            'body_html': body,
-            'email_from': (
-                f"{self.env.company.name} <{self.env.company.email}>"
-                if self.env.company.email
-                else self.env.user.email
-            ),
-            'email_to': ','.join(set(email_list)),
-            'auto_delete': True,
-        }
-        self.env['mail.mail'].sudo().create(mail_values).send()
+        # Email: "Handle in Odoo" users only got the inbox entry above, so they
+        # also get the template email. Queued, so the save is not slowed down.
+        template = self.env.ref(
+            'company_documents.email_template_document_notification',
+            raise_if_not_found=False,
+        )
+        if not template:
+            return
+        for user in users.filtered(lambda u: u.notification_type == 'inbox' and u.email):
+            template.with_context(
+                recipient_name=user.name,
+                change_title=title,
+                change_message=message,
+                doc_url=doc_url,
+            ).send_mail(self.id, email_values={'email_to': user.email})
 
     @api.model
     def get_public_documents(self):

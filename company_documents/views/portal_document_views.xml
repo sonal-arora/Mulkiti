@@ -11,7 +11,7 @@
 
             <t t-if="not documents">
                 <div class="alert alert-info">
-                    No public documents available at this time.
+                    No published documents available at this time.
                 </div>
             </t>
             <t t-else="">

@@ -1,37 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Document Published Notification -->
+    <!-- Document Added / Updated Notification (sent to the folder's users) -->
     <record id="email_template_document_notification" model="mail.template">
-        <field name="name">Company Document: New Publication Notification</field>
+        <field name="name">Company Document: Added / Updated Notification</field>
         <field name="model_id" ref="model_company_document"/>
-        <field name="subject">New Document Published: {{ object.name }}</field>
+        <field name="subject">{{ ctx.get('change_title', 'Document Update') }}: {{ object.name }}</field>
         <field name="email_from">{{ '%s &lt;%s&gt;' % (object.company_id.name, object.company_id.email or user.email) }}</field>
         <field name="body_html"><![CDATA[
 <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
     <div style="background:#875A7B;padding:25px;text-align:center;border-radius:8px 8px 0 0;">
-        <h2 style="color:white;margin:0;">New Document Published</h2>
+        <h2 style="color:white;margin:0;"><t t-out="ctx.get('change_title', 'Document Update')"/></h2>
         <p style="color:#f0d9f0;margin:8px 0 0 0;font-size:14px;"><t t-out="object.company_id.name"/></p>
     </div>
     <div style="padding:30px;background:#fff;border:1px solid #e0e0e0;">
         <p style="margin:0 0 16px;">Dear <strong><t t-out="ctx.get('recipient_name', 'Team Member')"/></strong>,</p>
-        <p style="color:#555;margin:0 0 20px;">A new document has been published for your reference:</p>
+        <p style="color:#555;margin:0 0 20px;"><t t-out="ctx.get('change_message', '')"/></p>
         <h3 style="color:#333;margin-top:0;"><t t-out="object.name"/></h3>
         <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
             <tr>
-                <td style="padding:8px;color:#666;width:40%;"><strong>Category:</strong></td>
+                <td style="padding:8px;color:#666;width:40%;"><strong>Folder:</strong></td>
+                <td style="padding:8px;color:#333;">
+                    <t t-if="object.folder_id"><t t-out="object.folder_id.name"/></t>
+                    <t t-else="">General</t>
+                </td>
+            </tr>
+            <tr style="background:#f9f9f9;">
+                <td style="padding:8px;color:#666;"><strong>Category:</strong></td>
                 <td style="padding:8px;color:#333;">
                     <t t-if="object.category_id"><t t-out="object.category_id.name"/></t>
                     <t t-else="">General</t>
                 </td>
             </tr>
-            <tr style="background:#f9f9f9;">
+            <tr>
                 <td style="padding:8px;color:#666;"><strong>Published:</strong></td>
                 <td style="padding:8px;color:#333;"><t t-out="object.published_date"/></td>
             </tr>
         </table>
         <div style="text-align:center;margin-top:25px;">
-            <a t-attf-href="#{ctx.get('base_url', '')}/odoo/company-documents"
+            <a t-att-href="ctx.get('doc_url', '')"
                style="background:#875A7B;color:white;padding:13px 35px;text-decoration:none;border-radius:6px;font-weight:bold;">
                 View Document
             </a>
