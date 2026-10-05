@@ -43,6 +43,19 @@ class CompanyDocumentFolder(models.Model):
         help='Send an email and Odoo inbox notification to the users who can '
              'access this folder when a document is added or updated in it.',
     )
+    allow_preview = fields.Boolean(
+        string='Allow Preview',
+        default=True,
+        tracking=True,
+        help='Users can open the documents of this folder in the browser viewer.',
+    )
+    allow_download = fields.Boolean(
+        string='Allow Download',
+        default=True,
+        tracking=True,
+        help='Users can download the files of this folder. When off, the '
+             'preview also hides its download and print buttons.',
+    )
     description = fields.Text(string='Description')
     document_ids = fields.One2many(
         comodel_name='company.document',

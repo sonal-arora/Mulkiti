@@ -38,12 +38,28 @@
                             type="action"
                             class="btn-primary"
                             groups="company_documents.group_company_document_manager"/>
+                    <button name="action_preview"
+                            string="Preview"
+                            type="object"
+                            icon="fa-eye"
+                            class="btn-secondary"
+                            invisible="not has_file or not can_preview"/>
                     <button name="action_log_download"
                             string="Download"
                             type="object"
                             icon="fa-download"
                             class="btn-secondary"
-                            invisible="not document_file"/>
+                            invisible="not has_file or not can_download"/>
+                    <button name="action_open_link"
+                            string="Open Link"
+                            type="object"
+                            icon="fa-external-link"
+                            class="btn-secondary"
+                            invisible="has_file or not document_url or not can_preview"/>
+                    <field name="has_file" invisible="1"/>
+                    <field name="document_url" invisible="1"/>
+                    <field name="can_preview" invisible="1"/>
+                    <field name="can_download" invisible="1"/>
                     <button name="action_send_notification"
                             string="📢 Notify Users"
                             type="object"
@@ -115,10 +131,9 @@
                                        groups="company_documents.group_company_document_manager"/>
                                 <field name="document_filename" string="File"
                                        groups="!company_documents.group_company_document_manager"/>
-                                <field name="document_file" invisible="1"
-                                       groups="!company_documents.group_company_document_manager"/>
                             </group>
-                            <group string="Or External Link">
+                            <group string="Or External Link"
+                                   groups="company_documents.group_company_document_manager">
                                 <field name="document_url" placeholder="https://..." readonly="visibility == 'public'"/>
                             </group>
                         </page>
@@ -198,12 +213,14 @@
         <field name="name">company.document.kanban</field>
         <field name="model">company.document</field>
         <field name="arch" type="xml">
-            <kanban class="o_kanban_mobile" default_group_by="category_id">
+            <kanban class="o_kanban_mobile">
                 <field name="name"/>
                 <field name="category_id"/>
                 <field name="folder_id"/>
                 <field name="visibility"/>
-                <field name="document_file"/>
+                <field name="has_file"/>
+                <field name="can_preview"/>
+                <field name="can_download"/>
                 <field name="document_filename"/>
                 <field name="document_url"/>
                 <field name="published_date"/>
@@ -227,17 +244,23 @@
                                 <span t-if="record.folder_id.raw_value" class="mx-1">·</span>
                                 <field name="published_date"/>
                             </div>
-                            <div t-if="record.document_file.raw_value" class="mt-2">
-                                <a t-attf-href="/company-documents/download/#{record.id.raw_value}"
+                            <div t-if="record.has_file.raw_value" class="mt-2 d-flex gap-2">
+                                <a t-if="record.can_preview.raw_value" role="button" target="_blank"
+                                   t-attf-href="/company-documents/preview/#{record.id.raw_value}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fa fa-eye me-1"/> Preview
+                                </a>
+                                <a t-if="record.can_download.raw_value" role="button"
+                                   t-attf-href="/company-documents/download/#{record.id.raw_value}"
                                    class="btn btn-sm btn-outline-primary">
                                     <i class="fa fa-download me-1"/> Download
                                 </a>
                             </div>
-                            <div t-elif="record.document_url.raw_value" class="mt-2">
-                                <a t-att-href="record.document_url.raw_value" target="_blank"
-                                   class="btn btn-sm btn-outline-primary">
+                            <div t-elif="record.document_url.raw_value and record.can_preview.raw_value" class="mt-2">
+                                <button type="object" name="action_open_link"
+                                        class="btn btn-sm btn-outline-primary">
                                     <i class="fa fa-external-link me-1"/> Open Link
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </t>

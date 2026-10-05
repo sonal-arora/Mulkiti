@@ -18,6 +18,8 @@
                 <field name="document_count"/>
                 <field name="view_count" optional="show"/>
                 <field name="download_count" optional="show"/>
+                <field name="allow_preview" optional="show"/>
+                <field name="allow_download" optional="show"/>
                 <field name="notify_on_update" optional="hide"/>
             </list>
         </field>
@@ -63,6 +65,8 @@
                             <field name="access_type" widget="radio"/>
                         </group>
                         <group>
+                            <field name="allow_preview"/>
+                            <field name="allow_download"/>
                             <field name="notify_on_update"/>
                             <field name="active" invisible="1"/>
                         </group>

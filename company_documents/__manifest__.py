@@ -9,6 +9,7 @@
         - Set visibility: Published (folder users) or Draft (HR/Admin only)
         - Folders (Phase 1, Phase 2, ...) with per-folder user access, per company
         - Email + Odoo inbox notification to the folder's users on add/update
+        - Per-folder Allow Preview / Allow Download options
         - Categorize documents (Policy, Announcement, Handbook, SOP, etc.)
         - Employees can view public documents from their portal
         - HR/Admin can manage all documents
@@ -27,6 +28,7 @@
         'views/company_document_menu.xml',
         'views/portal_document_views.xml',
         'views/sign_portal_views.xml',
+        'views/document_preview_views.xml',
     ],
     'installable': True,
     'application': True,

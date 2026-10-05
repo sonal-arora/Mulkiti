@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══ DOCUMENT PREVIEW PAGE ═══════════════════════════════════════════
+         Opened in a new tab from the document form / kanban / sign page.
+         When the folder does not allow download, the PDF viewer's download
+         and print buttons are hidden and right-click is disabled. -->
+    <template id="document_preview_page" name="Company Document Preview">
+        <t t-call="web.layout">
+            <t t-set="title" t-value="document.name"/>
+            <t t-set="head">
+                <style>
+                    html, body { height: 100%; margin: 0; background: #f5f5f5; font-family: Arial, sans-serif; }
+                    .cd-preview { display: flex; flex-direction: column; height: 100vh; }
+                    .cd-bar { display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+                              background: #875A7B; color: #fff; }
+                    .cd-bar h1 { flex: 1; margin: 0; font-size: 16px; font-weight: bold;
+                                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                    .cd-bar .cd-folder { opacity: .85; font-size: 13px; }
+                    .cd-bar a { color: #875A7B; background: #fff; padding: 6px 14px; border-radius: 4px;
+                                text-decoration: none; font-weight: bold; font-size: 13px; }
+                    .cd-body { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+                    .cd-body iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+                    .cd-body img, .cd-body video { max-width: 100%; max-height: 100%; }
+                    .cd-msg { text-align: center; color: #555; padding: 40px 16px; }
+                    .cd-nodl img { pointer-events: none; user-select: none; }
+                </style>
+            </t>
+            <div t-attf-class="cd-preview #{'' if can_download else 'cd-nodl'}"
+                 t-att-oncontextmenu="None if can_download else 'return false;'">
+                <div class="cd-bar">
+                    <h1>
+                        <t t-out="document.name"/>
+                        <span class="cd-folder" t-if="document.folder_id"> · <t t-out="document.folder_id.name"/></span>
+                    </h1>
+                    <a t-if="can_download" role="button"
+                       t-attf-href="/company-documents/download/#{document.id}">Download</a>
+                </div>
+                <div class="cd-body">
+                    <t t-if="kind == 'pdf'">
+                        <iframe id="cd-pdf" title="Document preview"
+                                t-attf-src="/web/static/lib/pdfjs/web/viewer.html?file=#{file_url}"
+                                t-att-data-hide-download="'0' if can_download else '1'"/>
+                    </t>
+                    <t t-elif="kind == 'image'">
+                        <img t-att-src="file_url" t-att-alt="document.name" draggable="false"/>
+                    </t>
+                    <t t-elif="kind == 'video'">
+                        <video t-att-src="file_url" controls="controls"
+                               t-att-controlsList="None if can_download else 'nodownload'"/>
+                    </t>
+                    <t t-elif="kind == 'text'">
+                        <iframe t-att-src="file_url" title="Document preview"/>
+                    </t>
+                    <t t-else="">
+                        <div class="cd-msg">
+                            <p>Preview is not available for this file type
+                               (<t t-out="document.document_filename"/>).</p>
+                            <p t-if="can_download">Use the Download button to open it.</p>
+                            <p t-else="">Download is not allowed for this folder. Please contact HR.</p>
+                        </div>
+                    </t>
+                </div>
+            </div>
+            <script t-if="kind == 'pdf'">
+                (function () {
+                    var iframe = document.getElementById('cd-pdf');
+                    var hide = ['#editorModeButtons', 'button#openFile', 'button#secondaryOpenFile',
+                                'a#viewBookmark', 'a#secondaryViewBookmark'];
+                    if (iframe.dataset.hideDownload === '1') {
+                        hide.push('button#downloadButton', 'button#secondaryDownload',
+                                  'button#printButton', 'button#secondaryPrint');
+                    }
+                    iframe.addEventListener('load', function () {
+                        var doc = iframe.contentDocument;
+                        if (!doc) { return; }
+                        var style = doc.createElement('style');
+                        style.textContent = hide.join(', ') + ' { display: none !important; }';
+                        doc.head.appendChild(style);
+                        if (iframe.dataset.hideDownload === '1') {
+                            doc.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+                            // Block Ctrl/Cmd+S and Ctrl/Cmd+P inside the viewer
+                            doc.addEventListener('keydown', function (e) {
+                                if ((e.ctrlKey || e.metaKey) &amp;&amp; ['s', 'p'].indexOf(e.key.toLowerCase()) !== -1) {
+                                    e.preventDefault();
+                                    e.stopImmediatePropagation();
+                                }
+                            }, true);
+                        }
+                    });
+                })();
+            </script>
+        </t>
+    </template>
+
+</odoo>

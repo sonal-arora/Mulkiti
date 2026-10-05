@@ -34,8 +34,14 @@
                                     </p>
                                 </div>
                                 <div class="card-footer bg-transparent">
-                                    <t t-if="doc.document_file">
-                                        <a t-attf-href="/web/content/company.document/#{doc.id}/document_file/#{doc.document_filename}?download=true"
+                                    <t t-if="doc.has_file">
+                                        <a t-if="doc.can_preview" target="_blank"
+                                           t-attf-href="/company-documents/preview/#{doc.id}"
+                                           class="btn btn-sm btn-outline-primary w-100 mb-1">
+                                            <i class="fa fa-eye me-1"/> Preview
+                                        </a>
+                                        <a t-if="doc.can_download"
+                                           t-attf-href="/company-documents/download/#{doc.id}"
                                            class="btn btn-sm btn-primary w-100">
                                             <i class="fa fa-download me-1"/> Download
                                         </a>

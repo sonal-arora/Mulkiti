@@ -59,13 +59,20 @@
                         </div>
                     </t>
 
-                    <!-- Download Link -->
+                    <!-- Preview (always, the signer must read it) / Download (if the folder allows) -->
                     <t t-if="document.document_file">
                         <div style="margin-bottom:20px;text-align:center;">
-                            <a t-attf-href="/company-documents/download/#{document.id}"
+                            <a t-attf-href="/company-documents/preview/#{document.id}" target="_blank"
                                style="color:#875A7B;font-weight:bold;">
-                                📎 Download Document to Review
+                                👁️ Preview Document to Review
                             </a>
+                            <t t-if="not document.folder_id or document.folder_id.allow_download">
+                                <span style="color:#ccc;margin:0 10px;">|</span>
+                                <a t-attf-href="/company-documents/download/#{document.id}"
+                                   style="color:#875A7B;font-weight:bold;">
+                                    📎 Download
+                                </a>
+                            </t>
                         </div>
                     </t>
                     <t t-elif="document.document_url">

@@ -55,11 +55,18 @@ class CompanyDocument(models.Model):
         help='Draft: only HR / Document Managers can see it.\n'
              'Published: visible to the users of its folder.',
     )
+    # Managers only: employees get the file through the tracking controllers,
+    # which enforce the folder's Allow Preview / Allow Download options. This
+    # also closes /web/content/company.document/<id>/document_file for them.
     document_file = fields.Binary(
         string='Document File',
         attachment=True,
+        groups='company_documents.group_company_document_manager',
     )
     document_filename = fields.Char(string='File Name')
+    has_file = fields.Boolean(string='Has File', compute='_compute_has_file', compute_sudo=True)
+    can_preview = fields.Boolean(string='Can Preview', compute='_compute_file_access')
+    can_download = fields.Boolean(string='Can Download', compute='_compute_file_access')
     document_url = fields.Char(string='External URL')
     company_id = fields.Many2one(
         comodel_name='res.company',
@@ -117,6 +124,27 @@ class CompanyDocument(models.Model):
     def _onchange_folder_id(self):
         if self.folder_id:
             self.company_id = self.folder_id.company_id
+
+    @api.depends('document_file')
+    def _compute_has_file(self):
+        for doc in self:
+            doc.has_file = bool(doc.document_file)
+
+    @api.depends('folder_id.allow_preview', 'folder_id.allow_download')
+    def _compute_file_access(self):
+        # The Preview / Download / Open Link buttons follow the folder options
+        # for everyone, managers included, so what HR sees is what employees
+        # see. Managers can still get the file from the form's file field.
+        for doc in self:
+            doc.can_preview, doc.can_download = doc._get_folder_file_options()
+
+    def _get_folder_file_options(self):
+        """(allow_preview, allow_download) set on the document's folder."""
+        self.ensure_one()
+        folder = self.sudo().folder_id
+        if not folder:
+            return True, True
+        return folder.allow_preview, folder.allow_download
 
     @api.depends('signature_ids', 'signature_ids.state')
     def _compute_signature_count(self):
@@ -184,12 +212,42 @@ class CompanyDocument(models.Model):
     def action_log_download(self):
         """Download through the tracking controller, which writes the log."""
         self.ensure_one()
-        if not self.document_file:
+        if not self.has_file:
             raise UserError(_('This document has no file to download.'))
+        if not self.can_download:
+            raise UserError(_('Download is not allowed for the documents of this folder.'))
         return {
             'type': 'ir.actions.act_url',
             'url': '/company-documents/download/%d' % self.id,
             'target': 'self',
+        }
+
+    def action_preview(self):
+        """Open the file in the browser viewer (new tab), logged as a view."""
+        self.ensure_one()
+        if not self.has_file:
+            raise UserError(_('This document has no file to preview.'))
+        if not self.can_preview:
+            raise UserError(_('Preview is not allowed for the documents of this folder.'))
+        return {
+            'type': 'ir.actions.act_url',
+            'url': '/company-documents/preview/%d' % self.id,
+            'target': 'new',
+        }
+
+    def action_open_link(self):
+        """Open an External URL document (new tab), logged as a view.
+        Follows the folder's Allow Preview option."""
+        self.ensure_one()
+        if not self.document_url:
+            raise UserError(_('This document has no external link.'))
+        if not self.can_preview:
+            raise UserError(_('Viewing is not allowed for the documents of this folder.'))
+        self.action_log_view()
+        return {
+            'type': 'ir.actions.act_url',
+            'url': self.document_url,
+            'target': 'new',
         }
 
     def action_view_history(self):
