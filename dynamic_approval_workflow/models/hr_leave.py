@@ -242,6 +242,31 @@ class HrLeave(models.Model):
         if others:
             super(HrLeave, others)._compute_can_validate()
 
+    @api.depends('state', 'employee_id', 'department_id')
+    def _compute_can_back_to_approve(self):
+        """Back to Approval: stock rule for Approved leaves (Time Off Officer);
+        on Refused leaves only for Time Off Administrators."""
+        super()._compute_can_back_to_approve()
+        refused = self.filtered(lambda h: h.state == 'refuse')
+        for h in refused:
+            h.can_back_to_approve = h._check_approval_update('confirm', raise_if_not_possible=False)
+
+    def action_back_to_approval(self):
+        refused = self.filtered(lambda h: h.state == 'refuse' and h.can_back_to_approve)
+        result = super().action_back_to_approval()
+        # The approval chain starts over: notify the 1st approver(s) again,
+        # as action_confirm does for a new request.
+        for leave in refused.filtered(lambda h: h.state == 'confirm'):
+            leave.message_post(body=_(
+                'Refused leave sent back to approval by %s.', self.env.user.name))
+            if leave._use_custom_flow():
+                first_approvers = leave._get_first_approvers()
+                if first_approvers:
+                    # sudo: the email reads employee HR data (department...)
+                    # that a Time Off Administrator may not be allowed to read.
+                    leave.sudo()._send_leave_approval_email(first_approvers, '1st Approval')
+        return result
+
     @api.depends(
         'state', 'employee_id', 'department_id',
         'employee_id.parent_id', 'employee_id.parent_id.user_id',
@@ -361,6 +386,21 @@ class HrLeave(models.Model):
                     raise UserError(_(
                         "You can't change your own leave's approval status. "
                         "Only your approver can do this."
+                    ))
+                return False
+
+            # Reopening a Refused leave (refuse → confirm, "Back to Approval")
+            # is reserved to Time Off Administrators. Stock Odoo allows any
+            # Time Off Officer.
+            if (
+                state == 'confirm'
+                and holiday.state == 'refuse'
+                and not self.env.user.has_group('hr_holidays.group_hr_holidays_manager')
+            ):
+                if raise_if_not_possible:
+                    raise UserError(_(
+                        "Only a Time Off Administrator can send a refused leave "
+                        "back to approval."
                     ))
                 return False
 
