@@ -125,7 +125,10 @@ class CompanyDocument(models.Model):
         if self.folder_id:
             self.company_id = self.folder_id.company_id
 
-    @api.depends('document_file')
+    # No @api.depends on document_file on purpose: a dependency makes the form
+    # fire an onchange on upload, which re-sends the whole base64 file in the
+    # RPC and crashes the browser (Out of memory) on large files. has_file is
+    # recomputed on read, so it updates once the record is saved.
     def _compute_has_file(self):
         for doc in self:
             doc.has_file = bool(doc.document_file)
