@@ -250,21 +250,24 @@
                                 <field name="employee_signature" widget="signature"
                                        options="{'full_name': 'employee_id'}"
                                        string="Employee Signature"
-                                       readonly="state != 'draft' or not is_own_record"/>
+                                       readonly="state != 'draft' or not is_own_record"
+                                       required="state == 'draft'"/>
                                 <field name="employee_signature_date" readonly="1"
                                        invisible="not employee_signature_date"/>
 
                                 <field name="manager_signature" widget="signature"
                                        options="{'full_name': 'manager_id'}"
                                        string="Manager's Signature"
-                                       readonly="state != 'submitted' or not can_manager_approve"/>
+                                       readonly="state != 'submitted' or not can_manager_approve"
+                                       required="state == 'submitted'"/>
                                 <field name="manager_signature_date" readonly="1"
                                        invisible="not manager_signature_date"/>
 
                                 <field name="owner_signature" widget="signature"
                                        options="{'full_name': 'second_manager_id'}"
                                        string="Owner's Signature"
-                                       readonly="state != 'manager_review' or not can_second_approve"/>
+                                       readonly="state != 'manager_review' or not can_second_approve"
+                                       required="state == 'manager_review'"/>
                                 <field name="owner_signature_date" readonly="1"
                                        invisible="not owner_signature_date"/>
                             </group>

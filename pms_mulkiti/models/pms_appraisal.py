@@ -326,6 +326,8 @@ class PmsAppraisal(models.Model):
             raise UserError(_("Please fill self-rating for all Work Attitude and Behavior lines before submitting."))
         if not self.overall_self_comments:
             raise UserError(_("Please fill Overall Self Comments before submitting."))
+        if not self.employee_signature:
+            raise UserError(_("Please add the Employee Signature before submitting."))
         if self.training_line_ids:
             any_checked = self.training_line_ids.filtered(
                 lambda l: l.want_to_learn or l.have_complete_knowledge or l.want_to_become_trainer
@@ -375,6 +377,8 @@ class PmsAppraisal(models.Model):
             raise UserError(_("Please fill manager-rating for all Work Attitude and Behavior lines."))
         if not self.overall_manager_comments:
             raise UserError(_("Please fill Overall Manager Comments before approving."))
+        if not self.manager_signature:
+            raise UserError(_("Please add the Manager's Signature before approving."))
 
         if not self.second_manager_id:
             # No 2nd approver configured — 1st level approval is enough.
@@ -429,6 +433,8 @@ class PmsAppraisal(models.Model):
             raise UserError(_("No 2nd Approver is configured for this employee."))
         if not self.overall_second_comments:
             raise UserError(_("Please fill Overall 2nd Approver Comments before approving."))
+        if not self.owner_signature:
+            raise UserError(_("Please add the Owner's Signature before approving."))
 
         self.write({
             "state": "approved",

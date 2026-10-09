@@ -14,7 +14,9 @@
             /* Classic full-grid business-document look, matching the office
                Word template: solid black borders on every cell, a gold band
                for section titles and info-table labels. */
-            .o_pms_report { font-size: 12px; color: #000000; line-height: 1.4; }
+            /* One font size for the whole report (11px); only the table
+               header rows (12px) and section titles (13px) are bigger. */
+            .o_pms_report { font-size: 11px; color: #000000; line-height: 1.35; }
             .o_pms_report table.o_pms_grid {
                 width: 100%;
                 border-collapse: collapse;
@@ -22,12 +24,17 @@
             .o_pms_report table.o_pms_grid th,
             .o_pms_report table.o_pms_grid td {
                 border: 1px solid #000000;
-                padding: 5px 8px;
+                padding: 4px 6px;
                 vertical-align: top;
+                font-size: 11px;
             }
+            /* Rich text in cells (comments, deliverables) keeps its own sizes
+               otherwise. */
+            .o_pms_report table.o_pms_grid td * { font-size: inherit !important; }
             .o_pms_report table.o_pms_grid th {
                 background-color: #ffffff;
                 font-weight: bold;
+                font-size: 12px;
             }
             .o_pms_report .o_pms_info_label {
                 background-color: #f6cb6d;
@@ -44,6 +51,9 @@
                 margin: 20px 0 0 0;
                 border: 1px solid #000000;
             }
+            /* Show each table's header row once, at its start: wkhtmltopdf
+               repeats a thead on every page the table continues on. */
+            .o_pms_report table.o_pms_grid thead { display: table-row-group; }
             .o_pms_report .col-kra { width: 13%; }
             .o_pms_report .col-deliverable { width: 29%; }
             .o_pms_report .col-rating { width: 8%; }
@@ -92,9 +102,12 @@
                 </p>
             </div>
 
-            <!-- KRA & Self Assessment -->
+            <!-- KRA & Self Assessment. Rows can't split across pages on the
+                 server's wkhtmltopdf (see the NOTE in <style>), so a tall row
+                 jumps to the next page and leaves a gap: the report is in
+                 landscape with a smaller font here to keep rows short. -->
             <h4 class="o_pms_section">KRA &amp; Self Assessment</h4>
-            <table class="o_pms_grid" t-if="o.line_ids">
+            <table class="o_pms_grid o_pms_kra_table" t-if="o.line_ids">
                 <thead>
                     <tr>
                         <th class="col-kra">KRA / Responsibility</th>
