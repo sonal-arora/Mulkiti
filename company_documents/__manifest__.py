@@ -30,6 +30,11 @@
         'views/sign_portal_views.xml',
         'views/document_preview_views.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'company_documents/static/src/**/*',
+        ],
+    },
     'installable': True,
     'application': True,
     'license': 'LGPL-3',

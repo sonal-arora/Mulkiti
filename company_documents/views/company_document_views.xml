@@ -127,8 +127,10 @@
                             <!-- Draft: managers upload / replace the file here -->
                             <group string="Upload File" invisible="visibility == 'public'"
                                    groups="company_documents.group_company_document_manager">
-                                <field name="document_file" filename="document_filename" widget="binary"/>
+                                <field name="document_file" filename="document_filename"
+                                       widget="company_document_upload"/>
                                 <field name="document_filename" invisible="1"/>
+                                <field name="upload_attachment_id" invisible="1"/>
                             </group>
                             <!-- Published (and always for employees): file name with the
                                  Preview / Download icons allowed by the folder -->

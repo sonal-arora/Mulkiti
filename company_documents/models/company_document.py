@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from markupsafe import Markup
 
 from odoo import api, fields, models, _
@@ -8,6 +10,9 @@ LOCKED_FIELDS = {
     'name', 'folder_id', 'category_id', 'tag_ids', 'description', 'document_file',
     'document_filename', 'document_url', 'company_id', 'published_date',
 }
+
+# Marks the temporary attachments created by /company-documents/upload.
+UPLOAD_TAG = 'company_documents.pending_upload'
 
 
 class CompanyDocument(models.Model):
@@ -64,6 +69,15 @@ class CompanyDocument(models.Model):
         groups='company_documents.group_company_document_manager',
     )
     document_filename = fields.Char(string='File Name')
+    # Set by the form's upload widget: id of a temporary attachment uploaded
+    # through /company-documents/upload (multipart), moved into document_file
+    # on save. This keeps the file content out of the JSON-RPC calls.
+    upload_attachment_id = fields.Integer(
+        string='Uploaded File',
+        compute='_compute_upload_attachment_id',
+        inverse='_inverse_upload_attachment_id',
+        groups='company_documents.group_company_document_manager',
+    )
     has_file = fields.Boolean(string='Has File', compute='_compute_has_file', compute_sudo=True)
     can_preview = fields.Boolean(string='Can Preview', compute='_compute_file_access')
     can_download = fields.Boolean(string='Can Download', compute='_compute_file_access')
@@ -124,6 +138,40 @@ class CompanyDocument(models.Model):
     def _onchange_folder_id(self):
         if self.folder_id:
             self.company_id = self.folder_id.company_id
+
+    def _compute_upload_attachment_id(self):
+        self.upload_attachment_id = 0
+
+    def _inverse_upload_attachment_id(self):
+        # Handled in create() / write() by _pop_uploaded_file().
+        pass
+
+    def _pop_uploaded_file(self, vals):
+        """Replace upload_attachment_id in vals by the content of that
+        temporary attachment; return the attachment to delete after saving."""
+        attachment_id = vals.pop('upload_attachment_id', False)
+        if not attachment_id:
+            return self.env['ir.attachment']
+        attachment = self.env['ir.attachment'].sudo().browse(attachment_id).exists()
+        if (not attachment
+                or attachment.description != UPLOAD_TAG
+                or attachment.res_model != self._name
+                or attachment.res_id
+                or attachment.create_uid != self.env.user):
+            raise UserError(_('The uploaded file was not found. Please upload it again.'))
+        vals['document_file'] = attachment.datas
+        vals.setdefault('document_filename', attachment.name)
+        return attachment
+
+    @api.autovacuum
+    def _gc_pending_uploads(self):
+        """Delete files uploaded in a form that was never saved."""
+        self.env['ir.attachment'].sudo().search([
+            ('res_model', '=', self._name),
+            ('res_id', '=', 0),
+            ('description', '=', UPLOAD_TAG),
+            ('create_date', '<', fields.Datetime.now() - timedelta(days=1)),
+        ]).unlink()
 
     # No @api.depends on document_file on purpose: a dependency makes the form
     # fire an onchange on upload, which re-sends the whole base64 file in the
@@ -317,12 +365,19 @@ class CompanyDocument(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        vals_list = [dict(vals) for vals in vals_list]
+        uploads = self.env['ir.attachment']
+        for vals in vals_list:
+            uploads |= self._pop_uploaded_file(vals)
         docs = super().create(vals_list)
+        uploads.unlink()
         if not self.env.context.get('skip_document_notification'):
             docs._notify_document_update('added')
         return docs
 
     def write(self, vals):
+        vals = dict(vals)
+        uploads = self._pop_uploaded_file(vals)
         if (LOCKED_FIELDS & vals.keys()
                 and vals.get('visibility') != 'private'
                 and not self.env.context.get('document_allow_published_edit')):
@@ -341,6 +396,7 @@ class CompanyDocument(models.Model):
             newly_published = self.filtered(lambda d: d.visibility != 'public')
         announced_before = {doc.id: doc.notification_sent for doc in newly_published}
         res = super().write(vals)
+        uploads.unlink()
         for doc in newly_published:
             doc._notify_document_update('updated' if announced_before[doc.id] else 'added')
         return res

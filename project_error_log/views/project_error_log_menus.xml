@@ -8,8 +8,8 @@
         also see those if this were nested under the Project app.
 
         Visible to both:
-          - project.group_project_user: full create/edit (see
-            security/ir.model.access.csv - access_project_error_log_project_user).
+          - group_project_error_log_user: full create/edit (see
+            security/ir.model.access.csv - access_project_error_log_user).
           - group_project_error_log_viewer: read-only (see
             access_project_error_log_viewer). Someone with only this group
             gets a read-only menu; someone with both groups keeps full
@@ -19,7 +19,7 @@
     <menuitem
         id="menu_project_error_log_root"
         name="Error Log"
-        groups="project.group_project_user,group_project_error_log_viewer"
+        groups="group_project_error_log_user,group_project_error_log_viewer"
         sequence="95"/>
 
     <menuitem
@@ -27,8 +27,17 @@
         name="Error Log"
         parent="menu_project_error_log_root"
         action="action_project_error_log"
-        groups="project.group_project_user,group_project_error_log_viewer"
+        groups="group_project_error_log_user,group_project_error_log_viewer"
         sequence="1"/>
+
+    <!-- Error Log managers may have no Project rights: own entry for them. -->
+    <menuitem
+        id="menu_project_error_log_type"
+        name="Error Types"
+        parent="menu_project_error_log_root"
+        action="action_project_error_type"
+        groups="group_project_error_log_manager"
+        sequence="10"/>
 
     <menuitem
         id="menu_project_error_type"

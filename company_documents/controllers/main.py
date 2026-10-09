@@ -1,7 +1,12 @@
+import json
+import unicodedata
+
 from werkzeug.exceptions import Forbidden, NotFound
 
 from odoo import http, _
 from odoo.http import request
+
+from ..models.company_document import UPLOAD_TAG
 
 PREVIEW_IMAGE = ('image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/bmp')
 
@@ -38,6 +43,34 @@ class CompanyDocumentController(http.Controller):
             doc, 'document_file', filename=doc.document_filename)
 
     # ── Download with tracking ────────────────────────────────────────────────
+    # ── File upload (form widget) ─────────────────────────────────────────────
+
+    @http.route('/company-documents/upload', auth='user', type='http', methods=['POST'])
+    def upload_document_file(self, ufile, **kwargs):
+        """Store the file sent as multipart in a temporary attachment. The
+        form then saves only its id (upload_attachment_id), never the base64
+        content, which crashes the browser on large files."""
+        if not request.env.user.has_group('company_documents.group_company_document_manager'):
+            return json.dumps({'error': _('Only document managers can upload files.')})
+        ufile = request.httprequest.files.get('ufile')
+        if not ufile:
+            return json.dumps({'error': _('No file received.')})
+        # Safari sends file names in NFD form.
+        filename = unicodedata.normalize('NFC', ufile.filename or 'document')
+        attachment = request.env['ir.attachment'].sudo().create({
+            'name': filename,
+            'raw': ufile.read(),
+            'res_model': 'company.document',
+            'res_id': 0,
+            'description': UPLOAD_TAG,
+        })
+        return json.dumps([{
+            'id': attachment.id,
+            'filename': filename,
+            'mimetype': attachment.mimetype,
+            'size': attachment.file_size,
+        }])
+
     @http.route('/company-documents/download/<int:document_id>', auth='user', type='http')
     def download_document(self, document_id, **kwargs):
         doc, is_signer = self._get_document(document_id)

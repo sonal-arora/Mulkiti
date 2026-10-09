@@ -1,6 +1,6 @@
 {
     'name': 'Project Error Log',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.0',
     'category': 'Services/Project',
     'summary': 'Track errors/mistakes reported against projects (replaces the Excel error log)',
     'description': """
@@ -10,8 +10,17 @@ Adds an "Error Log" menu under the Project app to record errors reported
 against a project/unit: who reported it, who made it, the type of error,
 description, screenshots, and whether it is a repeated or new error.
 
-Also defines two independent read-only groups:
-- "Error Log - View Only": view the Error Log only.
+Error Log access ("Error Log" section on the user form):
+- Error Log = User: sees the menu and all entries, creates / edits them.
+- Error Log = Manager: User rights + delete entries + manage Error Types.
+- View = View Only, alone: sees all entries, read-only.
+- View Only + Manager: same as Manager (all entries, full rights).
+- View Only + User: read-only, and only the entries where they are
+  "Error Reported By" or "Error Made By", or that they created.
+Only User / Manager members can be picked as "Error Reported By" /
+"Error Made By".
+
+Also defines an independent read-only group:
 - "Leave Summary - View Only": view the company-wide "Team Leave Summary"
   (Time Off allocated/used/pending/balance per employee) only.
 Each can be granted on its own, without implying the other.

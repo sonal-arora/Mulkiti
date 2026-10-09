@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="company_documents.DocumentUploadField">
+        <t t-if="!props.readonly">
+            <div class="w-100 d-inline-flex align-items-center gap-1">
+                <t t-if="hasFile">
+                    <input type="text" class="o_input" t-att-value="fileName" readonly="readonly"/>
+                    <button t-if="canDownload"
+                            class="btn btn-link btn-sm lh-1 fa fa-download o_download_file_button"
+                            data-tooltip="Download" aria-label="Download"
+                            t-on-click="onFileDownload"/>
+                </t>
+                <FileInput route="'/company-documents/upload'"
+                           acceptedFileExtensions="props.acceptedFileExtensions"
+                           beforeOpen.bind="beforeOpen"
+                           onWillUploadFiles.bind="onWillUploadFiles"
+                           onUpload.bind="onUploaded">
+                    <button t-if="hasFile"
+                            class="btn btn-link btn-sm lh-1 fa fa-pencil o_select_file_button"
+                            data-tooltip="Replace" aria-label="Replace"/>
+                    <button t-else="" class="btn btn-primary o_select_file_button">Upload your file</button>
+                </FileInput>
+                <button t-if="hasFile and !state.uploading"
+                        class="btn btn-link btn-sm lh-1 fa fa-trash o_clear_file_button"
+                        data-tooltip="Clear" aria-label="Clear"
+                        t-on-click="onClear"/>
+                <span t-if="state.uploading" class="text-muted small">
+                    <i class="fa fa-spinner fa-spin me-1"/>Uploading...
+                </span>
+            </div>
+        </t>
+        <t t-elif="props.record.resId and props.record.data[props.name]">
+            <a class="o_form_uri" href="#" t-on-click.prevent="onFileDownload">
+                <span class="fa fa-download me-2"/>
+                <t t-if="fileName" t-esc="fileName"/>
+            </a>
+        </t>
+    </t>
+
+</templates>
