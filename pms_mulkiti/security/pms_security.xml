@@ -124,6 +124,40 @@
             <field name="groups" eval="[(4, ref('pms_mulkiti.group_pms_head'))]"/>
         </record>
 
+        <!-- Global (no groups): applies on top of the role rules above, so
+             no PMS role - nor a user holding several of them - sees another
+             company's appraisals. company_ids = companies selected in the
+             company switcher. -->
+        <record id="pms_appraisal_rule_company" model="ir.rule">
+            <field name="name">PMS Appraisal: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_appraisal"/>
+            <field name="domain_force">[('employee_id.company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="pms_appraisal_line_rule_company" model="ir.rule">
+            <field name="name">PMS Appraisal KRA Line: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_appraisal_line"/>
+            <field name="domain_force">[('appraisal_id.employee_id.company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="pms_appraisal_attitude_line_rule_company" model="ir.rule">
+            <field name="name">PMS Appraisal Attitude Line: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_appraisal_attitude_line"/>
+            <field name="domain_force">[('appraisal_id.employee_id.company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="pms_appraisal_incident_line_rule_company" model="ir.rule">
+            <field name="name">PMS Appraisal Incident Line: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_appraisal_incident_line"/>
+            <field name="domain_force">[('appraisal_id.employee_id.company_id', 'in', company_ids)]</field>
+        </record>
+
+        <record id="pms_appraisal_training_line_rule_company" model="ir.rule">
+            <field name="name">PMS Appraisal Training Line: multi-company</field>
+            <field name="model_id" ref="pms_mulkiti.model_pms_appraisal_training_line"/>
+            <field name="domain_force">[('appraisal_id.employee_id.company_id', 'in', company_ids)]</field>
+        </record>
+
         <!-- PMS Initialize (financial-year setup) had no multi-company
              scoping at all - a Head could see/manage every company's
              initialize records. Global rule (no groups) since only
