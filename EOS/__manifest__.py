@@ -18,6 +18,7 @@
         'security/ir.model.access.csv',
         'data/hr_eos_sequence.xml',
         'data/hr_eos_payroll_structure.xml',
+        'report/hr_eos_report.xml',
         'views/hr_eos_views.xml',
         'views/hr_eos_menu.xml',
     ],

@@ -50,6 +50,8 @@
                             type="object"
                             invisible="state != 'waiting_approval'"
                             groups="EOS.group_hr_eos_head"/>
+                    <button name="%(EOS.action_report_hr_eos)d" string="Print Settlement"
+                            type="action"/>
                     <button name="action_view_payslip" string="View FnF Payslip"
                             type="object"
                             invisible="not payslip_id"/>

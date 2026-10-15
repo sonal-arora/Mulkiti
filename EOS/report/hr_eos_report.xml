@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="paperformat_hr_eos" model="report.paperformat">
+        <field name="name">End of Service Settlement</field>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">10</field>
+        <field name="margin_bottom">12</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_hr_eos" model="ir.actions.report">
+        <field name="name">Final Settlement Statement</field>
+        <field name="model">hr.eos</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">EOS.report_hr_eos</field>
+        <field name="report_file">EOS.report_hr_eos</field>
+        <field name="print_report_name">'Final Settlement - %s - %s' % (object.employee_id.name, object.name)</field>
+        <field name="paperformat_id" ref="paperformat_hr_eos"/>
+        <field name="binding_model_id" ref="model_hr_eos"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Self-contained page (logo inside the body, no web.external_layout):
+         external_layout needs wkhtmltopdf to run JS for its header/footer,
+         which the live server's unpatched-Qt build can't do (same approach
+         as the PMS report). -->
+    <template id="report_hr_eos_document">
+        <t t-set="company" t-value="o.company_id"/>
+        <t t-set="total_years" t-value="o.years_of_service + o.months_of_service / 12.0 + o.days_of_service / 365.0"/>
+        <t t-set="is_termination" t-value="o.exit_type == 'termination'"/>
+        <div class="page o_eos_report">
+            <style>
+                .o_eos_report { font-size: 11px; color: #000000; line-height: 1.35; }
+                .o_eos_report table.o_eos_grid { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+                .o_eos_report table.o_eos_grid th,
+                .o_eos_report table.o_eos_grid td { border: 1px solid #000000; padding: 4px 6px; vertical-align: top; font-size: 11px; }
+                .o_eos_report table.o_eos_grid th { font-size: 12px; font-weight: bold; background-color: #ffffff; }
+                .o_eos_report .o_eos_label { background-color: #f6cb6d; font-weight: bold; width: 30%; }
+                .o_eos_report .o_eos_amount { text-align: right; white-space: nowrap; width: 22%; }
+                .o_eos_report .o_eos_note { color: #444444; font-size: 10px; }
+                .o_eos_report h4.o_eos_section {
+                    background-color: #f6cb6d; font-weight: bold; text-transform: uppercase;
+                    font-size: 13px; padding: 5px 8px; margin: 14px 0 0 0; border: 1px solid #000000; border-bottom: 0;
+                }
+                .o_eos_report tr.o_eos_total td { font-weight: bold; background-color: #f2f2f2; }
+                .o_eos_report tr.o_eos_net td { font-weight: bold; font-size: 13px; background-color: #f6cb6d; }
+                .o_eos_report .o_eos_draft {
+                    border: 2px solid #c0392b; color: #c0392b; font-weight: bold; text-align: center;
+                    padding: 4px; margin-top: 6px; font-size: 12px;
+                }
+                .o_eos_report .o_eos_sign td { border: 0; padding: 30px 10px 0 10px; vertical-align: bottom; width: 33%; text-align: center; }
+                .o_eos_report .o_eos_sign_line { border-top: 1px solid #000000; padding-top: 3px; }
+            </style>
+
+            <!-- Logo + title -->
+            <table style="width: 100%;">
+                <tr>
+                    <td style="width: 25%; vertical-align: middle;">
+                        <img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-height: 70px;"/>
+                    </td>
+                    <td style="text-align: center; vertical-align: middle;">
+                        <h2 style="margin: 0; text-transform: uppercase;">Final Settlement Statement</h2>
+                        <div style="font-size: 12px;"><span t-field="company.name"/></div>
+                    </td>
+                    <td style="width: 25%; text-align: right; vertical-align: middle; font-size: 11px;">
+                        <div><strong>EOS No:</strong> <span t-field="o.name"/></div>
+                        <div><strong>Date:</strong> <span t-field="o.application_date"/></div>
+                    </td>
+                </tr>
+            </table>
+            <div t-if="o.state != 'done'" class="o_eos_draft">
+                <t t-if="o.state == 'draft'">DRAFT - NOT SUBMITTED</t>
+                <t t-else="">PENDING APPROVAL - NOT FINAL</t>
+            </div>
+
+            <!-- Employee details -->
+            <h4 class="o_eos_section">Employee Details</h4>
+            <table class="o_eos_grid">
+                <tr>
+                    <td class="o_eos_label">Employee Name</td><td><span t-field="o.employee_id.name"/></td>
+                    <td class="o_eos_label">Department</td><td><span t-field="o.department_id.name"/></td>
+                </tr>
+                <tr>
+                    <td class="o_eos_label">Job Title</td><td><span t-field="o.job_title"/></td>
+                    <td class="o_eos_label">Exit Type</td><td><span t-field="o.exit_type"/></td>
+                </tr>
+                <tr>
+                    <td class="o_eos_label">Date of Joining</td><td><span t-field="o.joining_date"/></td>
+                    <td class="o_eos_label" t-out="'Termination Date' if is_termination else 'Resignation Date'"/>
+                    <td><span t-field="o.resignation_date"/></td>
+                </tr>
+                <tr>
+                    <td class="o_eos_label">Notice Period</td><td><span t-out="o.notice_period_days"/> calendar days</td>
+                    <td class="o_eos_label">Last Working Date</td><td><span t-field="o.last_working_date"/></td>
+                </tr>
+                <tr>
+                    <td class="o_eos_label">Length of Service</td>
+                    <td colspan="3">
+                        <span t-out="o.years_of_service"/> year(s), <span t-out="o.months_of_service"/> month(s),
+                        <span t-out="o.days_of_service"/> day(s)
+                        (<span t-out="o.total_calendar_days"/> calendar days)
+                    </td>
+                </tr>
+                <tr t-if="is_termination and o.termination_reason">
+                    <td class="o_eos_label">Termination Reason</td>
+                    <td colspan="3"><span t-field="o.termination_reason"/></td>
+                </tr>
+            </table>
+
+            <!-- Salary -->
+            <h4 class="o_eos_section">Last Drawn Monthly Salary</h4>
+            <table class="o_eos_grid">
+                <tr>
+                    <th>Basic</th><th>Housing</th><th>Transportation</th><th>Others</th><th>Total</th>
+                </tr>
+                <tr>
+                    <td class="o_eos_amount"><span t-field="o.basic_salary"/></td>
+                    <td class="o_eos_amount"><span t-field="o.housing_allowance"/></td>
+                    <td class="o_eos_amount"><span t-field="o.transportation_allowance"/></td>
+                    <td class="o_eos_amount"><span t-field="o.other_salary_allowances"/></td>
+                    <td class="o_eos_amount"><strong><span t-field="o.total_salary"/></strong></td>
+                </tr>
+            </table>
+
+            <!-- Annual leave -->
+            <h4 class="o_eos_section">Annual Leave Encashment</h4>
+            <table class="o_eos_grid">
+                <tr>
+                    <td class="o_eos_label">Monthly Accrual Rate</td>
+                    <td>
+                        <span t-out="'%.2f' % o.leave_accrual_rate"/> days/month
+                        <span class="o_eos_note" t-out="'(less than 1 year of service)' if total_years &lt; 1 else '(1 year or more of service)'"/>
+                    </td>
+                    <td class="o_eos_label">Total Leave Entitlement</td>
+                    <td><span t-out="'%.2f' % o.total_leave_allocated"/> days</td>
+                </tr>
+                <tr>
+                    <td class="o_eos_label">Annual Leave Availed</td>
+                    <td><span t-out="'%.2f' % o.leave_availed"/> days</td>
+                    <td class="o_eos_label">Balance as of Month Start (A)</td>
+                    <td><span t-out="'%.2f' % o.leave_balance_month_start"/> days</td>
+                </tr>
+                <tr>
+                    <td class="o_eos_label">Working Days in Final Month</td>
+                    <td><span t-out="o.working_days_resignation_month"/> days</td>
+                    <td class="o_eos_label">Pro-rated Accrual, Final Month (B)</td>
+                    <td><span t-out="'%.2f' % o.pro_rated_leave_accrual"/> days</td>
+                </tr>
+                <tr class="o_eos_total">
+                    <td colspan="3">
+                        Leave Pay
+                        <span class="o_eos_note" style="font-weight: normal;">
+                            = Basic ÷ 22 × Balance (A) = <span t-out="'%.2f' % o.basic_salary"/> ÷ 22 × <span t-out="'%.2f' % o.leave_balance_month_start"/>
+                        </span>
+                    </td>
+                    <td class="o_eos_amount"><span t-field="o.leave_pay"/></td>
+                </tr>
+            </table>
+
+            <!-- Gratuity -->
+            <h4 class="o_eos_section">End of Service Gratuity</h4>
+            <table class="o_eos_grid">
+                <t t-if="o.gratuity_eligible">
+                    <tr>
+                        <td class="o_eos_label">Basis</td>
+                        <td colspan="3">
+                            <t t-if="total_years &lt;= 5">21 days' basic salary for each year of service (service up to 5 years)</t>
+                            <t t-else="">21 days' basic salary per year for the first 5 years, 30 days' basic salary per year after that</t>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="o_eos_label">Gratuity Days</td>
+                        <td><span t-out="'%.2f' % o.gratuity_days"/> days</td>
+                        <td class="o_eos_label">Daily Basic (Basic ÷ 30)</td>
+                        <td class="o_eos_amount"><span t-out="o.basic_salary / 30.0"
+                            t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/></td>
+                    </tr>
+                    <tr class="o_eos_total">
+                        <td colspan="3">Gratuity Pay</td>
+                        <td class="o_eos_amount"><span t-field="o.gratuity_pay"/></td>
+                    </tr>
+                </t>
+                <tr t-else="">
+                    <td class="o_eos_label">Not Eligible</td>
+                    <td colspan="3">Service is less than 1 year, so no gratuity is payable.</td>
+                </tr>
+            </table>
+
+            <!-- Settlement summary -->
+            <h4 class="o_eos_section">Settlement Summary</h4>
+            <table class="o_eos_grid">
+                <tr><th colspan="2">(A) Payable to Employee</th></tr>
+                <tr><td>Leave Pay</td><td class="o_eos_amount"><span t-field="o.leave_pay"/></td></tr>
+                <tr><td>Gratuity Pay</td><td class="o_eos_amount"><span t-field="o.gratuity_pay"/></td></tr>
+                <tr>
+                    <td>
+                        Salary for Final Month
+                        <span class="o_eos_note" t-if="o.last_working_date">
+                            (1 – <span t-out="o.last_working_date.strftime('%d %B %Y')"/>)
+                        </span>
+                    </td>
+                    <td class="o_eos_amount"><span t-field="o.notice_period_salary"/></td>
+                </tr>
+                <tr><td>Ticket Reimbursement</td><td class="o_eos_amount"><span t-field="o.ticket_reimbursement"/></td></tr>
+                <tr><td>Others</td><td class="o_eos_amount"><span t-field="o.other_income"/></td></tr>
+                <tr class="o_eos_total"><td>Total (A)</td><td class="o_eos_amount"><span t-field="o.total_a"/></td></tr>
+
+                <tr><th colspan="2">(B) Deductions</th></tr>
+                <tr><td>Loan / Salary Advance</td><td class="o_eos_amount"><span t-field="o.loan_advance"/></td></tr>
+                <tr><td>Notice Period Shortfall</td><td class="o_eos_amount"><span t-field="o.notice_period_shortfall"/></td></tr>
+                <tr><td>Others</td><td class="o_eos_amount"><span t-field="o.other_deductions"/></td></tr>
+                <tr class="o_eos_total"><td>Total (B)</td><td class="o_eos_amount"><span t-field="o.total_b"/></td></tr>
+
+                <tr class="o_eos_net">
+                    <td t-out="'Net Payable to Employee (A - B)' if o.net_payable &gt;= 0 else 'Net Recoverable from Employee (A - B)'"/>
+                    <td class="o_eos_amount"><span t-field="o.net_payable"/></td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <strong>Amount in words:</strong>
+                        <span t-out="o.currency_id.amount_to_text(abs(o.net_payable))"/>
+                    </td>
+                </tr>
+            </table>
+
+            <div t-if="o.state == 'done'" style="font-size: 11px;">
+                <strong>Approved by:</strong> <span t-field="o.approved_by.name"/>
+                on <span t-field="o.approval_date"/>
+                <t t-if="o.payslip_id"> · <strong>FnF Payslip:</strong> <span t-field="o.payslip_id.name"/></t>
+            </div>
+
+            <!-- Acknowledgement + signatures -->
+            <div style="page-break-inside: avoid; margin-top: 12px;">
+                <p style="font-size: 11px; margin-bottom: 0;">
+                    I, <strong><span t-field="o.employee_id.name"/></strong>, acknowledge that I have received the
+                    above amount in full and final settlement of all my dues from
+                    <strong><span t-field="company.name"/></strong>, and that I have no further claims against the company.
+                </p>
+                <table class="o_eos_sign" style="width: 100%;">
+                    <tr>
+                        <td><div class="o_eos_sign_line">Prepared By (HR)</div></td>
+                        <td><div class="o_eos_sign_line">Approved By</div></td>
+                        <td><div class="o_eos_sign_line">Employee Signature &amp; Date</div></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <template id="report_hr_eos">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="EOS.report_hr_eos_document"/>
+            </t>
+        </t>
+    </template>
+
+</odoo>
