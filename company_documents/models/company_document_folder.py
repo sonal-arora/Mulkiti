@@ -35,7 +35,8 @@ class CompanyDocumentFolder(models.Model):
         column1='folder_id',
         column2='user_id',
         string='Allowed Users',
-        domain="[('share', '=', False), ('company_ids', 'in', company_id)]",
+        domain="[('active', '=', True), ('share', '=', False), ('company_ids', 'in', company_id)]",
+        context={'active_test': True},
     )
     notify_on_update = fields.Boolean(
         string='Notify on Update',
