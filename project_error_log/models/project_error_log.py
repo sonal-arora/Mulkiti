@@ -4,6 +4,7 @@ from odoo.exceptions import AccessError, ValidationError
 ERROR_LOG_USER_GROUP = 'project_error_log.group_project_error_log_user'
 ERROR_LOG_VIEWER_GROUP = 'project_error_log.group_project_error_log_viewer'
 
+
 class ProjectErrorLog(models.Model):
     _name = 'project.error.log'
     _description = 'Project Error Log'
@@ -13,7 +14,8 @@ class ProjectErrorLog(models.Model):
     name = fields.Char(string='Sno', required=True, copy=False, readonly=True, default='New')
     date = fields.Date(required=True, default=fields.Date.context_today)
     reported_by_id = fields.Many2one(
-        'res.users', string='Error Reported By', required=True,
+        'res.users', string='Error Reported By', required=True, readonly=True,
+        default=lambda self: self.env.user,
         domain=lambda self: self._domain_error_log_users(ERROR_LOG_USER_GROUP))
     made_by_id = fields.Many2one(
         'res.users', string='Error Made By', required=True,

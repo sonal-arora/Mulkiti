@@ -1,6 +1,6 @@
 {
     'name': 'Project Error Log',
-    'version': '19.0.1.2.0',
+    'version': '19.0.1.3.0',
     'category': 'Services/Project',
     'summary': 'Track errors/mistakes reported against projects (replaces the Excel error log)',
     'description': """
@@ -17,8 +17,8 @@ Error Log access ("Error Log" section on the user form):
 - View Only + Manager: same as Manager (all entries, full rights).
 - View Only + User: read-only, and only the entries where they are
   "Error Reported By" or "Error Made By", or that they created.
-Only User / Manager members can be picked as "Error Reported By", and
-only View Only members as "Error Made By".
+"Error Reported By" is fixed to the logged-in user who creates the entry
+(read-only); only View Only members can be picked as "Error Made By".
 
 Also defines an independent read-only group:
 - "Leave Summary - View Only": view the company-wide "Team Leave Summary"
