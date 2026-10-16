@@ -30,7 +30,7 @@
         <field name="name">User</field>
         <field name="sequence">10</field>
         <field name="privilege_id" ref="res_groups_privilege_error_log"/>
-        <field name="comment">Sees the Error Log menu and all entries, can create and edit them. Can be chosen as "Error Reported By" / "Error Made By".</field>
+        <field name="comment">Sees the Error Log menu and all entries, can create and edit them.</field>
         <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
     </record>
 

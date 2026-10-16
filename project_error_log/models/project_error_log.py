@@ -2,6 +2,9 @@ from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, ValidationError
 
 ERROR_LOG_USER_GROUP = 'project_error_log.group_project_error_log_user'
+ERROR_LOG_VIEWER_GROUP = 'project_error_log.group_project_error_log_viewer'
+# Everyone who can see the Error Log (Manager implies User, so it is covered).
+ERROR_LOG_ACCESS_GROUPS = (ERROR_LOG_USER_GROUP, ERROR_LOG_VIEWER_GROUP)
 
 
 class ProjectErrorLog(models.Model):
@@ -31,16 +34,18 @@ class ProjectErrorLog(models.Model):
     company_id = fields.Many2one('res.company', default=lambda self: self.env.company)
 
     def _domain_error_log_users(self):
-        """Only "Error Log - User" members can report / be blamed for an error."""
-        return [('all_group_ids', 'in', self.env.ref(ERROR_LOG_USER_GROUP).ids)]
+        """Only active internal users with Error Log access (User / Manager /
+        View Only, implied groups included) can report / be blamed for an error."""
+        group_ids = [self.env.ref(xmlid).id for xmlid in ERROR_LOG_ACCESS_GROUPS]
+        return [('active', '=', True), ('share', '=', False), ('all_group_ids', 'in', group_ids)]
 
     @api.constrains('reported_by_id', 'made_by_id')
     def _check_error_log_users(self):
         for log in self:
             for user in log.reported_by_id | log.made_by_id:
-                if not user.has_group(ERROR_LOG_USER_GROUP):
+                if not any(user.has_group(xmlid) for xmlid in ERROR_LOG_ACCESS_GROUPS):
                     raise ValidationError(_(
-                        '%s is not in the "Error Log - User" group, so cannot be '
+                        '%s has no Error Log access, so cannot be '
                         'set as "Error Reported By" or "Error Made By".', user.name))
 
     def _check_access(self, operation):
