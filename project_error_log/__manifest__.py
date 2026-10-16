@@ -17,8 +17,8 @@ Error Log access ("Error Log" section on the user form):
 - View Only + Manager: same as Manager (all entries, full rights).
 - View Only + User: read-only, and only the entries where they are
   "Error Reported By" or "Error Made By", or that they created.
-Only active internal users with Error Log access (User / Manager / View
-Only) can be picked as "Error Reported By" / "Error Made By".
+Only User / Manager members can be picked as "Error Reported By", and
+only View Only members as "Error Made By".
 
 Also defines an independent read-only group:
 - "Leave Summary - View Only": view the company-wide "Team Leave Summary"

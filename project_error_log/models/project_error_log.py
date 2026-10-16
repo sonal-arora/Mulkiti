@@ -3,9 +3,6 @@ from odoo.exceptions import AccessError, ValidationError
 
 ERROR_LOG_USER_GROUP = 'project_error_log.group_project_error_log_user'
 ERROR_LOG_VIEWER_GROUP = 'project_error_log.group_project_error_log_viewer'
-# Everyone who can see the Error Log (Manager implies User, so it is covered).
-ERROR_LOG_ACCESS_GROUPS = (ERROR_LOG_USER_GROUP, ERROR_LOG_VIEWER_GROUP)
-
 
 class ProjectErrorLog(models.Model):
     _name = 'project.error.log'
@@ -17,10 +14,10 @@ class ProjectErrorLog(models.Model):
     date = fields.Date(required=True, default=fields.Date.context_today)
     reported_by_id = fields.Many2one(
         'res.users', string='Error Reported By', required=True,
-        domain=lambda self: self._domain_error_log_users())
+        domain=lambda self: self._domain_error_log_users(ERROR_LOG_USER_GROUP))
     made_by_id = fields.Many2one(
         'res.users', string='Error Made By', required=True,
-        domain=lambda self: self._domain_error_log_users())
+        domain=lambda self: self._domain_error_log_users(ERROR_LOG_VIEWER_GROUP))
     error_type_id = fields.Many2one('project.error.type', string='Type of Error', required=True)
     project_id = fields.Many2one('project.project', string='Project', required=True)
     unit_no = fields.Char(string='Unit #')
@@ -33,20 +30,25 @@ class ProjectErrorLog(models.Model):
     remarks = fields.Text(string='Additional Remarks')
     company_id = fields.Many2one('res.company', default=lambda self: self.env.company)
 
-    def _domain_error_log_users(self):
-        """Only active internal users with Error Log access (User / Manager /
-        View Only, implied groups included) can report / be blamed for an error."""
-        group_ids = [self.env.ref(xmlid).id for xmlid in ERROR_LOG_ACCESS_GROUPS]
-        return [('active', '=', True), ('share', '=', False), ('all_group_ids', 'in', group_ids)]
+    def _domain_error_log_users(self, group_xmlid):
+        """Active internal users of the given group (implied groups included).
+        "Error Reported By": Error Log User / Manager.
+        "Error Made By": View Only - they only see their own entries, so the
+        person blamed is always someone who can see that entry."""
+        return [('active', '=', True), ('share', '=', False),
+                ('all_group_ids', 'in', self.env.ref(group_xmlid).ids)]
 
     @api.constrains('reported_by_id', 'made_by_id')
     def _check_error_log_users(self):
         for log in self:
-            for user in log.reported_by_id | log.made_by_id:
-                if not any(user.has_group(xmlid) for xmlid in ERROR_LOG_ACCESS_GROUPS):
-                    raise ValidationError(_(
-                        '%s has no Error Log access, so cannot be '
-                        'set as "Error Reported By" or "Error Made By".', user.name))
+            if not log.reported_by_id.has_group(ERROR_LOG_USER_GROUP):
+                raise ValidationError(_(
+                    '%s is not in the "Error Log - User" group, so cannot be '
+                    'set as "Error Reported By".', log.reported_by_id.name))
+            if not log.made_by_id.has_group(ERROR_LOG_VIEWER_GROUP):
+                raise ValidationError(_(
+                    '%s is not in the "Error Log - View Only" group, so cannot be '
+                    'set as "Error Made By".', log.made_by_id.name))
 
     def _check_access(self, operation):
         """The 'View Only' group is a read-only lock: anyone holding it
