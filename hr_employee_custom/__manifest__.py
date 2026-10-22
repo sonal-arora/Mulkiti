@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'HR Employee Custom - UAE',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.0',
     'category': 'Human Resources',
     'summary': 'Custom HR Employee form for UAE',
     'depends': [
@@ -23,6 +23,7 @@
         'security/ir.model.access.csv',
         'data/ir_cron.xml',
         'views/hr_employee_views.xml',
+        'views/hr_employee_category_views.xml',
         'views/employee_document_views.xml',
         'views/hr_leave_allocation_view.xml',
         'views/auth_signup_override.xml',

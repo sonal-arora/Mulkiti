@@ -18,17 +18,17 @@ class HrEmployee(models.Model):
         groups='hr.group_hr_user',
         help=(
             "End of the employee's probation period. "
-            "Defaults to 6 months after the contract start date. "
+            "Defaults to 6 months after the joining date. "
             "Annual Leave cannot be taken before this date."
         ),
     )
 
-    @api.depends('contract_date_start')
+    @api.depends('joining_date', 'contract_date_start')
     def _compute_probation_end_date(self):
         for emp in self:
-            cds = emp.contract_date_start
-            if cds and not emp.probation_end_date:
-                emp.probation_end_date = cds + relativedelta(months=6)
+            start = emp.joining_date or emp.contract_date_start
+            if start and not emp.probation_end_date:
+                emp.probation_end_date = start + relativedelta(months=6)
 
     # ── 1st Level Approver ─────────────────────────────────────────────────
     # Either this user OR the employee's direct manager (parent_id.user_id)

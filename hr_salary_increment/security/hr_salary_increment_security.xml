@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Global: only increments of the companies the user is working in -->
+    <record id="hr_salary_increment_company_rule" model="ir.rule">
+        <field name="name">Salary Increment: multi-company</field>
+        <field name="model_id" ref="model_hr_salary_increment"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+
+    <!-- Employees: read only their own approved increments -->
+    <record id="hr_salary_increment_own_rule" model="ir.rule">
+        <field name="name">Salary Increment: own approved increments</field>
+        <field name="model_id" ref="model_hr_salary_increment"/>
+        <field name="domain_force">[('employee_id.user_id', '=', user.id), ('state', '=', 'approved')]</field>
+        <field name="groups" eval="[(4, ref('base.group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Payroll officers and administrators: all increments -->
+    <record id="hr_salary_increment_payroll_rule" model="ir.rule">
+        <field name="name">Salary Increment: payroll sees all</field>
+        <field name="model_id" ref="model_hr_salary_increment"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('hr_payroll.group_hr_payroll_user'))]"/>
+    </record>
+</odoo>

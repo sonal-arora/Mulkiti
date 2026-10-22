@@ -12,6 +12,7 @@
         'ohrms_loan',
         'mail',
         'hr_employee_probation',
+        'hr_employee_custom',
     ],
     'data': [
         'security/hr_eos_security.xml',

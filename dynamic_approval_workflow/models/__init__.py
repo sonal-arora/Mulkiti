@@ -3,3 +3,4 @@ from . import hr_employee
 from . import hr_leave
 from . import hr_leave_report_calendar
 from . import hr_leave_summary
+from . import hr_leave_brickwork

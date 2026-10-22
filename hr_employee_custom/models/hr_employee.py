@@ -32,6 +32,20 @@ class HrEmployee(models.Model):
     document_ids = fields.One2many('employee.document', 'employee_id', string="Documents")
     document_count = fields.Integer(compute="_compute_document_count")
     mol_contract_date = fields.Date(string='MOL Contract date')
+    # Fixed per employee: unlike contract_date_start it must not move when a
+    # contract is renewed or a new contract/version is created.
+    joining_date = fields.Date(
+        string='Joining Date',
+        tracking=True,
+        groups='hr.group_hr_user',
+        help='Date the employee first joined the company. It does not change '
+             'when contracts are renewed.',
+    )
+
+    def _get_joining_date(self):
+        """Joining date, falling back to the first contract start date."""
+        self.ensure_one()
+        return self.joining_date or self._get_first_contract_date(no_gap=False)
     # leave_second_approver_id = fields.Many2one(
     #     'res.users',
     #     string="Second Leave Approver"

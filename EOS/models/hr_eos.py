@@ -187,7 +187,7 @@ class HrEos(models.Model):
             if emp:
                 rec.department_id = emp.department_id
                 rec.job_title = emp.job_title or emp.job_id.name or ''
-                rec.joining_date = emp._get_first_contract_date(no_gap=False)
+                rec.joining_date = emp.sudo()._get_joining_date()
             else:
                 rec.department_id = False
                 rec.job_title = False

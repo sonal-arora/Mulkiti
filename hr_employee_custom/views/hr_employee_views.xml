@@ -26,9 +26,10 @@
             </xpath>
 
 
-             <xpath expr="//label[@for='contract_date_start']" position="attributes">
-                 <attribute name="string">Joining Date</attribute>
-             </xpath>
+            <!-- Joining Date is its own field; the contract dates keep their standard labels -->
+            <xpath expr="//label[@for='contract_date_start']" position="before">
+                <field name="joining_date"/>
+            </xpath>
 
             <xpath expr="//div[@name='contract_dates']" position="after">
                 <field name="mol_contract_date"/>

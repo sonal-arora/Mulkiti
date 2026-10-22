@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══ LIST ════════════════════════════════════════════════════════════ -->
+    <record id="view_hr_salary_increment_list" model="ir.ui.view">
+        <field name="name">hr.salary.increment.list</field>
+        <field name="model">hr.salary.increment</field>
+        <field name="arch" type="xml">
+            <list string="Salary Increments"
+                  decoration-muted="state == 'cancel'"
+                  decoration-info="state == 'draft'">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="department_id" optional="show"/>
+                <field name="date_effective"/>
+                <field name="increment_type" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="old_wage" optional="show"/>
+                <field name="new_wage" optional="show"/>
+                <field name="wage_increment_percent" string="Basic %" optional="show"/>
+                <field name="old_total" sum="Total"/>
+                <field name="new_total" sum="Total"/>
+                <field name="total_increment" sum="Total" optional="show"/>
+                <field name="total_increment_percent" string="Total %"/>
+                <field name="approved_by_id" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'approved'"
+                       decoration-muted="state == 'cancel'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ══ FORM ════════════════════════════════════════════════════════════ -->
+    <record id="view_hr_salary_increment_form" model="ir.ui.view">
+        <field name="name">hr.salary.increment.form</field>
+        <field name="model">hr.salary.increment</field>
+        <field name="arch" type="xml">
+            <form string="Salary Increment">
+                <header>
+                    <button name="action_approve" type="object" string="Approve"
+                            class="btn-primary" invisible="state != 'draft'"
+                            groups="hr_payroll.group_hr_payroll_manager"
+                            confirm="Approving creates a new contract version with the new salary from the effective date and locks this increment. Continue?"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object" string="Reset to Draft"
+                            invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,approved"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_version" type="object"
+                                class="oe_stat_button" icon="fa-file-text-o"
+                                invisible="not new_version_id"
+                                groups="hr_payroll.group_hr_payroll_user">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Contract</span>
+                                <span class="o_stat_text">Version</span>
+                            </div>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Approved" bg_color="text-bg-success"
+                            invisible="state != 'approved'"/>
+                    <widget name="web_ribbon" title="Cancelled" bg_color="text-bg-danger"
+                            invisible="state != 'cancel'"/>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Employee">
+                            <field name="employee_id" readonly="state != 'draft'"
+                                   options="{'no_create': True}"/>
+                            <field name="department_id"/>
+                            <field name="job_id"/>
+                            <field name="joining_date"/>
+                            <field name="contract_date_start"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="new_version_id" invisible="1"/>
+                        </group>
+                        <group string="Increment">
+                            <field name="date_effective" readonly="state != 'draft'"/>
+                            <field name="increment_type" readonly="state != 'draft'"/>
+                            <field name="wage_increment"/>
+                            <field name="wage_increment_percent" string="Basic Increment %"/>
+                            <field name="total_increment"/>
+                            <field name="total_increment_percent" string="Total Increment %"/>
+                        </group>
+                    </group>
+                    <group string="Salary">
+                        <group string="Old Salary">
+                            <field name="old_wage" string="Basic Salary"/>
+                            <field name="old_housing" string="Housing Allowance"/>
+                            <field name="old_transport" string="Transport Allowance"/>
+                            <field name="old_other" string="Other Allowances"/>
+                            <field name="old_total" string="Total Salary" class="fw-bold"/>
+                        </group>
+                        <group string="New Salary">
+                            <field name="new_wage" string="Basic Salary"
+                                   readonly="state != 'draft'"/>
+                            <field name="new_housing" string="Housing Allowance"
+                                   readonly="state != 'draft'"/>
+                            <field name="new_transport" string="Transport Allowance"
+                                   readonly="state != 'draft'"/>
+                            <field name="new_other" string="Other Allowances"
+                                   readonly="state != 'draft'"/>
+                            <field name="new_total" string="Total Salary" class="fw-bold"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="reason" readonly="state != 'draft'"
+                               placeholder="Why is this increment given?"/>
+                    </group>
+                    <group invisible="state != 'approved'">
+                        <group>
+                            <field name="approved_by_id"/>
+                            <field name="approved_date"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ══ SEARCH ══════════════════════════════════════════════════════════ -->
+    <record id="view_hr_salary_increment_search" model="ir.ui.view">
+        <field name="name">hr.salary.increment.search</field>
+        <field name="model">hr.salary.increment</field>
+        <field name="arch" type="xml">
+            <search string="Search Salary Increments">
+                <field name="name"/>
+                <field name="employee_id"/>
+                <field name="department_id"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Approved" name="approved" domain="[('state', '=', 'approved')]"/>
+                <filter string="Cancelled" name="cancel" domain="[('state', '=', 'cancel')]"/>
+                <separator/>
+                <filter string="Effective Date" name="date_effective" date="date_effective"/>
+                <separator/>
+                <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter string="Employee" name="group_employee" context="{'group_by': 'employee_id'}"/>
+                    <filter string="Department" name="group_department" context="{'group_by': 'department_id'}"/>
+                    <filter string="Type" name="group_type" context="{'group_by': 'increment_type'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Effective Year" name="group_year" context="{'group_by': 'date_effective:year'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ══ PIVOT ═══════════════════════════════════════════════════════════ -->
+    <record id="view_hr_salary_increment_pivot" model="ir.ui.view">
+        <field name="name">hr.salary.increment.pivot</field>
+        <field name="model">hr.salary.increment</field>
+        <field name="arch" type="xml">
+            <pivot string="Salary Increments">
+                <field name="department_id" type="row"/>
+                <field name="date_effective" interval="year" type="col"/>
+                <field name="total_increment" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_hr_salary_increment" model="ir.actions.act_window">
+        <field name="name">Salary Increments</field>
+        <field name="res_model">hr.salary.increment</field>
+        <field name="view_mode">list,form,pivot</field>
+        <field name="search_view_id" ref="view_hr_salary_increment_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Record a salary increment</p>
+            <p>Enter the new salary and effective date. On approval the employee's
+               contract gets a new version with the new salary.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_hr_salary_increment"
+              name="Salary Increments"
+              parent="hr.menu_hr_root"
+              action="action_hr_salary_increment"
+              groups="hr_payroll.group_hr_payroll_user"
+              sequence="5"/>
+
+    <!-- ══ MY SALARY INCREMENTS (employee self-service, read only) ═════════ -->
+    <record id="view_hr_salary_increment_my_list" model="ir.ui.view">
+        <field name="name">hr.salary.increment.my.list</field>
+        <field name="model">hr.salary.increment</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <list string="My Salary Increments" create="0" edit="0" delete="0">
+                <field name="name"/>
+                <field name="date_effective"/>
+                <field name="increment_type"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="old_wage"/>
+                <field name="new_wage"/>
+                <field name="old_total"/>
+                <field name="new_total"/>
+                <field name="total_increment_percent" string="Increment %"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hr_salary_increment_my_form" model="ir.ui.view">
+        <field name="name">hr.salary.increment.my.form</field>
+        <field name="model">hr.salary.increment</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <form string="Salary Increment" create="0" edit="0" delete="0">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="employee_name"/>
+                            <field name="department_id" options="{'no_open': True}"/>
+                            <field name="job_id" options="{'no_open': True}"/>
+                        </group>
+                        <group>
+                            <field name="date_effective"/>
+                            <field name="increment_type"/>
+                            <field name="total_increment_percent" string="Increment %"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Old Salary">
+                            <field name="old_wage" string="Basic Salary"/>
+                            <field name="old_housing" string="Housing Allowance"/>
+                            <field name="old_transport" string="Transport Allowance"/>
+                            <field name="old_other" string="Other Allowances"/>
+                            <field name="old_total" string="Total Salary" class="fw-bold"/>
+                        </group>
+                        <group string="New Salary">
+                            <field name="new_wage" string="Basic Salary"/>
+                            <field name="new_housing" string="Housing Allowance"/>
+                            <field name="new_transport" string="Transport Allowance"/>
+                            <field name="new_other" string="Other Allowances"/>
+                            <field name="new_total" string="Total Salary" class="fw-bold"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_hr_salary_increment_my" model="ir.actions.act_window">
+        <field name="name">My Salary Increments</field>
+        <field name="res_model">hr.salary.increment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('employee_id.user_id', '=', uid), ('state', '=', 'approved')]</field>
+        <field name="context">{'create': False, 'edit': False, 'delete': False}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_hr_salary_increment_my_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_hr_salary_increment_my_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No salary increments yet</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_hr_salary_increment_my"
+              name="My Salary Increments"
+              parent="hr.menu_hr_root"
+              action="action_hr_salary_increment_my"
+              groups="base.group_user"
+              sequence="6"/>
+
+</odoo>

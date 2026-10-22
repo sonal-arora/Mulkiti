@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_salary_increment_employee,hr.salary.increment employee,model_hr_salary_increment,base.group_user,1,0,0,0
+access_hr_salary_increment_payroll_user,hr.salary.increment payroll user,model_hr_salary_increment,hr_payroll.group_hr_payroll_user,1,1,1,0
+access_hr_salary_increment_payroll_manager,hr.salary.increment payroll manager,model_hr_salary_increment,hr_payroll.group_hr_payroll_manager,1,1,1,1
