@@ -7,9 +7,9 @@
 Salary Increment
 ================
 HR records an employee's salary increment (old vs new salary, increment %,
-effective date). On approval a new contract version is created from the
-effective date with the new salary. Contract start date and joining date stay
-unchanged. Approved increments are locked.
+effective date). On approval the current contract is closed the day before the
+effective date and a new contract starts on the effective date with the new
+salary. The joining date stays unchanged. Approved increments are locked.
     """,
     'author': 'Mulkiti',
     'depends': [

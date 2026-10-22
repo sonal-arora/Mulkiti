@@ -1,3 +1,5 @@
+from dateutil.relativedelta import relativedelta
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 
@@ -223,15 +225,7 @@ class HrSalaryIncrement(models.Model):
                 version_field: rec[f'new_{suffix}']
                 for suffix, version_field in SALARY_COMPONENTS.items()
             }
-            # create_version copies the contract in force on that date, so the
-            # contract start/end dates (and the joining date) stay unchanged.
-            version = rec.employee_id.create_version({
-                'date_version': rec.date_effective,
-                **salary_vals,
-            })
-            # create_version returns the existing version untouched when one
-            # already starts on the effective date.
-            version.write(salary_vals)
+            version = rec._create_increment_contract(salary_vals)
 
             rec.write({
                 'state': 'approved',
@@ -246,6 +240,40 @@ class HrSalaryIncrement(models.Model):
                 pct=rec.total_increment_percent, date=rec.date_effective,
             ))
         return True
+
+    def _create_increment_contract(self, salary_vals):
+        """Close the contract in force the day before the effective date and
+        start a new contract on the effective date with the new salary."""
+        self.ensure_one()
+        employee = self.employee_id
+        date_effective = self.date_effective
+        old_version = employee._get_version(date_effective).sudo()
+        old_start = old_version.contract_date_start
+        old_end = old_version.contract_date_end
+
+        # The contract already starts on the effective date: just update it.
+        if old_start == date_effective:
+            old_version.write(salary_vals)
+            return old_version
+        if old_version.date_version == date_effective:
+            raise UserError(_(
+                '%(employee)s already has a contract version starting on %(date)s that belongs '
+                'to the contract started on %(start)s. Remove that version or choose another '
+                'effective date.',
+                employee=employee.name, date=date_effective, start=old_start))
+
+        new_end = old_end if old_end and old_end >= date_effective else False
+        # Writing the end date on one version syncs it to every version of
+        # that contract.
+        if old_start and (not old_end or old_end >= date_effective):
+            old_version.write({'contract_date_end': date_effective - relativedelta(days=1)})
+
+        return employee.create_version({
+            'date_version': date_effective,
+            'contract_date_start': date_effective,
+            'contract_date_end': new_end,
+            **salary_vals,
+        })
 
     def action_cancel(self):
         if any(rec.state != 'draft' for rec in self):
