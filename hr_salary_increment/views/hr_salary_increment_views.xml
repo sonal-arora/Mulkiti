@@ -42,7 +42,7 @@
                     <button name="action_approve" type="object" string="Approve"
                             class="btn-primary" invisible="state != 'draft'"
                             groups="hr_payroll.group_hr_payroll_manager"
-                            confirm="Approving creates a new contract version with the new salary from the effective date and locks this increment. Continue?"/>
+                            confirm="Approving closes the current contract the day before the effective date, starts a new contract on the effective date with the new salary and locks this increment. Continue?"/>
                     <button name="action_cancel" type="object" string="Cancel"
                             invisible="state != 'draft'"/>
                     <button name="action_draft" type="object" string="Reset to Draft"
@@ -172,101 +172,72 @@
         <field name="search_view_id" ref="view_hr_salary_increment_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Record a salary increment</p>
-            <p>Enter the new salary and effective date. On approval the employee's
-               contract gets a new version with the new salary.</p>
+            <p>Enter the new salary and effective date. On approval the current
+               contract is closed and a new contract starts on the effective date
+               with the new salary.</p>
         </field>
     </record>
 
+    <!-- Payroll ▸ Employees ▸ Salary Increments (next to Salary Adjustments) -->
     <menuitem id="menu_hr_salary_increment"
               name="Salary Increments"
-              parent="hr.menu_hr_root"
+              parent="hr_payroll.menu_hr_payroll_employees"
               action="action_hr_salary_increment"
               groups="hr_payroll.group_hr_payroll_user"
-              sequence="5"/>
+              sequence="35"/>
 
-    <!-- ══ MY SALARY INCREMENTS (employee self-service, read only) ═════════ -->
+    <!-- ══ MY SALARY INCREMENTS — employee self-service, like My Payslips ══
+         • Only APPROVED increments of the logged-in employee
+         • Read only, list only (no form view on row click)
+    ═══════════════════════════════════════════════════════════════════════ -->
     <record id="view_hr_salary_increment_my_list" model="ir.ui.view">
         <field name="name">hr.salary.increment.my.list</field>
         <field name="model">hr.salary.increment</field>
         <field name="priority">50</field>
         <field name="arch" type="xml">
-            <list string="My Salary Increments" create="0" edit="0" delete="0">
-                <field name="name"/>
+            <list string="My Salary Increments"
+                  create="0"
+                  edit="0"
+                  delete="0"
+                  open_form_view="0"
+                  multi_edit="0">
+                <field name="name" string="Reference"/>
                 <field name="date_effective"/>
                 <field name="increment_type"/>
                 <field name="currency_id" column_invisible="1"/>
-                <field name="old_wage"/>
-                <field name="new_wage"/>
-                <field name="old_total"/>
-                <field name="new_total"/>
+                <field name="old_wage" string="Old Basic"/>
+                <field name="new_wage" string="New Basic"/>
+                <field name="new_housing" string="Housing" optional="show"/>
+                <field name="new_transport" string="Transport" optional="show"/>
+                <field name="new_other" string="Other" optional="show"/>
+                <field name="old_total" string="Old Total"/>
+                <field name="new_total" string="New Total" decoration-bf="1"/>
                 <field name="total_increment_percent" string="Increment %"/>
             </list>
-        </field>
-    </record>
-
-    <record id="view_hr_salary_increment_my_form" model="ir.ui.view">
-        <field name="name">hr.salary.increment.my.form</field>
-        <field name="model">hr.salary.increment</field>
-        <field name="priority">50</field>
-        <field name="arch" type="xml">
-            <form string="Salary Increment" create="0" edit="0" delete="0">
-                <sheet>
-                    <div class="oe_title">
-                        <h1><field name="name" readonly="1"/></h1>
-                    </div>
-                    <group>
-                        <group>
-                            <field name="employee_name"/>
-                            <field name="department_id" options="{'no_open': True}"/>
-                            <field name="job_id" options="{'no_open': True}"/>
-                        </group>
-                        <group>
-                            <field name="date_effective"/>
-                            <field name="increment_type"/>
-                            <field name="total_increment_percent" string="Increment %"/>
-                            <field name="currency_id" invisible="1"/>
-                        </group>
-                    </group>
-                    <group>
-                        <group string="Old Salary">
-                            <field name="old_wage" string="Basic Salary"/>
-                            <field name="old_housing" string="Housing Allowance"/>
-                            <field name="old_transport" string="Transport Allowance"/>
-                            <field name="old_other" string="Other Allowances"/>
-                            <field name="old_total" string="Total Salary" class="fw-bold"/>
-                        </group>
-                        <group string="New Salary">
-                            <field name="new_wage" string="Basic Salary"/>
-                            <field name="new_housing" string="Housing Allowance"/>
-                            <field name="new_transport" string="Transport Allowance"/>
-                            <field name="new_other" string="Other Allowances"/>
-                            <field name="new_total" string="Total Salary" class="fw-bold"/>
-                        </group>
-                    </group>
-                </sheet>
-            </form>
         </field>
     </record>
 
     <record id="action_hr_salary_increment_my" model="ir.actions.act_window">
         <field name="name">My Salary Increments</field>
         <field name="res_model">hr.salary.increment</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_hr_salary_increment_my_list"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_hr_salary_increment_my_list')})]"/>
         <field name="domain">[('employee_id.user_id', '=', uid), ('state', '=', 'approved')]</field>
         <field name="context">{'create': False, 'edit': False, 'delete': False}</field>
-        <field name="view_ids" eval="[(5, 0, 0),
-            (0, 0, {'view_mode': 'list', 'view_id': ref('view_hr_salary_increment_my_list')}),
-            (0, 0, {'view_mode': 'form', 'view_id': ref('view_hr_salary_increment_my_form')})]"/>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">No salary increments yet</p>
+            <p class="o_view_nocontent_smiling_face">No salary increments yet.</p>
+            <p>Your salary increments will appear here once approved by Payroll.</p>
         </field>
     </record>
 
+    <!-- Payroll ▸ My Salary Increments (next to My Payslips) -->
     <menuitem id="menu_hr_salary_increment_my"
               name="My Salary Increments"
-              parent="hr.menu_hr_root"
+              parent="hr_work_entry_enterprise.menu_hr_payroll_root"
               action="action_hr_salary_increment_my"
               groups="base.group_user"
-              sequence="6"/>
+              sequence="11"/>
 
 </odoo>
