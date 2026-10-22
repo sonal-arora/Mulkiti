@@ -26,9 +26,9 @@
     <menuitem
         id="menu_hr_leave_brickwork"
         name="Brickwork Leaves"
-        parent="hr_holidays.menu_hr_holidays_root"
         action="hr_leave_action_brickwork"
-        sequence="3"
+        sequence="226"
+        web_icon="hr_holidays,static/description/icon.png"
         groups="group_brickwork_leave_viewer"
     />
 </odoo>
